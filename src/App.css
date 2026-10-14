@@ -150,7 +150,7 @@
 }
 .layout {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  grid-template-columns: 300px minmax(0, 1fr) 350px;
   gap: 1rem;
   align-items: start;
 }
@@ -345,7 +345,7 @@ header p {
   opacity: 0.55;
 }
 .sheet-portrait {
-  width: 96px;
+  width: 112px;
   align-self: stretch;
   object-fit: cover;
   object-position: top center;
@@ -354,7 +354,7 @@ header p {
 }
 .sheet-face {
   font-size: 2.2rem;
-  width: 96px;
+  width: 112px;
   display: flex;
   align-items: center;
   justify-content: center;
