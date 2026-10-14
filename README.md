@@ -66,6 +66,6 @@ fits at least 6 cards; the hand list shows each card's requirement and who fits.
 4. ✅ Card resolution (focused/tile/directional/AoE, reactions, statuses)
 5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
 6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
-7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (legend, fits, e2e)
+7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
 8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
 9. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)
