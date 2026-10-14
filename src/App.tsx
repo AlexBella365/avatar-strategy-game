@@ -125,7 +125,7 @@ function SheetCard(props: {
         </div>
         <div className="sheet-row">
           <span title="Focus">◉ {c.focus}</span>
-          <span title="Movement spent">👣 {c.movementSpent}</span>
+          <span title="Movement spent">👟 {c.movementSpent}</span>
           {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
         </div>
         {c.statuses.length > 0 && (
@@ -619,7 +619,7 @@ export default function App() {
 
   const resourcesLine = (playerId: string): string => {
     const p = state.players.find((pl) => pl.id === playerId)!;
-    return `⚡${p.energy} 🌀${p.chi} 🂠${p.deck.length} 🗑${p.discard.length}`;
+    return `⚡${p.energy} 🌀${p.chi} 🃏${p.deck.length} 🗑${p.discard.length}`;
   };
 
   const restrictionLabel = (r: Restriction): string => {
@@ -920,9 +920,9 @@ export default function App() {
               <h2>Legend</h2>
               <ul>
                 <li>❤ health · ◉ Focus (Evade + Avatar State)</li>
-                <li>⚡ Energy (4/round) · 🌀 chi bank · 🂠 deck · 🗑 discard</li>
+                <li>⚡ Energy (4/round) · 🌀 chi bank · 🃏 deck · 🗑 discard</li>
                 <li>🌀 active Avatar (KO = instant loss) · Res n/6 meter</li>
-                <li>⚙n equipped Gear · 🂠 face-down assigned card</li>
+                <li>⚙n equipped Gear · 🃏 face-down assigned card</li>
                 <li>🧱 wall (blocks) · 🪨 rubble (2 to enter)</li>
                 <li>💧 water (+bonus) · 🔥 fire (1 entry) · 🌋 embers (1 EoR)</li>
                 <li>🧊 ice (difficult + OB) · 🛡 cover (−1 ranged)</li>
