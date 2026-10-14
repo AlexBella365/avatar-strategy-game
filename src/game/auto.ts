@@ -4,12 +4,20 @@
 import { getCardDefinition } from "./content/cards";
 import { CHARACTERS } from "./content/characters";
 import { restrictionSatisfied } from "./content/economy";
-import { key, reachableTiles } from "./rules/grid";
+import { key, manhattan, reachableTiles } from "./rules/grid";
 import { movementAllowance } from "./rules/movement";
 import { hasStatus } from "./rules/statuses";
 import { blockingTiles, difficultTiles } from "./rules/terrain";
-import { getLegalTargets } from "./rules/targeting";
-import type { CardDefinition, GameAction, GameState, Position } from "./types";
+import { getLegalTargets, validateTarget } from "./rules/targeting";
+import { cloneState } from "./state";
+import type {
+  CardDefinition,
+  CharacterState,
+  GameAction,
+  GameState,
+  Position,
+  TargetSelection,
+} from "./types";
 
 /** Mirror of the engine's cost check so auto prefers affordable plays. */
 function canAfford(
@@ -37,13 +45,79 @@ function canAfford(
   );
 }
 
-function randomReachable(
+/**
+ * Pick a fight target: focused attacks go for the nearest legal character;
+ * shapes maximize wanted hits (enemies for attacks, allies for support)
+ * while minimizing friendly fire. Random tiebreaks. Null when unhittable.
+ */
+function pickFightTarget(
+  state: GameState,
+  characterId: string,
+  card: CardDefinition,
+  random: () => number,
+): TargetSelection | null {
+  const source = state.characters.find((ch) => ch.id === characterId);
+  if (!source) return null;
+  const options = getLegalTargets(state, characterId, card).filter((o) => o.isLegal);
+  if (options.length === 0) return null;
+  const t = card.targeting;
+  if (t.kind === "character") {
+    let best = options[0];
+    let bestDist = Infinity;
+    for (const option of options) {
+      const target = state.characters.find((ch) => ch.id === option.primaryCharacterId);
+      const dist = target ? manhattan(source.position, target.position) : Infinity;
+      if (dist < bestDist || (dist === bestDist && random() < 0.5)) {
+        best = option;
+        bestDist = dist;
+      }
+    }
+    return best.selection;
+  }
+  const allegiance =
+    t.kind === "area" ? t.allegiance : t.kind === "direction" ? "enemies" : "all";
+  const wantAllies = allegiance === "allies" || allegiance === "selfAndAllies";
+  let best = options[0];
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const option of options) {
+    let wanted = 0;
+    let unwanted = 0;
+    for (const id of option.affectedCharacterIds) {
+      const hit = state.characters.find((ch) => ch.id === id);
+      if (!hit) continue;
+      if ((hit.ownerId === source.ownerId) === wantAllies) wanted += 1;
+      else unwanted += 1;
+    }
+    const score = wanted * 2 - unwanted;
+    if (score > bestScore || (score === bestScore && random() < 0.5)) {
+      best = option;
+      bestScore = score;
+    }
+  }
+  return best.selection;
+}
+
+/** Living enemies of a character, nearest first. */
+function nearestEnemies(state: GameState, characterId: string): CharacterState[] {
+  const c = state.characters.find((ch) => ch.id === characterId);
+  if (!c) return [];
+  return state.characters
+    .filter((o) => o.health > 0 && o.ownerId !== c.ownerId)
+    .sort((a, b) => manhattan(c.position, a.position) - manhattan(c.position, b.position));
+}
+
+/**
+ * Step toward the nearest enemy: the reachable tile minimizing distance to
+ * any living enemy. Returns null when already as close as possible.
+ */
+function advanceTowardEnemy(
   state: GameState,
   characterId: string,
   random: () => number,
 ): Position | null {
   const c = state.characters.find((ch) => ch.id === characterId);
-  if (!c) return null;
+  const foes = nearestEnemies(state, characterId);
+  if (!c || foes.length === 0) return null;
   const occupied = new Set(
     state.characters.filter((ch) => ch.health > 0).map((ch) => key(ch.position)),
   );
@@ -53,10 +127,43 @@ function randomReachable(
     occupied,
     difficult: difficultTiles(state),
   });
-  const keys = [...reach.keys()];
-  if (keys.length === 0) return null;
-  const [x, y] = keys[Math.floor(random() * keys.length)].split(",").map(Number);
-  return { x, y };
+  const here = Math.min(...foes.map((f) => manhattan(c.position, f.position)));
+  let best: Position[] = [];
+  let bestDist = here;
+  for (const k of reach.keys()) {
+    const [x, y] = k.split(",").map(Number);
+    const tile = { x, y };
+    const dist = Math.min(...foes.map((f) => manhattan(tile, f.position)));
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = [tile];
+    } else if (dist === bestDist && dist < here) {
+      best.push(tile);
+    }
+  }
+  if (best.length === 0) return null;
+  return best[Math.floor(random() * best.length)];
+}
+
+/**
+ * Would stepping to `dest` dodge a locked focused attack? Re-checks the
+ * attack from the hypothetical tile using the shared validator.
+ */
+export function evadeEscapes(
+  state: GameState,
+  attackerId: string,
+  card: CardDefinition,
+  targetId: string,
+  dest: Position,
+): boolean {
+  const clone = cloneState(state);
+  const target = clone.characters.find((ch) => ch.id === targetId);
+  if (!target) return false;
+  target.position = { ...dest };
+  return !validateTarget(clone, attackerId, card, {
+    kind: "character",
+    characterId: targetId,
+  }).ok;
 }
 
 /**
@@ -97,23 +204,22 @@ export function chooseAutoAction(
   if (assigned) {
     // Technique spent (Avatar activation): may still move, then pass.
     if (!c.techniqueBlockedThisActivation) {
-      // Sometimes stroll before playing.
-      if (c.movementSpent === 0 && random() < 0.6) {
-        const dest = randomReachable(state, c.id, random);
+      // Close in before playing.
+      if (c.movementSpent === 0 && random() < 0.85) {
+        const dest = advanceTowardEnemy(state, c.id, random);
         if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
       }
       const card = getCardDefinition(assigned.definitionId);
-      if (card && canAfford(state, playerId, c.id, card) && random() >= 0.25) {
-        const options = getLegalTargets(state, c.id, card).filter((o) => o.isLegal);
-        if (options.length > 0) {
-          const pick = options[Math.floor(random() * options.length)];
+      if (card && canAfford(state, playerId, c.id, card) && random() >= 0.15) {
+        const pick = pickFightTarget(state, c.id, card, random);
+        if (pick) {
           // Auto never evades on behalf of defenders (reactions: none).
           return {
             type: "PLAY_CARD",
             playerId,
             characterId: c.id,
             cardInstanceId: assigned.id,
-            selection: pick.selection,
+            selection: pick,
             card,
             reactions: [],
           };
@@ -122,7 +228,7 @@ export function chooseAutoAction(
       return { type: "SCRAP_ASSIGNED", playerId, characterId: c.id };
     }
     if (c.movementSpent === 0) {
-      const dest = randomReachable(state, c.id, random);
+      const dest = advanceTowardEnemy(state, c.id, random);
       if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
     }
     return { type: "PASS_ACTIVATION", playerId, characterId: c.id };

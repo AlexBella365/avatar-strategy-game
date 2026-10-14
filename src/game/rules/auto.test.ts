@@ -2,10 +2,12 @@
 // without validation errors.
 import { describe, expect, it } from "vitest";
 import { setup } from "../testutils";
-import { chooseAutoAction } from "../auto";
+import { chooseAutoAction, evadeEscapes } from "../auto";
 import { applyGameAction } from "./cards";
 import { drawCards, endRound, pendingActivations } from "./turns";
 import { ECONOMY_TUNING } from "../content/economy";
+import { getCardDefinition } from "../content/cards";
+import { manhattan } from "./grid";
 import type { GameState } from "../types";
 
 function mulberry(seed: number): () => number {
@@ -55,5 +57,34 @@ describe("auto-player", () => {
     const a = JSON.stringify(fullAutoMatch(7));
     const b = JSON.stringify(fullAutoMatch(7));
     expect(a).toBe(b);
+  });
+
+  it("evadeEscapes spots real dodges", () => {
+    const state = setup();
+    // katara (3,1) water-whip (range 3) vs sokka at (3,3)
+    state.characters.find((c) => c.id === "p2-c1")!.position = { x: 3, y: 3 };
+    const card = getCardDefinition("water-whip")!;
+    expect(evadeEscapes(state, "p1-c1", card, "p2-c1", { x: 5, y: 3 })).toBe(true); // d=4, out
+    expect(evadeEscapes(state, "p1-c1", card, "p2-c1", { x: 3, y: 2 })).toBe(false); // d=1, still hit
+  });
+
+  it("advances toward the nearest enemy instead of wandering", () => {
+    const state = setup();
+    state.players[0].teamHand.push({ id: "es", definitionId: "earth-sweep" });
+    const assign = applyGameAction(state, {
+      type: "ASSIGN_CARD",
+      playerId: "p1",
+      characterId: "p1-c0",
+      cardInstanceId: "es",
+    });
+    Object.assign(state, assign.state);
+    // aang (1,1), enemies on row 5: any legal move must head south
+    const action = chooseAutoAction(state, "p1", () => 0);
+    expect(action?.type).toBe("MOVE");
+    if (action?.type === "MOVE") {
+      const before = manhattan({ x: 1, y: 1 }, { x: 1, y: 5 });
+      const after = manhattan(action.to, { x: 1, y: 5 });
+      expect(after).toBeLessThan(before);
+    }
   });
 });

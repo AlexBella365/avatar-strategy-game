@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
-import { chooseAutoAction } from "./game/auto";
+import { chooseAutoAction, evadeEscapes } from "./game/auto";
 import PlayingCard from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
 import { bendingColor, bendingLabel } from "./ui/elements";
@@ -49,12 +49,14 @@ function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
     ids.map((id) => CHARACTERS.find((d) => d.id === id)!).filter(Boolean);
   const p1 = picks && picks.p1.length === 3 ? pickDefs(picks.p1) : [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]];
   const p2 = picks && picks.p2.length === 3 ? pickDefs(picks.p2) : [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]];
+  // Fresh random seed every match: both sides shuffle + draw independently.
+  const seed = Math.floor(Math.random() * 1_000_000_000);
   const state = createInitialState(
     [
       { playerId: "p1", characterDefs: p1, positions: P1_SLOTS },
       { playerId: "p2", characterDefs: p2, positions: P2_SLOTS },
     ],
-    1,
+    seed,
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
@@ -445,13 +447,13 @@ export default function App() {
       const targetId = option.primaryCharacterId;
       const target = state.characters.find((c) => c.id === targetId)!;
       if (canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
-        // Auto side decides for itself (coin flip); humans get the prompt.
+        // Auto side evades only to tiles that actually dodge the attack.
         if (autoSides.has(target.ownerId)) {
-          const dests = getEvadeDestinations(state, targetId);
+          const escaping = getEvadeDestinations(state, targetId).filter((dest) =>
+            evadeEscapes(state, selectedChar.id, targeting.card, targetId, dest),
+          );
           const use =
-            dests.length > 0 && Math.random() < 0.5
-              ? dests[Math.floor(Math.random() * dests.length)]
-              : null;
+            escaping.length > 0 ? escaping[Math.floor(Math.random() * escaping.length)] : null;
           doPlayWith(option.selection, use ? [{ characterId: targetId, dest: use }] : []);
           return;
         }
