@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Board from "./ui/Board";
+import Board, { FACES } from "./ui/Board";
 import type {
   CardDefinition,
   Direction,
@@ -107,6 +107,17 @@ export default function App() {
   const pending = pendingActivations(state);
   const gameOver = state.winnerId !== null || state.isDraw;
   const selectedChar = state.characters.find((c) => c.id === selected) ?? null;
+
+  // Cards played since the current round began (parsed from the battle log).
+  let roundStartIdx = 0;
+  state.log.forEach((entry, i) => {
+    if (entry.includes("begins")) roundStartIdx = i;
+  });
+  const turnPlays = state.log
+    .slice(roundStartIdx + 1)
+    .map((entry) => /^(\S+) plays (.+?) \(-/.exec(entry))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => ({ who: m[1], what: m[2] }));
 
   const dispatch = (action: GameAction): boolean => {
     const result = applyGameAction(state, action);
@@ -462,6 +473,62 @@ export default function App() {
         </section>
 
         <aside className="side-col">
+          <section className="sheets">
+            <h2>{actingSide} sheets</h2>
+            {state.characters
+              .filter((c) => c.ownerId === actingSide)
+              .map((c) => {
+                const ad = assignedDef(c.id);
+                const gearNames = c.equippedGear
+                  .map((g) => getCardDefinition(g.definitionId)?.name ?? g.definitionId)
+                  .join(", ");
+                return (
+                  <div
+                    key={c.id}
+                    className={`sheet ${c.id === selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    onClick={() => onCharClick(c.id)}
+                  >
+                    <span className="sheet-face" aria-hidden>
+                      {FACES[c.definitionId] ?? "❓"}
+                    </span>
+                    <div className="sheet-body">
+                      <strong>{c.definitionId}</strong>
+                      <span className="dim small">
+                        {" "}({c.position.x},{c.position.y}) ❤ {c.health}/{c.maxHealth} ◉ {c.focus}
+                        {c.activatedThisRound ? " · done" : ""}
+                      </span>
+                      <div className="dim small">
+                        Card: {ad ? ad.name : <span className="dim">facedown/none</span>}
+                        {gearNames ? ` · Gear: ${gearNames}` : ""}
+                        {c.statuses.length > 0
+                          ? ` · ${c.statuses.map((s) => s.statusId).join(", ")}`
+                          : ""}
+                        {c.avatarState && !c.avatarState.active
+                          ? ` · Res ${c.avatarState.resonance}/${avatarThreshold(c.definitionId)}`
+                          : ""}
+                        {c.avatarState?.active ? " · 🌀 ACTIVE — lose if KO'd!" : ""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </section>
+
+          <section className="turn-feed">
+            <h2>This round's plays</h2>
+            {turnPlays.length === 0 ? (
+              <p className="dim small">No cards played yet this round.</p>
+            ) : (
+              <ul>
+                {turnPlays.map((p, i) => (
+                  <li key={i}>
+                    <strong>{p.who}</strong> played <strong>{p.what}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <section className="hand">
             <h2>
               {actingSide} hand ({me.teamHand.length})

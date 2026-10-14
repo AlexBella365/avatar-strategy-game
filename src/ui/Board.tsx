@@ -1,6 +1,5 @@
 import type { GameState } from "../game/types";
 import { GRID_COLS, GRID_ROWS, key } from "../game/rules/grid";
-import { CHARACTERS } from "../game/content/characters";
 import "./Board.css";
 
 interface BoardProps {
@@ -24,6 +23,16 @@ const STATUS_SHORT: Record<string, string> = {
   Exposed: "EX",
   Bound: "BD",
   Exhausted: "XH",
+};
+
+/** Placeholder faces until real portraits land (matches roster glyphs). */
+export const FACES: Record<string, string> = {
+  aang: "🧑‍🦲",
+  katara: "🌊",
+  toph: "🪨",
+  zuko: "🔥",
+  sokka: "🪃",
+  azula: "⚡",
 };
 
 const TERRAIN_SHORT: Record<string, string> = {
@@ -75,30 +84,31 @@ export default function Board({
               {chars.map((c) => (
                 <div
                   key={c.id}
-                  className={`char ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                  className={`puck ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                  title={`${c.definitionId} (${c.ownerId}) ❤ ${c.health}/${c.maxHealth} ◉ ${c.focus}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onCharClick(c.id);
                   }}
                 >
-                  <strong>
-                    {c.avatarState?.active ? "🌀" : ""}
-                    {c.definitionId} ({c.ownerId})
-                  </strong>
-                  <span>
-                    ❤ {c.health}/{c.maxHealth} · ◉ {c.focus}
-                    {c.equippedGear.length > 0 ? ` · ⚙${c.equippedGear.length}` : ""}
+                  <span className="face" aria-hidden>
+                    {FACES[c.definitionId] ?? "❓"}
+                  </span>
+                  {c.avatarState?.active && <span className="avatar-ring" title="AVATAR STATE — lose if KO'd">🌀</span>}
+                  <span
+                    className="hp-bar"
+                    style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}
+                  />
+                  <span className="puck-caption">
+                    {c.definitionId} {c.health}/{c.maxHealth}
                   </span>
                   {c.statuses.length > 0 && (
                     <span className="statuses" title={c.statuses.map((s) => s.statusId).join(", ")}>
                       {c.statuses.map((s) => STATUS_SHORT[s.statusId] ?? s.statusId).join(" ")}
                     </span>
                   )}
-                  {c.avatarState && !c.avatarState.active && (
-                    <span className="resonance">
-                      Res {c.avatarState.resonance}/
-                      {CHARACTERS.find((d) => d.id === c.definitionId)?.avatarState?.threshold ?? "?"}
-                    </span>
+                  {c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0 && (
+                    <span className="resonance">Res {c.avatarState.resonance}</span>
                   )}
                 </div>
               ))}

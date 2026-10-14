@@ -3,7 +3,7 @@
   gap: 4px;
 }
 .tile {
-  min-height: 76px;
+  min-height: 104px;
   border: 1px solid #888;
   border-radius: 6px;
   padding: 4px;
@@ -41,6 +41,63 @@
   border-radius: 4px;
   padding: 1px 3px;
 }
+/* Round puck token with the character's face. */
+.puck {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin: 2px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
+  border: 3px solid #666;
+  cursor: pointer;
+}
+.puck.p0 {
+  border-color: #1e78ff;
+}
+.puck.p1 {
+  border-color: #d62728;
+}
+.puck.selected {
+  outline: 3px solid #1e78ff;
+  outline-offset: 2px;
+}
+.puck.target-hl {
+  outline: 3px solid #d62728;
+  outline-offset: 2px;
+}
+.puck.ko {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.puck .face {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.puck .avatar-ring {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 1rem;
+}
+.puck .hp-bar {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: #2a9d48;
+}
+.puck-caption {
+  font-size: 0.68rem;
+  color: #333;
+  text-align: center;
+  margin-top: 1px;
+}
 .char.p0 {
   background: rgba(30, 120, 255, 0.12);
 }
@@ -57,6 +114,7 @@
   opacity: 0.45;
   text-decoration: line-through;
 }
+/* NOTE: .char rules above are legacy (pucks replaced them); kept one release, then delete. */
 .statuses,
 .resonance {
   font-size: 0.72rem;

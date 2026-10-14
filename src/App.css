@@ -121,10 +121,53 @@ button:disabled {
 }
 .activation,
 .hand,
-.log {
+.log,
+.sheets,
+.turn-feed {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 8px 10px;
+}
+.sheet {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.sheet.selected {
+  outline: 2px solid #1e78ff;
+}
+.sheet.ko {
+  opacity: 0.55;
+}
+.sheet-face {
+  font-size: 1.8rem;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
+  flex: none;
+}
+.sheet-body {
+  min-width: 0;
+}
+.turn-feed ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+.turn-feed li {
+  border-bottom: 1px dotted #ddd;
+  padding: 2px 0;
 }
 h2 {
   font-size: 1rem;
