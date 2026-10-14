@@ -1,6 +1,7 @@
 .grid-board {
   display: grid;
   gap: 2px;
+  max-width: 460px;
 }
 .tile {
   aspect-ratio: 1 / 1;
