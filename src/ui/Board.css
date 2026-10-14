@@ -3,10 +3,10 @@
   gap: 4px;
 }
 .tile {
-  min-height: 64px;
+  min-height: 45px;
   border: 1px solid #888;
-  border-radius: 6px;
-  padding: 4px;
+  border-radius: 5px;
+  padding: 2px;
   position: relative;
   cursor: pointer;
   background: #f7f7f5;
@@ -23,12 +23,12 @@
   outline: 2px solid #d62728;
 }
 .coords {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #888;
 }
 .terrain {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.62rem;
 }
 .char {
   font-size: 0.8rem;
@@ -47,15 +47,15 @@
 }
 .puck {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
-  margin: 2px auto 0;
+  margin: 1px auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
-  border: 3px solid #666;
+  border: 2px solid #666;
 }
 .puck.p1 {
   border-color: #1e78ff;
@@ -66,58 +66,58 @@
 /* NOTE: owner ring colors above are legacy (rings now use bending colors inline). */
 .puck .owner-badge {
   position: absolute;
-  left: -6px;
-  bottom: -6px;
-  font-size: 0.62rem;
+  left: -5px;
+  bottom: -5px;
+  font-size: 0.55rem;
   font-weight: bold;
   background: #222;
   color: #fff;
-  border-radius: 8px;
-  padding: 0 4px;
+  border-radius: 7px;
+  padding: 0 3px;
 }
 .puck.selected {
-  outline: 3px solid #1e78ff;
-  outline-offset: 2px;
+  outline: 2px solid #1e78ff;
+  outline-offset: 1px;
 }
 .puck.target-hl {
-  outline: 3px solid #d62728;
-  outline-offset: 2px;
+  outline: 2px solid #d62728;
+  outline-offset: 1px;
 }
 .puck.ko {
   filter: grayscale(1);
   opacity: 0.55;
 }
 .puck .face {
-  font-size: 1.15rem;
+  font-size: 0.8rem;
   line-height: 1;
 }
 /* Circular-cropped portrait photo layered over the emoji fallback. */
 .puck .face-photo {
   position: absolute;
-  inset: 3px;
-  width: calc(100% - 6px);
-  height: calc(100% - 6px);
+  inset: 2px;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
   border-radius: 50%;
   object-fit: cover;
   object-position: top center;
 }
 .puck .avatar-ring {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 1rem;
+  top: -7px;
+  right: -7px;
+  font-size: 0.8rem;
 }
 .puck .hp-bar {
   position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 4px;
-  height: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 3px;
+  height: 3px;
   border-radius: 2px;
   background: #2a9d48;
 }
 .puck-caption {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   color: #333;
   text-align: center;
   margin-top: 1px;
@@ -141,6 +141,6 @@
 /* NOTE: .char rules above are legacy (pucks replaced them); kept one release, then delete. */
 .statuses,
 .resonance {
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   color: #555;
 }

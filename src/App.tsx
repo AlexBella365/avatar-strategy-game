@@ -156,49 +156,10 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoSide, setAutoSide] = useState<string | null>(null);
 
-  if (!state) {
-    return (
-      <div className="app">
-        <header>
-          <h1>Avatar Tactical Card Game — Prototype</h1>
-          <p className="fan-note">
-            Unofficial fan prototype. Non-commercial, no affiliation with Nickelodeon or Avatar Studios.
-          </p>
-        </header>
-        <section className="setup">
-          <p>
-            Hot-seat 3v3 duel on a 7×5 grid. P1: Aang, Katara, Toph. P2: Zuko, Sokka, Azula.
-            Each round: draw 5, assign 1 face-down per character, alternate activations
-            (Play or Scrap + move), end the round to bank leftovers and draw again.
-          </p>
-          <button onClick={() => { setState(demoState()); setActingSide("p1"); }}>
-            Start match
-          </button>
-        </section>
-      </div>
-    );
-  }
-
-  const me = state.players.find((p) => p.id === actingSide)!;
-  const foe = state.players.find((p) => p.id !== actingSide)!;
-  const pending = pendingActivations(state);
-  const gameOver = state.winnerId !== null || state.isDraw;
-  const selectedChar = state.characters.find((c) => c.id === selected) ?? null;
-
-  // Cards played since the current round began (parsed from the battle log).
-  let roundStartIdx = 0;
-  state.log.forEach((entry, i) => {
-    if (entry.includes("begins")) roundStartIdx = i;
-  });
-  const turnPlays = state.log
-    .slice(roundStartIdx + 1)
-    .map((entry) => /^(\S+) plays (.+?) \(-/.exec(entry))
-    .filter((m): m is RegExpExecArray => m !== null)
-    .map((m) => ({ who: m[1], what: m[2] }));
-
-  // Test-only auto-player loop: one authorized action per tick for autoSide.
+  // Test-only auto-player loop (all hooks stay above the early return).
   useEffect(() => {
-    if (!autoSide || !state || gameOver) return;
+    if (!autoSide || !state) return;
+    if (state.winnerId !== null || state.isDraw) return;
     const autoPending = pendingActivations(state).filter(
       (id) => state.characters.find((c) => c.id === id)?.ownerId === autoSide,
     );
@@ -238,7 +199,47 @@ export default function App() {
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, autoSide, gameOver]);
+  }, [state, autoSide]);
+
+  if (!state) {
+    return (
+      <div className="app">
+        <header>
+          <h1>Avatar Tactical Card Game — Prototype</h1>
+          <p className="fan-note">
+            Unofficial fan prototype. Non-commercial, no affiliation with Nickelodeon or Avatar Studios.
+          </p>
+        </header>
+        <section className="setup">
+          <p>
+            Hot-seat 3v3 duel on a 7×7 grid. P1: Aang, Katara, Toph. P2: Zuko, Sokka, Azula.
+            Each round: draw 5, assign 1 face-down per character, alternate activations
+            (Play or Scrap + move), end the round to bank leftovers and draw again.
+          </p>
+          <button onClick={() => { setState(demoState()); setActingSide("p1"); }}>
+            Start match
+          </button>
+        </section>
+      </div>
+    );
+  }
+
+  const me = state.players.find((p) => p.id === actingSide)!;
+  const foe = state.players.find((p) => p.id !== actingSide)!;
+  const pending = pendingActivations(state);
+  const gameOver = state.winnerId !== null || state.isDraw;
+  const selectedChar = state.characters.find((c) => c.id === selected) ?? null;
+
+  // Cards played since the current round began (parsed from the battle log).
+  let roundStartIdx = 0;
+  state.log.forEach((entry, i) => {
+    if (entry.includes("begins")) roundStartIdx = i;
+  });
+  const turnPlays = state.log
+    .slice(roundStartIdx + 1)
+    .map((entry) => /^(\S+) plays (.+?) \(-/.exec(entry))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => ({ who: m[1], what: m[2] }));
 
   const dispatch = (action: GameAction): boolean => {
     const result = applyGameAction(state, action);
