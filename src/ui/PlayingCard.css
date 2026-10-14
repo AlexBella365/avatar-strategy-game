@@ -10,8 +10,7 @@
 .playing-card {
   position: relative;
   width: 148px;
-  min-width: 118px;
-  flex: 1 1 0;
+  flex: none;
   min-height: 208px;
   border-radius: 10px;
   background: linear-gradient(160deg, #fffdf7, #f3ecdd);
