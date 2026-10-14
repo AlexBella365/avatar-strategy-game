@@ -1,13 +1,17 @@
 .hand-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 8px;
   margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
 }
 /* Classic playing-card look for technique cards. */
 .playing-card {
   position: relative;
   width: 148px;
+  min-width: 118px;
+  flex: 1 1 0;
   min-height: 208px;
   border-radius: 10px;
   background: linear-gradient(160deg, #fffdf7, #f3ecdd);

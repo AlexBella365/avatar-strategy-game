@@ -16,7 +16,7 @@ import {
 import { createTerrain } from "./terrain";
 import { applyStatus } from "./statuses";
 
-const AANG = "p0-c0"; // (1,1)
+const AANG = "p1-c0"; // (1,1)
 
 describe("voluntary movement", () => {
   it("moves along a legal path and spends allowance", () => {
@@ -47,7 +47,7 @@ describe("voluntary movement", () => {
 
   it("cannot pass through or end on occupied tiles", () => {
     const state = setup();
-    // (3,1) holds katara (p0-c1)
+    // (3,1) holds katara (p1-c1)
     const through = validateMove(state, AANG, [
       { x: 2, y: 1 },
       { x: 3, y: 1 },
@@ -64,7 +64,7 @@ describe("voluntary movement", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "rock-wall", "permanent", "fail");
     expect(validateMove(state, AANG, [{ x: 1, y: 2 }]).errors[0].code).toBe("TILE_BLOCKED");
-    expect(validateMove(state, "p0-c1", [{ x: 3, y: 0 }, { x: 3, y: -1 }]).errors[0].code).toBe(
+    expect(validateMove(state, "p1-c1", [{ x: 3, y: 0 }, { x: 3, y: -1 }]).errors[0].code).toBe(
       "OUT_OF_BOUNDS",
     );
   });
@@ -87,7 +87,7 @@ describe("voluntary movement", () => {
 
   it("can move into a tile freed by knockout", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p0-c1")!.health = 0; // katara (3,1) KO'd
+    state.characters.find((c) => c.id === "p1-c1")!.health = 0; // katara (3,1) KO'd
     const result = applyMove(state, AANG, [{ x: 2, y: 1 }, { x: 3, y: 1 }]);
     expect(result.ok).toBe(true);
   });
@@ -139,17 +139,17 @@ describe("Evade reaction", () => {
 describe("forced movement", () => {
   it("pushes along a direction and stops before occupied tiles", () => {
     const state = setup();
-    const result = resolveForcedMove(state, "p1-c0", "north", 5); // toph (1,3)
-    expect(result.moved).toBe(1); // (1,2), then aang holds (1,1)
+    const result = resolveForcedMove(state, "p2-c0", "north", 5); // toph (1,5)
+    expect(result.moved).toBe(3); // (1,4),(1,3),(1,2), then aang holds (1,1)
     expect(result.stopped).toBe("occupied");
-    expect(state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 1, y: 2 });
+    expect(state.characters.find((c) => c.id === "p2-c0")!.position).toEqual({ x: 1, y: 2 });
   });
 
   it("stops before blocking terrain and occupied tiles", () => {
     const state = setup();
     createTerrain(state, { x: 3, y: 2 }, "rock-wall", "permanent", "fail");
-    const result = resolveForcedMove(state, "p1-c1", "north", 3); // sokka (3,3)
-    expect(result.moved).toBe(0);
+    const result = resolveForcedMove(state, "p2-c1", "north", 3); // sokka (3,5)
+    expect(result.moved).toBe(2); // (3,4),(3,3), then the wall at (3,2)
     expect(result.stopped).toBe("blocking");
   });
 
@@ -166,17 +166,17 @@ describe("forced movement", () => {
 
   it("tracks displacement in the round event log", () => {
     const state = setup();
-    resolveForcedMove(state, "p1-c2", "west", 1);
-    expect(state.roundEventLog).toContain("displaced:p1-c2");
+    resolveForcedMove(state, "p2-c2", "west", 1);
+    expect(state.roundEventLog).toContain("displaced:p2-c2");
   });
 
   it("swap exchanges tiles and rejects knocked-out characters", () => {
     const state = setup();
-    const result = resolveSwap(state, AANG, "p1-c0");
+    const result = resolveSwap(state, AANG, "p2-c0");
     expect(result.ok).toBe(true);
-    expect(state.characters.find((c) => c.id === AANG)!.position).toEqual({ x: 1, y: 3 });
-    expect(state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 1, y: 1 });
-    state.characters.find((c) => c.id === "p1-c0")!.health = 0;
-    expect(resolveSwap(state, AANG, "p1-c0").ok).toBe(false);
+    expect(state.characters.find((c) => c.id === AANG)!.position).toEqual({ x: 1, y: 5 });
+    expect(state.characters.find((c) => c.id === "p2-c0")!.position).toEqual({ x: 1, y: 1 });
+    state.characters.find((c) => c.id === "p2-c0")!.health = 0;
+    expect(resolveSwap(state, AANG, "p2-c0").ok).toBe(false);
   });
 });

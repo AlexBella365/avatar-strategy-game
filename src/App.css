@@ -147,6 +147,13 @@ button:disabled {
   padding: 12px;
   margin-bottom: 12px;
 }
+h1 {
+  font-size: 1.25rem;
+  margin: 0 0 4px;
+}
+header p {
+  margin: 2px 0;
+}
 .resources {
   font-size: 0.95rem;
 }
@@ -171,10 +178,10 @@ button:disabled {
   overflow: hidden;
   background: #fdfdfb;
 }
-.sheet.p0 {
+.sheet.p1 {
   border-top: 4px solid #1e78ff;
 }
-.sheet.p1 {
+.sheet.p2 {
   border-top: 4px solid #d62728;
 }
 .sheet.selected {

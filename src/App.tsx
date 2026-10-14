@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
+import { chooseAutoAction } from "./game/auto";
 import PlayingCard from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
 import { bendingColor, bendingLabel } from "./ui/elements";
@@ -33,7 +34,7 @@ function demoState(): GameState {
   const state = createInitialState(
     [
       {
-        playerId: "p0",
+        playerId: "p1",
         characterDefs: [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]],
         positions: [
           { x: 1, y: 1 },
@@ -42,20 +43,20 @@ function demoState(): GameState {
         ],
       },
       {
-        playerId: "p1",
+        playerId: "p2",
         characterDefs: [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]],
         positions: [
-          { x: 1, y: 3 },
-          { x: 3, y: 3 },
-          { x: 5, y: 3 },
+          { x: 1, y: 5 },
+          { x: 3, y: 5 },
+          { x: 5, y: 5 },
         ],
       },
     ],
     1,
   );
-  drawCards(state, "p0", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
-  state.log.push("Round 1 begins (initiative: p0). Draw your cards and assign one per character.");
+  drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
+  state.log.push("Round 1 begins (initiative: p1). Draw your cards and assign one per character.");
   return state;
 }
 
@@ -145,14 +146,15 @@ function SheetCard(props: {
 
 export default function App() {
   const [state, setState] = useState<GameState | null>(null);
-  const [actingSide, setActingSide] = useState("p0");
+  const [actingSide, setActingSide] = useState("p1");
   const [selected, setSelected] = useState<string | null>(null);
   const [moveMode, setMoveMode] = useState(false);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [targeting, setTargeting] = useState<TargetingState | null>(null);
   const [evade, setEvade] = useState<EvadeState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [autoSide, setAutoSide] = useState<string | null>(null);
 
   if (!state) {
     return (
@@ -165,11 +167,11 @@ export default function App() {
         </header>
         <section className="setup">
           <p>
-            Hot-seat 3v3 duel on a 7×5 grid. P0: Aang, Katara, Toph. P1: Zuko, Sokka, Azula.
+            Hot-seat 3v3 duel on a 7×5 grid. P1: Aang, Katara, Toph. P2: Zuko, Sokka, Azula.
             Each round: draw 5, assign 1 face-down per character, alternate activations
             (Play or Scrap + move), end the round to bank leftovers and draw again.
           </p>
-          <button onClick={() => { setState(demoState()); setActingSide("p0"); }}>
+          <button onClick={() => { setState(demoState()); setActingSide("p1"); }}>
             Start match
           </button>
         </section>
@@ -193,6 +195,50 @@ export default function App() {
     .map((entry) => /^(\S+) plays (.+?) \(-/.exec(entry))
     .filter((m): m is RegExpExecArray => m !== null)
     .map((m) => ({ who: m[1], what: m[2] }));
+
+  // Test-only auto-player loop: one authorized action per tick for autoSide.
+  useEffect(() => {
+    if (!autoSide || !state || gameOver) return;
+    const autoPending = pendingActivations(state).filter(
+      (id) => state.characters.find((c) => c.id === id)?.ownerId === autoSide,
+    );
+    if (autoPending.length === 0) {
+      if (pendingActivations(state).length > 0) return; // waiting on human
+      const t = setTimeout(() => {
+        const next = cloneState(state);
+        endRound(next);
+        setState(next);
+        setSelected(null);
+        setActingSide(next.initiativePlayerId);
+      }, 600);
+      return () => clearTimeout(t);
+    }
+    const action = chooseAutoAction(state, autoSide);
+    if (!action) return;
+    const t = setTimeout(() => {
+      const result = applyGameAction(state, action);
+      if (result.errors.length > 0) {
+        // Guarantee progress: pass instead of retrying a failing action.
+        const characterId = (action as { characterId: string }).characterId;
+        const fallback = applyGameAction(state, {
+          type: "PASS_ACTIVATION",
+          playerId: autoSide,
+          characterId,
+        });
+        if (fallback.errors.length === 0) {
+          setState(fallback.state);
+          setMessage(`Auto (${autoSide}) passed after: ${result.errors[0].message}`);
+        } else {
+          setMessage(result.errors[0].message);
+        }
+        return;
+      }
+      setMessage(null);
+      setState(result.state);
+    }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, autoSide, gameOver]);
 
   const dispatch = (action: GameAction): boolean => {
     const result = applyGameAction(state, action);
@@ -284,7 +330,18 @@ export default function App() {
       option.primaryCharacterId !== selectedChar.id
     ) {
       const targetId = option.primaryCharacterId;
+      const target = state.characters.find((c) => c.id === targetId)!;
       if (canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
+        // Auto side decides for itself (coin flip); humans get the prompt.
+        if (target.ownerId === autoSide) {
+          const dests = getEvadeDestinations(state, targetId);
+          const use =
+            dests.length > 0 && Math.random() < 0.5
+              ? dests[Math.floor(Math.random() * dests.length)]
+              : null;
+          doPlayWith(option.selection, use ? [{ characterId: targetId, dest: use }] : []);
+          return;
+        }
         setEvade({
           card: targeting.card,
           instanceId: targeting.instanceId,
@@ -398,7 +455,7 @@ export default function App() {
     setState(result.state);
     setSelected(null);
     clearTransient();
-    const other = actingSide === "p0" ? "p1" : "p0";
+    const other = actingSide === "p1" ? "p2" : "p1";
     const otherHasPending = pendingActivations(result.state).some(
       (id) => result.state.characters.find((c) => c.id === id)?.ownerId === other,
     );
@@ -429,6 +486,11 @@ export default function App() {
 
   const avatarThreshold = (definitionId: string): number =>
     CHARACTERS.find((d) => d.id === definitionId)?.avatarState?.threshold ?? 6;
+
+  const resourcesLine = (playerId: string): string => {
+    const p = state.players.find((pl) => pl.id === playerId)!;
+    return `⚡${p.energy} 🌀${p.chi} 🂠${p.deck.length} 🗑${p.discard.length}`;
+  };
 
   const restrictionLabel = (r: Restriction): string => {
     switch (r.type) {
@@ -464,16 +526,15 @@ export default function App() {
         <h1>Avatar Tactical Card Game — Prototype</h1>
         <p>
           Round {state.round}/{state.maxRounds} · Initiative: {state.initiativePlayerId} · Acting:{" "}
-          <button className={actingSide === "p0" ? "active-side" : ""} onClick={() => switchSide("p0")}>P0</button>{" "}
-          <button className={actingSide === "p1" ? "active-side" : ""} onClick={() => switchSide("p1")}>P1</button>
-        </p>
-        <p className="resources">
-          P0 ⚡{state.players[0].energy} 🌀{state.players[0].chi} 🂠{state.players[0].deck.length}🗑{state.players[0].discard.length}
-          {" · "}
-          P1 ⚡{state.players[1].energy} 🌀{state.players[1].chi} 🂠{state.players[1].deck.length}🗑{state.players[1].discard.length}
+          <button className={actingSide === "p1" ? "active-side" : ""} onClick={() => switchSide("p1")}>P1</button>{" "}
+          <button className={actingSide === "p2" ? "active-side" : ""} onClick={() => switchSide("p2")}>P2</button>
           {" · "}
           <button onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? "Hide log & legend" : "Show log & legend"}
+          </button>
+          {" · "}
+          <button onClick={() => setAutoSide(autoSide === "p2" ? null : "p2")}>
+            Auto P2: {autoSide === "p2" ? "on" : "off"}
           </button>
         </p>
       </header>
@@ -481,7 +542,7 @@ export default function App() {
       {gameOver && (
         <section className="gameover">
           <h2>{state.isDraw ? "Draw!" : `${state.winnerId} wins!`}</h2>
-          <button onClick={() => { setState(demoState()); setActingSide("p0"); setSelected(null); clearTransient(); setMessage(null); }}>
+          <button onClick={() => { setState(demoState()); setActingSide("p1"); setSelected(null); clearTransient(); setMessage(null); }}>
             New match
           </button>
         </section>
@@ -489,12 +550,13 @@ export default function App() {
 
       <main className="layout">
         <aside className="sheets-col">
+          <p className="resources">{resourcesLine("p1")}</p>
           <section className="sheets">
             <h2>
-              p0 sheets{actingSide === "p0" ? " (acting)" : ""}
+              p1 sheets{actingSide === "p1" ? " (acting)" : ""}
             </h2>
             {state.characters
-              .filter((c) => c.ownerId === "p0")
+              .filter((c) => c.ownerId === "p1")
               .map((c) => (
                 <SheetCard
                   key={c.id}
@@ -580,12 +642,13 @@ export default function App() {
         </section>
 
         <aside className="side-col">
+          <p className="resources">{resourcesLine("p2")}</p>
           <section className="sheets">
             <h2>
-              p1 sheets{actingSide === "p1" ? " (acting)" : ""}
+              p2 sheets{actingSide === "p2" ? " (acting)" : ""}
             </h2>
             {state.characters
-              .filter((c) => c.ownerId === "p1")
+              .filter((c) => c.ownerId === "p2")
               .map((c) => (
                 <SheetCard
                   key={c.id}
@@ -666,7 +729,7 @@ export default function App() {
                 End round{pending.length > 0 ? ` (${pending.length} left)` : ""}
               </button>
               <button
-                onClick={() => { setState(demoState()); setActingSide("p0"); setSelected(null); clearTransient(); setMessage(null); }}
+                onClick={() => { setState(demoState()); setActingSide("p1"); setSelected(null); clearTransient(); setMessage(null); }}
               >
                 New match
               </button>

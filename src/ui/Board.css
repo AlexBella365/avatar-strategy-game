@@ -57,10 +57,10 @@
   background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
   border: 3px solid #666;
 }
-.puck.p0 {
+.puck.p1 {
   border-color: #1e78ff;
 }
-.puck.p1 {
+.puck.p2 {
   border-color: #d62728;
 }
 /* NOTE: owner ring colors above are legacy (rings now use bending colors inline). */
@@ -122,10 +122,10 @@
   text-align: center;
   margin-top: 1px;
 }
-.char.p0 {
+.char.p1 {
   background: rgba(30, 120, 255, 0.12);
 }
-.char.p1 {
+.char.p2 {
   background: rgba(255, 60, 60, 0.12);
 }
 .char.selected {

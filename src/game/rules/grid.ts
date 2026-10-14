@@ -12,7 +12,7 @@
 import type { AreaShapeName, Direction, Position } from "../types";
 
 export const GRID_COLS = 7;
-export const GRID_ROWS = 5;
+export const GRID_ROWS = 7;
 export const BASE_MOVEMENT = 2;
 
 export const DIRECTION_VECTORS: Record<Direction, Position> = {

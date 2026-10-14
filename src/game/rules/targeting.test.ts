@@ -29,21 +29,22 @@ function mkCard(targeting: Targeting, overrides: Partial<CardDefinition> = {}): 
 const focused = (range: number | "melee" | "any" = 3) =>
   mkCard({ kind: "character", allegiance: "enemies", range });
 
-const AANG = "p0-c0"; // (1,1)
-const TOPH = "p1-c0"; // (1,3)
-const SOKKA = "p1-c1"; // (3,3)
+const AANG = "p1-c0"; // (1,1)
+const TOPH = "p2-c0"; // (1,5)
+const SOKKA = "p2-c1"; // (3,5)
+const ZUKO = "p1-c2"; // (5,1)
 
 describe("focused character targeting", () => {
   it("affects exactly one legal target", () => {
     const state = setup();
     expect(
-      getAffectedCharacters(state, AANG, focused(), { kind: "character", characterId: TOPH }),
+      getAffectedCharacters(state, AANG, focused(5), { kind: "character", characterId: TOPH }),
     ).toEqual([TOPH]);
   });
 
   it("melee needs Manhattan distance 1", () => {
     const state = setup();
-    state.characters.find((c) => c.id === AANG)!.position = { x: 3, y: 2 };
+    state.characters.find((c) => c.id === AANG)!.position = { x: 3, y: 4 };
     const card = focused("melee");
     const sokka = getLegalTargets(state, AANG, card).find((o) => o.primaryCharacterId === SOKKA)!;
     expect(sokka.isLegal).toBe(true);
@@ -55,13 +56,13 @@ describe("focused character targeting", () => {
   it("ranged attacks need line of sight by default, unless opted out", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "rock-wall", "permanent", "fail");
-    const blocked = getLegalTargets(state, AANG, focused(5)).find(
+    const blocked = getLegalTargets(state, AANG, focused(6)).find(
       (o) => o.primaryCharacterId === TOPH,
     )!;
     expect(blocked.isLegal).toBe(false);
     expect(blocked.illegalReason?.code).toBe("NO_LINE_OF_SIGHT");
     // ...but the diagonal to sokka stays open
-    const open = getLegalTargets(state, AANG, focused(5)).find(
+    const open = getLegalTargets(state, AANG, focused(6)).find(
       (o) => o.primaryCharacterId === SOKKA,
     )!;
     expect(open.isLegal).toBe(true);
@@ -75,7 +76,7 @@ describe("focused character targeting", () => {
 
   it("rejects wrong allegiance and knocked-out targets", () => {
     const state = setup();
-    const ally = validateTarget(state, AANG, focused(), { kind: "character", characterId: "p0-c1" });
+    const ally = validateTarget(state, AANG, focused(), { kind: "character", characterId: "p1-c1" });
     expect(ally.errors[0].code).toBe("WRONG_ALLEGIANCE");
     state.characters.find((c) => c.id === TOPH)!.health = 0;
     expect(
@@ -86,12 +87,12 @@ describe("focused character targeting", () => {
 
 describe("tile targeting", () => {
   const tileCard = (allowsOccupiedTile: boolean) =>
-    mkCard({ kind: "tile", range: 3, allowsOccupiedTile });
+    mkCard({ kind: "tile", range: 5, allowsOccupiedTile });
 
   it("resolves at the tile and hits occupants", () => {
     const state = setup();
     expect(
-      getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 1, y: 3 } }),
+      getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 1, y: 5 } }),
     ).toEqual([TOPH]);
     expect(
       getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 2, y: 2 } }),
@@ -103,7 +104,7 @@ describe("tile targeting", () => {
     createTerrain(state, { x: 2, y: 2 }, "rock-wall", "permanent", "fail");
     const occupied = validateTarget(state, AANG, tileCard(false), {
       kind: "tile",
-      pos: { x: 1, y: 3 },
+      pos: { x: 1, y: 5 },
     });
     expect(occupied.errors[0].code).toBe("TILE_OCCUPIED");
     const blocked = validateTarget(state, AANG, tileCard(true), {
@@ -122,17 +123,19 @@ describe("tile targeting", () => {
 describe("direction and area targeting", () => {
   it("direction attacks run a line from the source", () => {
     const state = setup();
-    const card = mkCard({ kind: "direction", maxLength: 2, directions: ["north", "south"] });
-    const tiles = resolveTiles(state, TOPH, card, { kind: "direction", direction: "north" });
-    // stable y,x order: (1,1) sorts before (1,2)
+    const card = mkCard({ kind: "direction", maxLength: 4, directions: ["north", "south"] });
+    const tiles = resolveTiles(state, ZUKO, card, { kind: "direction", direction: "south" });
+    // stable y,x order
     expect(tiles).toEqual([
-      { x: 1, y: 1 },
-      { x: 1, y: 2 },
+      { x: 5, y: 2 },
+      { x: 5, y: 3 },
+      { x: 5, y: 4 },
+      { x: 5, y: 5 },
     ]);
-    expect(getAffectedCharacters(state, TOPH, card, { kind: "direction", direction: "north" })).toEqual([
-      AANG,
+    expect(getAffectedCharacters(state, ZUKO, card, { kind: "direction", direction: "south" })).toEqual([
+      "p2-c2",
     ]);
-    const disallowed = validateTarget(state, TOPH, card, { kind: "direction", direction: "east" });
+    const disallowed = validateTarget(state, ZUKO, card, { kind: "direction", direction: "east" });
     expect(disallowed.errors[0].code).toBe("TARGET_MISMATCH");
   });
 
@@ -157,14 +160,14 @@ describe("direction and area targeting", () => {
       kind: "area",
       shape: "plus",
       allegiance: "enemies",
-      maxRange: 3,
+      maxRange: 5,
     });
     expect(
-      getAffectedCharacters(state, AANG, card, { kind: "tile", pos: { x: 1, y: 3 } }),
+      getAffectedCharacters(state, AANG, card, { kind: "tile", pos: { x: 1, y: 5 } }),
     ).toEqual([TOPH]);
-    const far = validateTarget(state, AANG, card, { kind: "tile", pos: { x: 1, y: 3 } });
-    expect(far.ok).toBe(true); // distance (1,1)->(1,3) = 2 ≤ 3
-    const tooFar = validateTarget(state, AANG, card, { kind: "tile", pos: { x: 5, y: 3 } });
+    const far = validateTarget(state, AANG, card, { kind: "tile", pos: { x: 1, y: 5 } });
+    expect(far.ok).toBe(true); // distance (1,1)->(1,5) = 4 ≤ 5
+    const tooFar = validateTarget(state, AANG, card, { kind: "tile", pos: { x: 5, y: 5 } });
     expect(tooFar.errors[0].code).toBe("OUT_OF_RANGE");
   });
 
@@ -174,7 +177,7 @@ describe("direction and area targeting", () => {
     expect(getAffectedCharacters(state, AANG, all, { kind: "automatic" })).toEqual([
       TOPH,
       SOKKA,
-      "p1-c2",
+      "p2-c2",
     ]);
     const guard = mkCard({ kind: "area", shape: "sourceAndAdjacent", allegiance: "allies" });
     expect(getAffectedCharacters(state, AANG, guard, { kind: "automatic" })).toEqual([AANG]);
@@ -188,15 +191,15 @@ describe("direction and area targeting", () => {
       allegiance: "enemies",
       radius: 1,
     });
-    const tiles = resolveTiles(state, AANG, card, { kind: "tile", pos: { x: 3, y: 3 } });
+    const tiles = resolveTiles(state, AANG, card, { kind: "tile", pos: { x: 3, y: 5 } });
     expect(tiles).toEqual([
-      { x: 3, y: 2 },
-      { x: 2, y: 3 },
-      { x: 3, y: 3 },
-      { x: 4, y: 3 },
       { x: 3, y: 4 },
+      { x: 2, y: 5 },
+      { x: 3, y: 5 },
+      { x: 4, y: 5 },
+      { x: 3, y: 6 },
     ]);
-    expect(getAffectedCharacters(state, AANG, card, { kind: "tile", pos: { x: 3, y: 3 } })).toEqual([
+    expect(getAffectedCharacters(state, AANG, card, { kind: "tile", pos: { x: 3, y: 5 } })).toEqual([
       SOKKA,
     ]);
   });

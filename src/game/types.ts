@@ -62,9 +62,9 @@ export interface CharacterDefinition {
 }
 
 export interface CharacterState {
-  id: string; // stable instance id, e.g. "p0-c0"
+  id: string; // stable instance id, e.g. "p1-c0"
   definitionId: string;
-  ownerId: string; // "p0" | "p1"
+  ownerId: string; // "p1" | "p2"
   health: number;
   maxHealth: number;
   focus: number; // 0..4
@@ -256,7 +256,7 @@ export interface TerrainDefinition {
 export type Intention = "Attack" | "Defend" | "Reposition" | "Prepare";
 
 export interface PlayerState {
-  id: string; // "p0" | "p1"
+  id: string; // "p1" | "p2"
   energy: number;
   /** v0.3 chi bank: spendable team currency, persists across rounds. */
   chi: number;
