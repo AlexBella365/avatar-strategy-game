@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Board, { FACES } from "./ui/Board";
+import Board, { FACES, PORTRAITS } from "./ui/Board";
 import type {
   CardDefinition,
   Direction,
@@ -479,35 +479,59 @@ export default function App() {
               .filter((c) => c.ownerId === actingSide)
               .map((c) => {
                 const ad = assignedDef(c.id);
+                const charDef = CHARACTERS.find((d) => d.id === c.definitionId);
                 const gearNames = c.equippedGear
                   .map((g) => getCardDefinition(g.definitionId)?.name ?? g.definitionId)
                   .join(", ");
+                const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
+                const portrait = PORTRAITS[c.definitionId];
                 return (
                   <div
                     key={c.id}
-                    className={`sheet ${c.id === selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    className={`sheet ${c.ownerId} ${c.id === selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
                     onClick={() => onCharClick(c.id)}
                   >
-                    <span className="sheet-face" aria-hidden>
-                      {FACES[c.definitionId] ?? "❓"}
-                    </span>
-                    <div className="sheet-body">
-                      <strong>{c.definitionId}</strong>
-                      <span className="dim small">
-                        {" "}({c.position.x},{c.position.y}) ❤ {c.health}/{c.maxHealth} ◉ {c.focus}
-                        {c.activatedThisRound ? " · done" : ""}
+                    {portrait ? (
+                      <img className="sheet-portrait" src={portrait} alt={c.definitionId} />
+                    ) : (
+                      <span className="sheet-face" aria-hidden>
+                        {FACES[c.definitionId] ?? "❓"}
                       </span>
-                      <div className="dim small">
-                        Card: {ad ? ad.name : <span className="dim">facedown/none</span>}
-                        {gearNames ? ` · Gear: ${gearNames}` : ""}
-                        {c.statuses.length > 0
-                          ? ` · ${c.statuses.map((s) => s.statusId).join(", ")}`
-                          : ""}
-                        {c.avatarState && !c.avatarState.active
-                          ? ` · Res ${c.avatarState.resonance}/${avatarThreshold(c.definitionId)}`
-                          : ""}
-                        {c.avatarState?.active ? " · 🌀 ACTIVE — lose if KO'd!" : ""}
+                    )}
+                    <div className="sheet-body">
+                      <div className="sheet-title">
+                        <strong>{charDef?.name ?? c.definitionId}</strong>
+                        <span className="dim small">
+                          {charDef?.class} · ({c.position.x},{c.position.y})
+                          {c.activatedThisRound ? " · done" : ""}
+                        </span>
                       </div>
+                      <div className="sheet-hp" title={`Health ${c.health}/${c.maxHealth}`}>
+                        <span className="sheet-hp-fill" style={{ width: `${hpPct}%` }} />
+                        <span className="sheet-hp-text">❤ {c.health}/{c.maxHealth}</span>
+                      </div>
+                      <div className="sheet-row">
+                        <span title="Focus">◉ {c.focus}</span>
+                        <span title="Movement spent">👣 {c.movementSpent}</span>
+                        {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
+                      </div>
+                      {c.statuses.length > 0 && (
+                        <div className="sheet-row statuses">
+                          {c.statuses.map((s) => s.statusId).join(" · ")}
+                        </div>
+                      )}
+                      {gearNames !== "" && <div className="sheet-row dim small">⚙ {gearNames}</div>}
+                      <div className="sheet-row dim small">
+                        Card: {ad ? ad.name : "facedown/none"}
+                      </div>
+                      {c.avatarState && !c.avatarState.active && (
+                        <div className="sheet-row dim small">
+                          Res {c.avatarState.resonance}/{avatarThreshold(c.definitionId)}
+                        </div>
+                      )}
+                      {c.avatarState?.active && (
+                        <div className="sheet-row avatar-warn">🌀 ACTIVE — lose if KO'd!</div>
+                      )}
                     </div>
                   </div>
                 );

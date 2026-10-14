@@ -42,6 +42,12 @@
   padding: 1px 3px;
 }
 /* Round puck token with the character's face. */
+.puck-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
 .puck {
   position: relative;
   width: 52px;
@@ -53,7 +59,6 @@
   justify-content: center;
   background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
   border: 3px solid #666;
-  cursor: pointer;
 }
 .puck.p0 {
   border-color: #1e78ff;
@@ -76,6 +81,16 @@
 .puck .face {
   font-size: 1.6rem;
   line-height: 1;
+}
+/* Circular-cropped portrait photo layered over the emoji fallback. */
+.puck .face-photo {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
 }
 .puck .avatar-ring {
   position: absolute;

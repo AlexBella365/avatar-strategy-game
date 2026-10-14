@@ -130,13 +130,20 @@ button:disabled {
 }
 .sheet {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  gap: 10px;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 6px;
-  margin-bottom: 6px;
+  border-radius: 10px;
+  padding: 0;
+  margin-bottom: 8px;
   cursor: pointer;
+  overflow: hidden;
+  background: #fdfdfb;
+}
+.sheet.p0 {
+  border-top: 4px solid #1e78ff;
+}
+.sheet.p1 {
+  border-top: 4px solid #d62728;
 }
 .sheet.selected {
   outline: 2px solid #1e78ff;
@@ -144,12 +151,17 @@ button:disabled {
 .sheet.ko {
   opacity: 0.55;
 }
+.sheet-portrait {
+  width: 96px;
+  align-self: stretch;
+  object-fit: cover;
+  object-position: top center;
+  flex: none;
+  background: #dfe6ee;
+}
 .sheet-face {
-  font-size: 1.8rem;
-  line-height: 1;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  font-size: 2.2rem;
+  width: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,6 +170,49 @@ button:disabled {
 }
 .sheet-body {
   min-width: 0;
+  flex: 1;
+  padding: 6px 8px 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sheet-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+.sheet-hp {
+  position: relative;
+  height: 16px;
+  border-radius: 8px;
+  background: #e3e3e3;
+  overflow: hidden;
+}
+.sheet-hp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #2a9d48, #7ed491);
+}
+.sheet-hp-text {
+  position: relative;
+  font-size: 0.72rem;
+  padding-left: 6px;
+  line-height: 16px;
+}
+.sheet-row {
+  font-size: 0.82rem;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sheet-row.statuses {
+  color: #8a5a00;
+  font-weight: bold;
+}
+.sheet-row.avatar-warn {
+  color: #b00020;
+  font-weight: bold;
 }
 .turn-feed ul {
   list-style: none;

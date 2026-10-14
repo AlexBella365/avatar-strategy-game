@@ -25,7 +25,7 @@ const STATUS_SHORT: Record<string, string> = {
   Exhausted: "XH",
 };
 
-/** Placeholder faces until real portraits land (matches roster glyphs). */
+/** Placeholder faces for characters without a portrait (matches roster glyphs). */
 export const FACES: Record<string, string> = {
   aang: "🧑‍🦲",
   katara: "🌊",
@@ -33,6 +33,16 @@ export const FACES: Record<string, string> = {
   zuko: "🔥",
   sokka: "🪃",
   azula: "⚡",
+};
+
+/** Official portraits scraped for the demo (fan prototype, replace with original art). */
+export const PORTRAITS: Record<string, string> = {
+  aang: "/portraits/aang.webp",
+  katara: "/portraits/katara.webp",
+  toph: "/portraits/toph.webp",
+  zuko: "/portraits/zuko.webp",
+  sokka: "/portraits/sokka.webp",
+  azula: "/portraits/azula.webp",
 };
 
 const TERRAIN_SHORT: Record<string, string> = {
@@ -84,21 +94,36 @@ export default function Board({
               {chars.map((c) => (
                 <div
                   key={c.id}
-                  className={`puck ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
-                  title={`${c.definitionId} (${c.ownerId}) ❤ ${c.health}/${c.maxHealth} ◉ ${c.focus}`}
+                  className="puck-wrap"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCharClick(c.id);
                   }}
                 >
-                  <span className="face" aria-hidden>
-                    {FACES[c.definitionId] ?? "❓"}
-                  </span>
-                  {c.avatarState?.active && <span className="avatar-ring" title="AVATAR STATE — lose if KO'd">🌀</span>}
-                  <span
-                    className="hp-bar"
-                    style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}
-                  />
+                  <div
+                    className={`puck ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    title={`${c.definitionId} (${c.ownerId}) ❤ ${c.health}/${c.maxHealth} ◉ ${c.focus}`}
+                  >
+                    <span className="face" aria-hidden>
+                      {FACES[c.definitionId] ?? "❓"}
+                    </span>
+                    {PORTRAITS[c.definitionId] && (
+                      <img
+                        className="face-photo"
+                        src={PORTRAITS[c.definitionId]}
+                        alt=""
+                        aria-hidden
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+                    {c.avatarState?.active && <span className="avatar-ring" title="AVATAR STATE — lose if KO'd">🌀</span>}
+                    <span
+                      className="hp-bar"
+                      style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}
+                    />
+                  </div>
                   <span className="puck-caption">
                     {c.definitionId} {c.health}/{c.maxHealth}
                   </span>
