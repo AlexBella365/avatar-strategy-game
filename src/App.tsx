@@ -20,7 +20,8 @@ import { cloneState, createInitialState } from "./game/state";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
-import { ECONOMY_TUNING } from "./game/content/economy";
+import { ECONOMY_TUNING, restrictionSatisfied } from "./game/content/economy";
+import type { Restriction } from "./game/types";
 import { key, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
@@ -343,6 +344,34 @@ export default function App() {
   const avatarThreshold = (definitionId: string): number =>
     CHARACTERS.find((d) => d.id === definitionId)?.avatarState?.threshold ?? 6;
 
+  const restrictionLabel = (r: Restriction): string => {
+    switch (r.type) {
+      case "unique":
+        return `${CHARACTERS.find((d) => d.id === r.characterId)?.name ?? r.characterId} only`;
+      case "element":
+        return r.elements.join(" or ");
+      case "alignment":
+        return r.alignment === "hero" ? "Heroes" : "Villains";
+    }
+  };
+
+  /** Who (among the acting side's characters) this card can be assigned to. */
+  const fitsWhom = (card: CardDefinition): string => {
+    const restrictions = card.economy?.restrictions ?? [];
+    const requirement =
+      restrictions.length === 0 ? "anyone" : restrictions.map(restrictionLabel).join(" + ");
+    const names = state.characters
+      .filter((c) => c.ownerId === actingSide)
+      .filter((c) => {
+        const def = CHARACTERS.find((d) => d.id === c.definitionId)!;
+        return restrictions.every((r) =>
+          restrictionSatisfied({ definitionId: def.id, element: def.element, role: def.role }, r),
+        );
+      })
+      .map((c) => c.definitionId);
+    return names.length > 0 ? `${requirement} (yours: ${names.join(", ")})` : `${requirement} (none of yours — bank it)`;
+  };
+
   return (
     <div className="app">
       <header>
@@ -449,6 +478,7 @@ export default function App() {
                       ⚡{def?.energyCost ?? "?"} 🌀{def?.economy?.chiCost ?? "?"} ⇪{def?.economy?.value ?? "?"}
                     </span>
                     <div className="dim small">{def?.rulesText}</div>
+                    {def && <div className="dim small">Fits: {fitsWhom(def)}</div>}
                     <button onClick={() => setAssigning(assigning === c.id ? null : c.id)}>
                       {assigning === c.id ? "Cancel" : "Assign"}
                     </button>
