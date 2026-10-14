@@ -40,22 +40,22 @@ You can only assign a card to a character it fits (see Restrictions).
 Play rounds in this order:
 
 1. **Start:** Set Energy to 4. Reset activations and reactions. Resolve start-of-round effects.
-2. **Draw & assign:** You draw **N = 5** cards. You secretly assign 1 face-down to each living character (3 assigned). The 2 unassigned go straight to your chi bank (you gain their printed chi).
+2. **Draw & assign:** You draw **N = 5** cards. You secretly assign 1 face-down to each living character (3 assigned) and set each character's facing token face-down (defaults to north — see Facing). The 2 unassigned go straight to your chi bank (you gain their printed chi).
 3. **Activate:** You alternate with your opponent, one character at a time. On your turn you reveal that character's card and choose **Play or Scrap** (see below). You may also move (see On your activation). Initiative swaps each round.
 4. **End:** Resolve end-of-round damage, remove expired statuses/terrain/Momentum, check victory. Discard played cards. Unplayed assigned cards do not carry over — you scrap them (gain chi) at end of round if still unused (e.g. character was KO'd before activating).
 
 ## On your activation
 
-When you activate a character, you reveal its assigned card and pick one:
+When you activate a character, you reveal its assigned card and facing token, then do these two in either order:
 
-- **Play:** Pay its Energy (team pool) + Focus (that character) + chi (team bank, if it has a chi cost). Resolve it, then discard it — except Gear, which stays equipped. You reveal the card.
-- **Scrap:** Don't play it. Bank its printed chi immediately and keep it secret. You may still move and use an already-equipped bonus, but you play no card this activation.
+- **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing).
+- **Move (one block):** Move up to 2 tiles orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early or skip moving.
 
-Then, whether you played or scrapped, you may:
+You may also pass (counts as activated; assigned card auto-scraps, move lost).
 
-- **Move up to 2 tiles** (orthogonally, + Gear bonuses). You cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early.
+## Facing (secret direction)
 
-You may also pass (counts as activated; assigned card auto-scraps).
+Some cards need a direction — line attacks, and earth **Wall Rise** (low wall on an adjacent empty tile: blocks movement but not sight, and gives allies directly behind it cover −1 vs. ranged from the faced side). You set the facing secretly at assignment; it is revealed with the card and never changes when you move. Every character sets one (default north) so your opponent can't tell who holds a directional card. If the board turned against you, you can always scrap instead.
 
 ## Bank & chi (spend, not threshold)
 
@@ -77,13 +77,26 @@ Every card lists who can take it. You check all that apply:
 
 If it doesn't fit, you cannot assign or play it on that character. You can still bank it for chi.
 
+## Talents (one per character)
+
+Talents are innate — they never use slots. Each works only while its stated condition holds (always public info, so no trust needed).
+
+- **Aang — Evasive Focus:** +1 Focus after a successful evasion, once per round.
+- **Katara — Healing Waters:** her heals +1 while she is on or adjacent to a water source.
+- **Toph — Earth Sense:** while at full HP, before each enemy activation you may peek at that character's facing token. Useless against airborne attacks.
+- **Zuko — Breakthrough:** +1 damage against shielded targets.
+- **Sokka — Scavenger:** his first scrap each round banks +1 chi.
+- **Azula — Charged Strike:** +1 damage if she didn't move this activation.
+
+Playtest v1 — all numbers tunable.
+
 ## Cards and targeting
 
 You read the range on your card, then check line of sight (blocked by walls/rock unless the card says otherwise):
 
 - **Focused:** You pick one character in range. Melee = adjacent (distance 1). Ranged = range in tiles (e.g. ≤3).
 - **Tile:** You pick a tile. Whoever is there when it resolves is hit — moving away dodges it.
-- **Line / direction:** You pick north/east/south/west. It hits tiles in a line up to the stated length. The first wall usually stops it.
+- **Line / direction:** Uses your secretly chosen facing (north/east/south/west). It hits tiles in a line up to the stated length. The first wall usually stops it.
 - **Area (AoE):** You pick a center. It hits every valid character in the shape (`plus`, `line`, `radius`, etc.). Damage is full to each — it is not split.
 - **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so.
 
