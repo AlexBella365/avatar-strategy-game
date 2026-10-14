@@ -9,8 +9,8 @@ describe("endRound", () => {
   it("refreshes energy/flags, clears momentum and intentions, flips initiative", () => {
     const state = setup();
     state.players[0].energy = 0;
-    state.players[0].intentions["p0-c0"] = "Attack";
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    state.players[0].intentions["p1-c0"] = "Attack";
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.activatedThisRound = true;
     aang.reactionUsedThisRound = true;
     aang.movementSpent = 2;
@@ -27,14 +27,14 @@ describe("endRound", () => {
     expect(aang.momentum).toBe(0);
     expect(aang.passiveUsesThisRound).toEqual({});
     expect(aang.techniqueBlockedThisActivation).toBe(false);
-    expect(state.initiativePlayerId).toBe("p1");
+    expect(state.initiativePlayerId).toBe("p2");
     expect(events.some((e) => e.includes("Round 2 begins"))).toBe(true);
   });
 
   it("does not advance once the match is over", () => {
     const state = setup();
-    for (const id of ["p1-c0", "p1-c1", "p1-c2"]) dealDamage(state, id, 999, "test");
-    expect(state.winnerId).toBe("p0");
+    for (const id of ["p2-c0", "p2-c1", "p2-c2"]) dealDamage(state, id, 999, "test");
+    expect(state.winnerId).toBe("p1");
     endRound(state);
     expect(state.round).toBe(1);
   });
@@ -42,15 +42,15 @@ describe("endRound", () => {
   it("applies the round-8 tiebreaker instead of advancing", () => {
     const state = setup();
     state.round = 8;
-    dealDamage(state, "p1-c0", 999, "test");
+    dealDamage(state, "p2-c0", 999, "test");
     endRound(state);
-    expect(state.winnerId).toBe("p0");
+    expect(state.winnerId).toBe("p1");
     expect(state.round).toBe(8);
   });
 
   it("removes untilNextRound shields and keeps untilConsumed ones", () => {
     const state = setup();
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.shields.push({ id: "a", amount: 1, duration: "untilNextRound" });
     aang.shields.push({ id: "b", amount: 2, duration: "untilConsumed" });
     aang.shields.push({ id: "c", amount: 3 });
@@ -60,7 +60,7 @@ describe("endRound", () => {
 
   it("counts Avatar State duration down and ends it at zero", () => {
     const state = setup();
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.avatarState!.active = true;
     aang.avatarState!.roundsRemaining = 2;
     endRound(state);
@@ -76,18 +76,18 @@ describe("activation helpers", () => {
   it("pendingActivations lists living unactivated characters", () => {
     const state = setup();
     expect(pendingActivations(state)).toHaveLength(6);
-    state.characters.find((c) => c.id === "p0-c0")!.activatedThisRound = true;
-    state.characters.find((c) => c.id === "p1-c0")!.health = 0;
+    state.characters.find((c) => c.id === "p1-c0")!.activatedThisRound = true;
+    state.characters.find((c) => c.id === "p2-c0")!.health = 0;
     expect(pendingActivations(state)).toHaveLength(4);
   });
 
   it("canActivate respects life, activation, and match end", () => {
     const state = setup();
-    expect(canActivate(state, "p0-c0")).toBe(true);
-    state.characters.find((c) => c.id === "p0-c0")!.activatedThisRound = true;
-    expect(canActivate(state, "p0-c0")).toBe(false);
+    expect(canActivate(state, "p1-c0")).toBe(true);
+    state.characters.find((c) => c.id === "p1-c0")!.activatedThisRound = true;
+    expect(canActivate(state, "p1-c0")).toBe(false);
     expect(canActivate(state, "nope")).toBe(false);
-    state.winnerId = "p0";
-    expect(canActivate(state, "p0-c1")).toBe(false);
+    state.winnerId = "p1";
+    expect(canActivate(state, "p1-c1")).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 # Avatar Tactical Card Game — Rules
 
-You lead 3 benders in a turn-based duel on a 7×5 grid. Outmaneuver your opponent, play the right technique at the right time, and knock out their whole team.
+You lead 3 benders in a turn-based duel on a 7×7 grid. Outmaneuver your opponent, play the right technique at the right time, and knock out their whole team.
 
 - **Players:** 2 (hot-seat / pass-and-play)
 - **Time:** up to 8 rounds
@@ -18,7 +18,7 @@ If both teams survive after round 8, you compare:
 ## Setup
 
 1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
-2. You place your 3 characters on 3 different tiles in your zone: Team A rows 0–1, Team B rows 3–4. Row 2 starts empty.
+2. You place your 3 characters on 3 different tiles in your zone: Team A rows 0–1, Team B rows 5–6. Rows 2–4 start empty.
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
 4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
@@ -33,6 +33,8 @@ Each card has one type, one chi value (1–3), and a restriction tag:
 - **Companion (ability):** You call a named animal ally for a one-shot feat, then you discard it. Appa flies you anywhere; Momo steals from the enemy.
 
 Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
+
+Universal cards fit everyone: **Travel Rations** (share a meal, heal 2), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
 
 You can only assign a card to a character it fits (see Restrictions).
 
@@ -50,7 +52,7 @@ Play rounds in this order:
 When you activate a character, you reveal its assigned card and facing token, then do these two in either order:
 
 - **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing).
-- **Move (one block):** Move up to 2 tiles orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early or skip moving.
+- **Move (one block):** Move 1 tile orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may skip moving.
 
 You may also pass (counts as activated; assigned card auto-scraps, move lost).
 
@@ -150,7 +152,7 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 
 ## Example
 
-> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just move 2 tiles.
+> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just move 1 tile.
 
 ## Tips
 

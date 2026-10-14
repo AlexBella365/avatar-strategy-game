@@ -50,7 +50,7 @@ Framework: named-animal one-shots that resolve then discard. Slot families for f
 type CardKind = "gear" | "attack" | "defense";
 type Restriction =
   | { type: "unique"; characterId: string }        // e.g. glider→aang
-  | { type: "element"; element: "water" | "earth" | "fire" | "air" | "nonbender" | "avatar" }
+  | { type: "element"; elements: ("water" | "earth" | "fire" | "air" | "nonbender" | "avatar")[] }  // any-of: e.g. water|avatar
   | { type: "alignment"; alignment: "hero" | "villain" }
   | { type: "team"; team: string };                // e.g. team-avatar; scenario list
 // CardDefinition +=
@@ -72,7 +72,7 @@ Rules: restriction check runs at assign AND at play (a restriction change mid-ro
 
 ## Balance config (single source of truth)
 
-All numbers live in `src/game/content/economy.ts` — tune there, never in engine code. It holds `ECONOMY_TUNING` (N = 5 draw, M = 4 slots, 2/2/2 caps, 4 Energy, chi 1–3) and the draft `CARD_ECONOMY` table for the 12 starter cards + 2 signature gear (Glider, Boomerang): chi value, chi cost, energy, restrictions, slot. Starter split: workhorses (Earth Sweep, Air Blast, Water Whip, Water Recovery, Sokka's Feint) cost 0 chi; mids (Rising Flame, Ice Bind, Earth Wall, Precision Strike) cost 1 chi; the AoE bomb (Fire Sweep) costs 2 chi. Legacy engine constants (Energy/Focus/Avatar numbers in `state.ts`/content) migrate into the config in a follow-up; new economy code must read from the config from day one.
+All numbers live in `src/game/content/economy.ts` — tune there, never in engine code. It holds `ECONOMY_TUNING` (N = 5 draw, M = 4 slots, 2/2/2 caps, 4 Energy, chi 1–3) and the draft `CARD_ECONOMY` table for the 12 starter cards + 2 signature gear (Glider, Boomerang): chi value, chi cost, energy, restrictions, slot. Starter split: workhorses (Earth Sweep, Air Blast, Water Whip, Water Recovery, Sokka's Feint) cost 0 chi; mids (Rising Flame, Ice Bind, Earth Wall, Precision Strike) cost 1 chi; the AoE bomb (Fire Sweep) costs 2 chi. Universal cards with no restrictions (Travel Rations, Smoke Bomb, Dust Toss) plus the Comet Strike reference round the demo pool out to 18, so every character fits at least 6 cards. Legacy engine constants (Energy/Focus/Avatar numbers in `state.ts`/content) migrate into the config in a follow-up; new economy code must read from the config from day one.
 
 ## Content notes (§13)
 

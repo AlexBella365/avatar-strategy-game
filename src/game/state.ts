@@ -15,10 +15,10 @@ export const STARTING_FOCUS = 1;
 export const ENERGY_PER_ROUND = 4;
 export const MAX_ROUNDS = 8;
 
-/** Deployment rows: first team rows 0–1, second team rows 3–4 (spec §4.2). */
+/** Deployment rows: first team rows 0–1, second team rows 5–6 (spec §4.2). */
 export const DEPLOYMENT_ROWS: [number[], number[]] = [
   [0, 1],
-  [3, 4],
+  [5, 6],
 ];
 
 export function maxHealthFor(resilience: number, override?: number): number {
@@ -115,6 +115,8 @@ export function deploymentErrors(teams: [TeamSetup, TeamSetup]): string[] {
 
 /** Create a fresh match with empty hands (hands dealt in round setup later). */
 export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): GameState {
+  // Instance-id counter resets per match so replays are fully deterministic.
+  idCounter = 0;
   const errors = deploymentErrors(teams);
   if (errors.length > 0) throw new Error(`Illegal deployment:\n${errors.join("\n")}`);
   const characters: CharacterState[] = [];
@@ -128,13 +130,15 @@ export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): Gam
   return {
     round: 1,
     maxRounds: MAX_ROUNDS,
-    initiativePlayerId: "p0",
+    initiativePlayerId: "p1",
     characters,
-    players: teams.map((t) => ({
+    players: teams.map((t, ti) => ({
       id: t.playerId,
       energy: ENERGY_PER_ROUND,
       chi: 0,
-      deck: buildStarterDeck(t.playerId, seed),
+      // Each side shuffles independently (seed offset per team) so opening
+      // hands differ while staying fully deterministic per match seed.
+      deck: buildStarterDeck(t.playerId, seed + ti * 7919),
       discard: [],
       teamHand: [],
       characterHands: {},

@@ -56,9 +56,9 @@ describe("terrain entry triggers", () => {
   it("bonfire deals 1 on entry; ice applies OffBalance and costs 2", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "bonfire", "permanent", "fail");
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     const hp = aang.health;
-    const result = applyMove(state, "p0-c0", [{ x: 1, y: 2 }]);
+    const result = applyMove(state, "p1-c0", [{ x: 1, y: 2 }]);
     expect(result.ok).toBe(true);
     expect(aang.health).toBe(hp - 1);
   });
@@ -67,10 +67,11 @@ describe("terrain entry triggers", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "bonfire", "permanent", "fail");
     createTerrain(state, { x: 2, y: 2 }, "bonfire", "permanent", "fail");
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.position = { x: 0, y: 2 };
+    state.players[0].intentions["p1-c0"] = "Reposition"; // +1 tile for the 2-step path
     const hp = aang.health;
-    applyMove(state, "p0-c0", [
+    applyMove(state, "p1-c0", [
       { x: 1, y: 2 },
       { x: 2, y: 2 },
     ]);
@@ -97,7 +98,7 @@ describe("terrain expiry", () => {
   it("end-of-round hazards damage occupants", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 1 }, "ember-field", 2, "fail");
-    const aang = state.characters.find((c) => c.id === "p0-c0")!;
+    const aang = state.characters.find((c) => c.id === "p1-c0")!;
     const hp = aang.health;
     tickTerrainEndOfRound(state);
     expect(aang.health).toBe(hp - 1);

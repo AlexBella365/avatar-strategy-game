@@ -1,0 +1,101 @@
+.hand-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+/* Classic playing-card look for technique cards. */
+.playing-card {
+  position: relative;
+  width: 148px;
+  min-width: 118px;
+  flex: 1 1 0;
+  min-height: 208px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #fffdf7, #f3ecdd);
+  border: 2px solid #333;
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
+  padding: 22px 8px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+.playing-card:hover {
+  transform: translateY(-4px);
+}
+.playing-card.assigning {
+  outline: 3px solid #1e78ff;
+}
+.playing-card.kind-gear {
+  border-color: #6b7280;
+  background: linear-gradient(160deg, #f4f4f5, #d9d9de);
+}
+.playing-card.kind-attack {
+  border-color: #d62728;
+}
+.playing-card.kind-defense {
+  border-color: #1e78ff;
+}
+.pc-corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: bold;
+  line-height: 1.1;
+}
+.pc-tl {
+  top: 4px;
+  left: 6px;
+}
+.pc-br {
+  bottom: 4px;
+  right: 6px;
+  transform: rotate(180deg);
+}
+.pc-cost {
+  font-size: 0.8rem;
+}
+.pc-suit {
+  font-size: 0.9rem;
+}
+.pc-name {
+  font-weight: bold;
+  font-size: 0.82rem;
+  text-align: center;
+}
+.pc-art {
+  font-size: 2.2rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  width: 100%;
+  text-align: center;
+  padding: 6px 0;
+}
+.pc-kind {
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: #555;
+}
+.pc-rules {
+  text-align: center;
+  color: #333;
+  flex: 1;
+}
+.pc-fits {
+  text-align: center;
+  color: #555;
+  font-size: 0.68rem;
+}
+.pc-bank {
+  color: #666;
+  font-size: 0.68rem;
+}

@@ -1,23 +1,22 @@
 .grid-board {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 .tile {
-  min-height: 76px;
+  height: 64px;
+  overflow: hidden;
   border: 1px solid #888;
-  border-radius: 6px;
-  padding: 4px;
+  background-color: #aaa;;
+  border-radius: 5px;
+  padding: 2px;
   position: relative;
   cursor: pointer;
+  background: #f7f7f5;
 }
-.tile.zone-a {
-  background: #eef6ff;
-}
-.tile.zone-b {
-  background: #ffeef0;
-}
-.tile.zone-neutral {
-  background: #f5f5f0;
+.tile.has-terrain {
+  outline: 2px dashed #8a5a00;
+  outline-offset: -2px;
+  background: #fdf6e3;
 }
 .tile.move-hl {
   outline: 2px solid #2a9d48;
@@ -25,13 +24,18 @@
 .tile.target-hl {
   outline: 2px solid #d62728;
 }
-.coords {
-  font-size: 0.7rem;
-  color: #888;
+.tile-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 12px;
 }
+/* NOTE: .coords removed (tiles no longer numbered). */
 .terrain {
-  display: block;
-  font-size: 0.75rem;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .char {
   font-size: 0.8rem;
@@ -41,10 +45,106 @@
   border-radius: 4px;
   padding: 1px 3px;
 }
-.char.p0 {
+/* Round puck token with the character's face. */
+.puck-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+.puck {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin: 1px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
+  border: 3px solid #666;
+}
+.puck.p1 {
+  border-color: #1e78ff;
+}
+.puck.p2 {
+  border-color: #d62728;
+}
+/* NOTE: owner ring colors above are legacy (rings now use bending colors inline). */
+.puck .owner-badge {
+  position: absolute;
+  left: -5px;
+  bottom: -5px;
+  font-size: 0.55rem;
+  font-weight: bold;
+  background: #222;
+  color: #fff;
+  border-radius: 7px;
+  padding: 0 3px;
+}
+.puck.selected {
+  outline: 2px solid #1e78ff;
+  outline-offset: 1px;
+}
+.puck.target-hl {
+  outline: 2px solid #d62728;
+  outline-offset: 1px;
+}
+.puck.ko {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.puck .face {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+/* Circular-cropped portrait photo layered over the emoji fallback. */
+.puck .face-photo {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
+}
+.puck .avatar-ring {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  font-size: 0.8rem;
+}
+.puck .hp-bar {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: #2a9d48;
+}
+.puck-badges {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  white-space: nowrap;
+}
+.puck-badges .statuses,
+.puck-badges .resonance {
+  font-size: 0.55rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+  padding: 0 4px;
+}
+/* NOTE: .puck-caption removed (HP bar + tooltip carry it). */
+.char.p1 {
   background: rgba(30, 120, 255, 0.12);
 }
-.char.p1 {
+.char.p2 {
   background: rgba(255, 60, 60, 0.12);
 }
 .char.selected {
@@ -57,8 +157,9 @@
   opacity: 0.45;
   text-decoration: line-through;
 }
+/* NOTE: .char rules above are legacy (pucks replaced them); kept one release, then delete. */
 .statuses,
 .resonance {
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   color: #555;
 }

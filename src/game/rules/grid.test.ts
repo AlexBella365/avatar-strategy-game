@@ -22,12 +22,12 @@ import {
 function setup(positions: [Position[], Position[]]) {
   const teams: [TeamSetup, TeamSetup] = [
     {
-      playerId: "p0",
+      playerId: "p1",
       characterDefs: [CHARACTERS[0], CHARACTERS[1], CHARACTERS[3]],
       positions: positions[0],
     },
     {
-      playerId: "p1",
+      playerId: "p2",
       characterDefs: [CHARACTERS[2], CHARACTERS[4], CHARACTERS[5]],
       positions: positions[1],
     },
@@ -42,24 +42,24 @@ const OPEN: [Position[], Position[]] = [
     { x: 5, y: 1 },
   ],
   [
-    { x: 1, y: 3 },
-    { x: 3, y: 3 },
-    { x: 5, y: 3 },
+    { x: 1, y: 5 },
+    { x: 3, y: 5 },
+    { x: 5, y: 5 },
   ],
 ];
 
 describe("board bounds and deployment", () => {
   it(`board is ${GRID_COLS}×${GRID_ROWS}`, () => {
     expect(GRID_COLS).toBe(7);
-    expect(GRID_ROWS).toBe(5);
+    expect(GRID_ROWS).toBe(7);
   });
 
   it("inBounds accepts edges and rejects outside tiles", () => {
     expect(inBounds({ x: 0, y: 0 })).toBe(true);
-    expect(inBounds({ x: 6, y: 4 })).toBe(true);
+    expect(inBounds({ x: 6, y: 6 })).toBe(true);
     expect(inBounds({ x: -1, y: 0 })).toBe(false);
     expect(inBounds({ x: 7, y: 0 })).toBe(false);
-    expect(inBounds({ x: 0, y: 5 })).toBe(false);
+    expect(inBounds({ x: 0, y: 7 })).toBe(false);
   });
 
   it("six characters deploy on distinct tiles in their zones", () => {
@@ -93,14 +93,20 @@ describe("board bounds and deployment", () => {
       ]),
     ).toThrow(/deployment zone/);
     expect(() =>
-      setup([OPEN[0], [{ x: 9, y: 9 }, { x: 3, y: 3 }, { x: 5, y: 3 }]]),
-    ).toThrow(/outside the 7×5 board/);
+      setup([OPEN[0], [{ x: 9, y: 9 }, { x: 3, y: 5 }, { x: 5, y: 5 }]]),
+    ).toThrow(/outside the 7×7 board/);
+  });
+
+  it("rejects second-team deployment outside rows 5-6", () => {
+    expect(() =>
+      setup([OPEN[0], [{ x: 1, y: 3 }, { x: 3, y: 5 }, { x: 5, y: 5 }]]),
+    ).toThrow(/deployment zone/);
   });
 
   it("knockout removes a character from occupancy immediately", () => {
     const state = setup(OPEN);
-    expect(occupantAt(state, { x: 1, y: 1 })?.id).toBe("p0-c0");
-    state.characters.find((c) => c.id === "p0-c0")!.health = 0;
+    expect(occupantAt(state, { x: 1, y: 1 })?.id).toBe("p1-c0");
+    state.characters.find((c) => c.id === "p1-c0")!.health = 0;
     expect(occupantAt(state, { x: 1, y: 1 })).toBeUndefined();
   });
 });
@@ -146,9 +152,9 @@ describe("line of sight", () => {
 describe("movement paths", () => {
   const empty = { blocked: new Set<string>(), occupied: new Set<string>(), difficult: new Set<string>() };
 
-  it("allowance 2 from open center reaches Manhattan ≤ 2", () => {
-    const reach = reachableTiles({ x: 3, y: 2 }, { ...empty, allowance: 2 });
-    expect(reach.size).toBe(12); // 13 tiles within radius 2, minus start
+  it("allowance 1 from open center reaches Manhattan ≤ 1", () => {
+    const reach = reachableTiles({ x: 3, y: 2 }, { ...empty, allowance: 1 });
+    expect(reach.size).toBe(4); // 4 orthogonal neighbors
     for (const [k, cost] of reach) {
       const [x, y] = k.split(",").map(Number);
       expect(cost).toBe(manhattan({ x: 3, y: 2 }, { x, y }));
@@ -163,6 +169,12 @@ describe("movement paths", () => {
     expect(reach.get("3,1")).toBe(2);
     // beyond the difficult tile would cost 3: unreachable
     expect(reach.has("3,0")).toBe(false);
+    // ...and with the standard allowance of 1 it cannot be entered at all
+    const short = reachableTiles(
+      { x: 3, y: 2 },
+      { ...empty, allowance: 1, difficult: new Set(["3,1"]) },
+    );
+    expect(short.has("3,1")).toBe(false);
   });
 
   it("cannot enter or pass through blocked/occupied tiles", () => {

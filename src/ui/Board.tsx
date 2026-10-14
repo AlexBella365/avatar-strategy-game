@@ -1,6 +1,6 @@
 import type { GameState } from "../game/types";
 import { GRID_COLS, GRID_ROWS, key } from "../game/rules/grid";
-import { CHARACTERS } from "../game/content/characters";
+import { bendingColor } from "./elements";
 import "./Board.css";
 
 interface BoardProps {
@@ -13,17 +13,43 @@ interface BoardProps {
   onCharClick: (id: string) => void;
 }
 
-function zoneOf(y: number): string {
-  if (y <= 1) return "zone-a";
-  if (y >= 3) return "zone-b";
-  return "zone-neutral";
-}
-
 const STATUS_SHORT: Record<string, string> = {
   OffBalance: "OB",
   Exposed: "EX",
   Bound: "BD",
   Exhausted: "XH",
+};
+
+/** Placeholder faces for characters without a portrait (matches roster glyphs). */
+export const FACES: Record<string, string> = {
+  aang: "🧑‍🦲",
+  katara: "🌊",
+  toph: "🪨",
+  zuko: "🔥",
+  sokka: "🪃",
+  azula: "⚡",
+  iroh: "🍵",
+  ozai: "👑",
+  suki: "🥋",
+  tylee: "🎪",
+  appa: "🦬",
+  momo: "🐒",
+};
+
+/** Official portraits scraped for the demo (fan prototype, replace with original art). */
+export const PORTRAITS: Record<string, string> = {
+  aang: "/portraits/aang.webp",
+  katara: "/portraits/katara.webp",
+  toph: "/portraits/toph.webp",
+  zuko: "/portraits/zuko.webp",
+  sokka: "/portraits/sokka.webp",
+  azula: "/portraits/azula.webp",
+  iroh: "/portraits/iroh.webp",
+  ozai: "/portraits/ozai.webp",
+  suki: "/portraits/suki.webp",
+  tylee: "/portraits/tylee.webp",
+  appa: "/portraits/appa.webp",
+  momo: "/portraits/momo.webp",
 };
 
 const TERRAIN_SHORT: Record<string, string> = {
@@ -56,7 +82,7 @@ export default function Board({
           const terrain = state.terrain.find((t) => t.x === x && t.y === y);
           const cls = [
             "tile",
-            zoneOf(y),
+            terrain ? "has-terrain" : "",
             moveTiles.has(k) ? "move-hl" : "",
             legalTargetTiles.has(k) ? "target-hl" : "",
           ]
@@ -64,41 +90,63 @@ export default function Board({
             .join(" ");
           return (
             <div key={k} className={cls} onClick={() => onTileClick(x, y)}>
-              <span className="coords">
-                {x},{y}
-              </span>
-              {terrain && (
-                <span className="terrain" title={`${terrain.terrainId} (${terrain.remainingRounds ?? "∞"})`}>
-                  {TERRAIN_SHORT[terrain.terrainId] ?? terrain.terrainId}
-                </span>
-              )}
+              <div className="tile-top">
+                {terrain && (
+                  <span className="terrain" title={`${terrain.terrainId} (${terrain.remainingRounds ?? "∞"})`}>
+                    {TERRAIN_SHORT[terrain.terrainId] ?? terrain.terrainId}
+                  </span>
+                )}
+              </div>
               {chars.map((c) => (
                 <div
                   key={c.id}
-                  className={`char ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                  className="puck-wrap"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCharClick(c.id);
                   }}
                 >
-                  <strong>
-                    {c.avatarState?.active ? "🌀" : ""}
-                    {c.definitionId} ({c.ownerId})
-                  </strong>
-                  <span>
-                    ❤ {c.health}/{c.maxHealth} · ◉ {c.focus}
-                    {c.equippedGear.length > 0 ? ` · ⚙${c.equippedGear.length}` : ""}
-                  </span>
-                  {c.statuses.length > 0 && (
-                    <span className="statuses" title={c.statuses.map((s) => s.statusId).join(", ")}>
-                      {c.statuses.map((s) => STATUS_SHORT[s.statusId] ?? s.statusId).join(" ")}
+                  <div
+                    className={`puck ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    style={{ borderColor: bendingColor(c.definitionId) }}
+                    title={`${c.definitionId} (${c.ownerId}) ❤ ${c.health}/${c.maxHealth} ◉ ${c.focus}`}
+                  >
+                    <span className="face" aria-hidden>
+                      {FACES[c.definitionId] ?? "❓"}
                     </span>
-                  )}
-                  {c.avatarState && !c.avatarState.active && (
-                    <span className="resonance">
-                      Res {c.avatarState.resonance}/
-                      {CHARACTERS.find((d) => d.id === c.definitionId)?.avatarState?.threshold ?? "?"}
+                    {PORTRAITS[c.definitionId] && (
+                      <img
+                        className="face-photo"
+                        src={PORTRAITS[c.definitionId]}
+                        alt=""
+                        aria-hidden
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+                    {c.avatarState?.active && <span className="avatar-ring" title="AVATAR STATE — lose if KO'd">🌀</span>}
+                    <span className="owner-badge" title={`Owner: ${c.ownerId}`}>
+                      {c.ownerId}
                     </span>
+                    <span
+                      className="hp-bar"
+                      title={`${c.definitionId} ❤ ${c.health}/${c.maxHealth}`}
+                      style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}
+                    />
+                  </div>
+                  {(c.statuses.length > 0 ||
+                    (c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0)) && (
+                    <div className="puck-badges">
+                      {c.statuses.length > 0 && (
+                        <span className="statuses" title={c.statuses.map((s) => s.statusId).join(", ")}>
+                          {c.statuses.map((s) => STATUS_SHORT[s.statusId] ?? s.statusId).join(" ")}
+                        </span>
+                      )}
+                      {c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0 && (
+                        <span className="resonance">Res {c.avatarState.resonance}</span>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

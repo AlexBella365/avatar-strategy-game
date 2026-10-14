@@ -16,6 +16,7 @@ const econEnergy = (id: string): number => CARD_ECONOMY[id].energy;
 export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   "earth-sweep": {
     id: "earth-sweep",
+    art: "🪨",
     name: "Earth Sweep",
     cardType: "attack",
     element: "earth",
@@ -32,6 +33,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "air-blast": {
     id: "air-blast",
+    art: "💨",
     name: "Air Blast",
     cardType: "attack",
     element: "air",
@@ -48,6 +50,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "rising-flame": {
     id: "rising-flame",
+    art: "🔥",
     name: "Rising Flame",
     cardType: "attack",
     element: "fire",
@@ -63,6 +66,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "water-whip": {
     id: "water-whip",
+    art: "🌊",
     name: "Water Whip",
     cardType: "attack",
     element: "water",
@@ -79,6 +83,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "air-shield": {
     id: "air-shield",
+    art: "🌀",
     name: "Air Shield",
     cardType: "defense",
     element: "air",
@@ -92,6 +97,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "earth-wall": {
     id: "earth-wall",
+    art: "🧱",
     name: "Earth Wall",
     cardType: "support",
     element: "earth",
@@ -108,6 +114,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "fire-sweep": {
     id: "fire-sweep",
+    art: "☄️",
     name: "Fire Sweep",
     cardType: "attack",
     element: "fire",
@@ -121,6 +128,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "ice-bind": {
     id: "ice-bind",
+    art: "🧊",
     name: "Ice Bind",
     cardType: "attack",
     element: "water",
@@ -137,6 +145,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "sokkas-feint": {
     id: "sokkas-feint",
+    art: "🎭",
     name: "Sokka's Feint",
     cardType: "attack",
     element: "nonbender",
@@ -153,6 +162,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "precision-strike": {
     id: "precision-strike",
+    art: "🎯",
     name: "Precision Strike",
     cardType: "attack",
     element: "nonbender",
@@ -169,6 +179,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "water-recovery": {
     id: "water-recovery",
+    art: "💧",
     name: "Water Recovery",
     cardType: "support",
     element: "water",
@@ -182,6 +193,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "seismic-read": {
     id: "seismic-read",
+    art: "👁️",
     name: "Seismic Read",
     cardType: "support",
     element: "earth",
@@ -198,6 +210,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "aang-glider": {
     id: "aang-glider",
+    art: "🪁",
     name: "Aang's Glider",
     cardType: "support",
     energyCost: econEnergy("aang-glider"),
@@ -211,6 +224,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "sokka-boomerang": {
     id: "sokka-boomerang",
+    art: "🪃",
     name: "Sokka's Boomerang",
     cardType: "support",
     energyCost: econEnergy("sokka-boomerang"),
@@ -224,6 +238,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "comet-strike": {
     id: "comet-strike",
+    art: "💥",
     name: "Comet Strike",
     cardType: "attack",
     element: "fire",
@@ -243,6 +258,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "travel-rations": {
     id: "travel-rations",
+    art: "🍱",
     name: "Travel Rations",
     cardType: "support",
     element: "nonbender",
@@ -256,6 +272,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "smoke-bomb": {
     id: "smoke-bomb",
+    art: "🌫️",
     name: "Smoke Bomb",
     cardType: "defense",
     element: "nonbender",
@@ -272,6 +289,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   },
   "dust-toss": {
     id: "dust-toss",
+    art: "🌪️",
     name: "Dust Toss",
     cardType: "attack",
     element: "nonbender",
@@ -300,6 +318,7 @@ export function validateCardDefinitions(): string[] {
   for (const card of CARDS) {
     if (!card.name || card.name.includes("TODO")) problems.push(`${card.id}: bad name`);
     if (!card.rulesText || card.rulesText.includes("TODO")) problems.push(`${card.id}: bad rulesText`);
+    if (!card.art) problems.push(`${card.id}: missing art`);
     if (!card.economy) problems.push(`${card.id}: missing economy`);
     if (card.energyCost < 0) problems.push(`${card.id}: bad energyCost`);
   }

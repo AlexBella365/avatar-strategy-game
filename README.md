@@ -21,7 +21,7 @@ Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pu
 
 ## Layout
 
-- `src/game/types.ts` — data shapes only (7×5 grid model + v0.3 economy)
+- `src/game/types.ts` — data shapes only (7×7 grid model + v0.3 economy)
 - `src/game/state.ts` — match init, deployment validation, seeded decks, occupancy helpers
 - `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
 - `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
@@ -46,10 +46,10 @@ Run `make help` for all targets.
 
 A 30-character fan pool across five classes (Water / Earth / Fire / Air / Non-bending),
 drawing on characters from both animated series, with series/role/class metadata for
-alignment restrictions. The MVP starts with a core
-six: Aang, Katara, Toph, Zuko, Sokka, Azula. Aang is currently the only Avatar
-State–capable character; Resonance buildup, activation cost, duration, and the
-active-Avatar instant-loss rule live in the shared engine, not in card data.
+alignment restrictions. The demo drafts 10 fighters (core six + Iroh, Ozai, Suki,
+Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
+the only Avatar State–capable character; Resonance buildup, activation cost,
+duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
 
 ## Cards (18)
 
@@ -66,5 +66,6 @@ fits at least 6 cards; the hand list shows each card's requirement and who fits.
 4. ✅ Card resolution (focused/tile/directional/AoE, reactions, statuses)
 5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
 6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
-7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (legend, fits, e2e)
-8. ⬜ End-to-end polish (passives, AI opponent, animations, roster waves)
+7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
+8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
+9. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)
