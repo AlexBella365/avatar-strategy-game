@@ -4,51 +4,35 @@
   margin: 0 auto;
   padding: 1rem;
 }
-.board {
+.grid-board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 4px;
 }
-.lane {
+.tile {
+  min-height: 72px;
   border: 1px solid #888;
-  border-radius: 8px;
-  padding: 0.5rem;
-}
-.lane h2 {
-  text-transform: capitalize;
-  margin: 0 0 0.5rem;
-}
-.rank-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.rank-label {
-  width: 40px;
-  font-size: 0.8rem;
-  color: #555;
-}
-.slot {
-  flex: 1;
-  min-height: 44px;
-  border: 1px dashed #aaa;
   border-radius: 6px;
   padding: 4px;
+  position: relative;
 }
-.slot.p0 {
+.tile.zone-a {
   background: #eef6ff;
 }
-.slot.p1 {
+.tile.zone-b {
   background: #ffeef0;
 }
+.tile.zone-neutral {
+  background: #f5f5f0;
+}
+.coords {
+  font-size: 0.7rem;
+  color: #888;
+}
 .char {
+  font-size: 0.8rem;
+  margin-top: 2px;
   display: flex;
   flex-direction: column;
-  font-size: 0.85rem;
-}
-.empty {
-  color: #aaa;
 }
 .log {
   margin-top: 1rem;

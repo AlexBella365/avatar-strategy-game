@@ -1,13 +1,13 @@
-// Core game types. Mirrors spec §4–§9, §11–§12A.
+// Core game types. v2 grid model (§4, §9).
 // Keep this file free of logic: pure data shapes only.
 
-export type Lane = "left" | "center" | "right";
-export type Rank = "front" | "rear";
-
+/** Grid tile. x: 0..6 (west→east), y: 0..4 (top edge→bottom). */
 export interface Position {
-  lane: Lane;
-  rank: Rank;
+  x: number;
+  y: number;
 }
+
+export type Direction = "north" | "east" | "south" | "west";
 
 export interface AttributeSet {
   aggression: number; // 1..5
@@ -68,23 +68,53 @@ export interface CharacterState {
   avatarState?: AvatarStateStatus;
 }
 
+export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
+
+export type AreaShapeName =
+  | "singleTile"
+  | "plus"
+  | "line"
+  | "rectangle"
+  | "radiusManhattan"
+  | "sourceAndAdjacent"
+  | "allEnemies";
+
 export type Targeting =
   | { kind: "self" }
   | {
-      kind: "singleEnemy";
-      range: "melee" | "ranged" | "any";
-      canTargetRear: boolean;
+      kind: "character";
+      allegiance: AllegianceFilter;
+      range: number | "melee" | "any";
+      requiresLineOfSight?: boolean; // default true
     }
-  | { kind: "singleAlly"; range: "sameLane" | "adjacentLane" | "any" }
-  | {
-      kind: "lane";
-      laneSelection: "current" | "chosen" | "adjacent" | "all";
-    }
+  | { kind: "tile"; range: number | "any"; allowsOccupiedTile: boolean }
+  | { kind: "direction"; maxLength: number; directions: Direction[] }
   | {
       kind: "area";
-      shape: "cross" | "adjacentLanes" | "allEnemiesInLane" | "allEnemies";
-    }
-  | { kind: "selfAndAdjacentAllies" };
+      shape: AreaShapeName;
+      allegiance: AllegianceFilter;
+      maxRange?: number;
+      radius?: number;
+      width?: number;
+      height?: number;
+      maxLength?: number;
+      requiresLineOfSight?: boolean; // default true
+    };
+
+export interface MovementEffect {
+  timing: "beforeTechnique" | "afterTechnique" | "insteadOfTechnique";
+  maxSteps: number;
+  path: "orthogonal" | "straightOrthogonal" | "teleport";
+  ignoresDifficultTerrain?: boolean;
+  destinationRule: "mustBeLegal" | "stopBeforeIllegal" | "fizzle";
+}
+
+export interface TerrainEffect {
+  terrainId: string;
+  target: "targetTile" | "pathTiles" | "areaTiles";
+  durationRounds: number | "permanent";
+  replacementPolicy: "replace" | "fail" | "preserveExisting";
+}
 
 export type CardEffect =
   | { type: "damage"; amount: number; scalesWithAggression?: boolean }
@@ -99,14 +129,16 @@ export type CardEffect =
   | {
       type: "move";
       steps: number;
-      direction?: "chosen" | "awayFromSource" | "towardSource";
+      direction?: Direction | "chosen" | "awayFromSource" | "towardSource";
     }
-  | { type: "push"; steps: number }
+  | { type: "push"; steps: number; direction?: Direction | "awayFromSource" }
+  | { type: "pull"; steps: number; direction?: Direction | "towardSource" }
+  | { type: "swap"; target: "ally" | "enemy" }
   | {
       type: "createTerrain";
       terrainId: string;
-      duration: number;
-      replacementPolicy: "replace" | "fail";
+      duration: number | "permanent";
+      replacementPolicy: "replace" | "fail" | "preserveExisting";
     }
   | { type: "gainFocus"; amount: number }
   | { type: "gainMomentum"; amount: number }
@@ -123,19 +155,17 @@ export interface CardDefinition {
   energyCost: number;
   focusCost: number;
   targeting: Targeting;
+  movement?: MovementEffect;
+  terrainEffects?: TerrainEffect[];
   tags: string[];
   effects: CardEffect[];
   reactionWindow?: "beforeDamage" | "afterTargeting" | "onMovement";
   canBeEvaded?: boolean;
   accuracyModifier?: number;
   cannotBeEvaded?: boolean;
+  tracking?: boolean;
+  requiresReaction?: boolean;
   requiresAttributes?: Partial<AttributeSet>;
-  /** Who lane/area effects can hit. Default: "enemies" for attacks, "allies" otherwise. */
-  allegiance?: AllegianceFilter;
-  /** Whether lane/area effects include rear-rank characters. Default true. */
-  canHitRear?: boolean;
-  /** Whether a ranged attack ignores Obstacle blocking. Default false. */
-  ignoresObstacle?: boolean;
   rulesText: string;
 }
 
@@ -144,11 +174,13 @@ export interface CardInstance {
   definitionId: string;
 }
 
-export type TerrainId = "cover" | "unstableGround" | "waterSource" | "obstacle";
-
+/** Tile-level terrain. Property semantics (blocking/difficult/cover/...) come
+ * from data-driven terrain definitions (step 3); geometry takes explicit sets. */
 export interface TerrainState {
-  lane: Lane;
-  terrainId: TerrainId;
+  id: string; // stable instance id
+  x: number;
+  y: number;
+  terrainId: string;
   remainingRounds: number | null; // null = permanent
 }
 
@@ -183,8 +215,7 @@ export type GameAction =
       playerId: string;
       characterId: string;
       cardInstanceId: string;
-      targetCharacterIds: string[];
-      targetLane?: Lane;
+      selection: TargetSelection;
     }
   | { type: "PASS_ACTIVATION"; playerId: string; characterId: string }
   | { type: "ACTIVATE_AVATAR_STATE"; playerId: string; characterId: string }
@@ -195,13 +226,12 @@ export interface ActionError {
   message: string;
 }
 
-export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
-
 /** Player's target choice. UI builds these; the engine validates them. */
 export type TargetSelection =
   | { kind: "character"; characterId: string }
-  | { kind: "lane"; lane: Lane }
-  | { kind: "automatic" }; // shapes with no choice (self, lane:"all", most areas)
+  | { kind: "tile"; pos: Position }
+  | { kind: "direction"; direction: Direction }
+  | { kind: "automatic" }; // shapes with no choice (self, sourceAndAdjacent, allEnemies)
 
 /** One selectable option, including *illegal* candidates so the UI can explain why. */
 export interface TargetOption {
@@ -209,7 +239,9 @@ export interface TargetOption {
   label: string;
   isLegal: boolean;
   illegalReason?: ActionError;
-  /** Preview of affected characters (stable order); empty when illegal. */
+  /** Preview of affected tiles (stable y,x order); empty when illegal. */
+  affectedTiles: Position[];
+  /** Preview of affected characters (stable y,x order); empty when illegal. */
   affectedCharacterIds: string[];
   primaryCharacterId?: string;
 }

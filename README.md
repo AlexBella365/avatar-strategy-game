@@ -19,11 +19,11 @@ test UI — mechanics first, visuals later.
 
 ## Layout
 
-- `src/game/types.ts` — data shapes only
-- `src/game/state.ts` — match init + immutable helpers
-- `src/game/rules/` — targeting, movement, damage, statuses, terrain, cards, turns
+- `src/game/types.ts` — data shapes only (7×5 grid model)
+- `src/game/state.ts` — match init, deployment validation, occupancy helpers
+- `src/game/rules/` — grid geometry, movement, damage, statuses, terrain, cards, turns
 - `src/game/content/` — characters, cards (data-driven, no hard-coded IDs in the engine)
-- `src/App.tsx` — board (3 lanes × front/rear), hands (next), battle log
+- `src/App.tsx` — 7×5 grid board, hands (next), battle log
 
 ## Run
 
@@ -48,12 +48,13 @@ six: Aang, Katara, Toph, Zuko, Sokka, Azula. Aang is currently the only Avatar
 State–capable character; Resonance buildup, activation cost, duration, and the
 active-Avatar instant-loss rule live in the shared engine, not in card data.
 
-## Roadmap
+## Roadmap (grid model)
 
-1. ✅ Types + state skeleton
-2. ⬜ Pure rules functions (adjacency, movement, targeting)
-3. ⬜ Card resolution (single-target, AoE, reactions, terrain, statuses)
-4. ⬜ Round loop + victory
-5. ⬜ Minimal UI interactions
-6. ⬜ 6 characters + 12 cards complete data
-7. ⬜ Full test suite (core rules, Avatar State, end-to-end determinism)
+1. ✅ Types + state (grid coords, deployment, occupancy)
+2. ✅ Pure geometry (bounds, Manhattan, LOS, paths, AoE shapes)
+3. ⬜ Movement + terrain (normal moves, Evade, push/pull/swap, entry/expiry)
+4. ⬜ Card resolution (focused/tile/directional/AoE, reactions, statuses)
+5. ⬜ Round loop + victory
+6. ⬜ Minimal UI interactions (movement/path previews, target previews)
+7. ⬜ 6 characters + 12 cards complete data
+8. ⬜ Full test suite (geometry, movement, terrain, reactions, Avatar State, end-to-end)
