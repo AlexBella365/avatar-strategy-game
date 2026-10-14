@@ -1,5 +1,6 @@
 import type { GameState } from "../game/types";
 import { GRID_COLS, GRID_ROWS, key } from "../game/rules/grid";
+import { bendingColor } from "./elements";
 import "./Board.css";
 
 interface BoardProps {
@@ -10,12 +11,6 @@ interface BoardProps {
   legalTargetChars: Set<string>;
   onTileClick: (x: number, y: number) => void;
   onCharClick: (id: string) => void;
-}
-
-function zoneOf(y: number): string {
-  if (y <= 1) return "zone-a";
-  if (y >= 3) return "zone-b";
-  return "zone-neutral";
 }
 
 const STATUS_SHORT: Record<string, string> = {
@@ -33,6 +28,12 @@ export const FACES: Record<string, string> = {
   zuko: "🔥",
   sokka: "🪃",
   azula: "⚡",
+  iroh: "🍵",
+  ozai: "👑",
+  suki: "🥋",
+  tylee: "🎪",
+  appa: "🦬",
+  momo: "🐒",
 };
 
 /** Official portraits scraped for the demo (fan prototype, replace with original art). */
@@ -43,6 +44,12 @@ export const PORTRAITS: Record<string, string> = {
   zuko: "/portraits/zuko.webp",
   sokka: "/portraits/sokka.webp",
   azula: "/portraits/azula.webp",
+  iroh: "/portraits/iroh.webp",
+  ozai: "/portraits/ozai.webp",
+  suki: "/portraits/suki.webp",
+  tylee: "/portraits/tylee.webp",
+  appa: "/portraits/appa.webp",
+  momo: "/portraits/momo.webp",
 };
 
 const TERRAIN_SHORT: Record<string, string> = {
@@ -75,7 +82,7 @@ export default function Board({
           const terrain = state.terrain.find((t) => t.x === x && t.y === y);
           const cls = [
             "tile",
-            zoneOf(y),
+            terrain ? "has-terrain" : "",
             moveTiles.has(k) ? "move-hl" : "",
             legalTargetTiles.has(k) ? "target-hl" : "",
           ]
@@ -101,7 +108,8 @@ export default function Board({
                   }}
                 >
                   <div
-                    className={`puck ${c.ownerId} ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    className={`puck ${c.id === selectedChar ? "selected" : ""} ${legalTargetChars.has(c.id) ? "target-hl" : ""} ${c.health <= 0 ? "ko" : ""}`}
+                    style={{ borderColor: bendingColor(c.definitionId) }}
                     title={`${c.definitionId} (${c.ownerId}) ❤ ${c.health}/${c.maxHealth} ◉ ${c.focus}`}
                   >
                     <span className="face" aria-hidden>
@@ -119,6 +127,9 @@ export default function Board({
                       />
                     )}
                     {c.avatarState?.active && <span className="avatar-ring" title="AVATAR STATE — lose if KO'd">🌀</span>}
+                    <span className="owner-badge" title={`Owner: ${c.ownerId}`}>
+                      {c.ownerId}
+                    </span>
                     <span
                       className="hp-bar"
                       style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}

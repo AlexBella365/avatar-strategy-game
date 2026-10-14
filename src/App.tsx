@@ -1,7 +1,11 @@
 import { useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
+import PlayingCard from "./ui/PlayingCard";
+import "./ui/PlayingCard.css";
+import { bendingColor, bendingLabel } from "./ui/elements";
 import type {
   CardDefinition,
+  CharacterState,
   Direction,
   GameAction,
   GameState,
@@ -69,6 +73,76 @@ interface EvadeState {
   dests: Position[];
 }
 
+/** One character-sheet card (portrait, stats, card, resonance). */
+function SheetCard(props: {
+  c: CharacterState;
+  selected: boolean;
+  assignedName: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const { c, selected, assignedName, onSelect } = props;
+  const charDef = CHARACTERS.find((d) => d.id === c.definitionId);
+  const gearNames = c.equippedGear
+    .map((g) => getCardDefinition(g.definitionId)?.name ?? g.definitionId)
+    .join(", ");
+  const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
+  const portrait = PORTRAITS[c.definitionId];
+  const bending = bendingColor(c.definitionId);
+  return (
+    <div
+      className={`sheet ${selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
+      style={{ borderTopColor: bending }}
+      onClick={() => onSelect(c.id)}
+    >
+      {portrait ? (
+        <img className="sheet-portrait" src={portrait} alt={c.definitionId} />
+      ) : (
+        <span className="sheet-face" aria-hidden>
+          {FACES[c.definitionId] ?? "❓"}
+        </span>
+      )}
+      <div className="sheet-body">
+        <div className="sheet-title">
+          <strong>{charDef?.name ?? c.definitionId}</strong>
+          <span className="dim small">
+            <span
+              className="element-dot"
+              style={{ backgroundColor: bending }}
+              title={bendingLabel(c.definitionId)}
+            />{" "}
+            {charDef?.class} · ({c.position.x},{c.position.y})
+            {c.activatedThisRound ? " · done" : ""}
+          </span>
+        </div>
+        <div className="sheet-hp" title={`Health ${c.health}/${c.maxHealth}`}>
+          <span className="sheet-hp-fill" style={{ width: `${hpPct}%` }} />
+          <span className="sheet-hp-text">❤ {c.health}/{c.maxHealth}</span>
+        </div>
+        <div className="sheet-row">
+          <span title="Focus">◉ {c.focus}</span>
+          <span title="Movement spent">👣 {c.movementSpent}</span>
+          {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
+        </div>
+        {c.statuses.length > 0 && (
+          <div className="sheet-row statuses">
+            {c.statuses.map((s) => s.statusId).join(" · ")}
+          </div>
+        )}
+        {gearNames !== "" && <div className="sheet-row dim small">⚙ {gearNames}</div>}
+        <div className="sheet-row dim small">Card: {assignedName ?? "facedown/none"}</div>
+        {c.avatarState && !c.avatarState.active && (
+          <div className="sheet-row dim small">
+            Res {c.avatarState.resonance}/{charDef?.avatarState?.threshold ?? 6}
+          </div>
+        )}
+        {c.avatarState?.active && (
+          <div className="sheet-row avatar-warn">🌀 ACTIVE — lose if KO'd!</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState<GameState | null>(null);
   const [actingSide, setActingSide] = useState("p0");
@@ -78,6 +152,7 @@ export default function App() {
   const [targeting, setTargeting] = useState<TargetingState | null>(null);
   const [evade, setEvade] = useState<EvadeState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (!state) {
     return (
@@ -396,6 +471,10 @@ export default function App() {
           P0 ⚡{state.players[0].energy} 🌀{state.players[0].chi} 🂠{state.players[0].deck.length}🗑{state.players[0].discard.length}
           {" · "}
           P1 ⚡{state.players[1].energy} 🌀{state.players[1].chi} 🂠{state.players[1].deck.length}🗑{state.players[1].discard.length}
+          {" · "}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? "Hide log & legend" : "Show log & legend"}
+          </button>
         </p>
       </header>
 
@@ -408,7 +487,25 @@ export default function App() {
         </section>
       )}
 
-      <main className="layout">
+      <main className={sidebarOpen ? "layout with-sidebar" : "layout"}>
+        <aside className="sheets-col">
+          <section className="sheets">
+            <h2>
+              p0 sheets{actingSide === "p0" ? " (acting)" : ""}
+            </h2>
+            {state.characters
+              .filter((c) => c.ownerId === "p0")
+              .map((c) => (
+                <SheetCard
+                  key={c.id}
+                  c={c}
+                  selected={c.id === selected}
+                  assignedName={assignedDef(c.id)?.name ?? null}
+                  onSelect={onCharClick}
+                />
+              ))}
+          </section>
+        </aside>
         <section className="board-col">
           <Board
             state={state}
@@ -420,21 +517,31 @@ export default function App() {
             onCharClick={onCharClick}
           />
           {message && <p className="message">{message}</p>}
-          <details className="legend">
-            <summary>Legend — what the icons mean</summary>
-            <ul>
-              <li>❤ health (current / max) · ◉ Focus (0–4, fuels Evade + Avatar State)</li>
-              <li>⚡ Team Energy (4/round, shared) · 🌀 team chi bank (spendable)</li>
-              <li>🂠 deck remaining · 🗑 discard pile</li>
-              <li>🌀 before a name: active Avatar State (KO = instant loss) · Res n/6: Resonance meter</li>
-              <li>⚙n: equipped Gear count · 🂠 on a character: face-down assigned card</li>
-              <li>🧱 wall (blocking, stops movement + sight) · 🪨 rubble (difficult, 2 to enter)</li>
-              <li>💧 water source (empowers Water: +bonus) · 🔥 bonfire (1 on entry) · 🌋 embers (1 at round end)</li>
-              <li>🧊 ice (difficult + OffBalance on entry) · 🛡 cover (−1 vs ranged)</li>
-              <li>Status codes: OB OffBalance · EX Exposed · BD Bound · XH Exhausted</li>
-              <li>Green outline: reachable move · Red outline: legal target</li>
-            </ul>
-          </details>
+          <section className="hand">
+            <h2>
+              {actingSide} hand ({me.teamHand.length})
+              {assigning ? " — click a card, then one of your characters" : ""}
+            </h2>
+            {me.teamHand.length === 0 && <p className="dim">Hand empty — banked or assigned.</p>}
+            <div className="hand-row">
+              {me.teamHand.map((c) => {
+                const def = getCardDefinition(c.definitionId);
+                if (!def) return null;
+                return (
+                  <PlayingCard
+                    key={c.id}
+                    def={def}
+                    assigning={assigning === c.id}
+                    fits={fitsWhom(def)}
+                    onAssign={() => setAssigning(assigning === c.id ? null : c.id)}
+                  />
+                );
+              })}
+            </div>
+            <p className="dim small">
+              Foe hand: {foe.teamHand.length} cards (hidden). Foe chi: {foe.chi} (secret in competitive play).
+            </p>
+          </section>
           {targeting?.card.targeting.kind === "direction" && (
             <div className="directions">
               {(["north", "east", "south", "west"] as Direction[]).map((d) => (
@@ -474,68 +581,20 @@ export default function App() {
 
         <aside className="side-col">
           <section className="sheets">
-            <h2>{actingSide} sheets</h2>
+            <h2>
+              p1 sheets{actingSide === "p1" ? " (acting)" : ""}
+            </h2>
             {state.characters
-              .filter((c) => c.ownerId === actingSide)
-              .map((c) => {
-                const ad = assignedDef(c.id);
-                const charDef = CHARACTERS.find((d) => d.id === c.definitionId);
-                const gearNames = c.equippedGear
-                  .map((g) => getCardDefinition(g.definitionId)?.name ?? g.definitionId)
-                  .join(", ");
-                const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
-                const portrait = PORTRAITS[c.definitionId];
-                return (
-                  <div
-                    key={c.id}
-                    className={`sheet ${c.ownerId} ${c.id === selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
-                    onClick={() => onCharClick(c.id)}
-                  >
-                    {portrait ? (
-                      <img className="sheet-portrait" src={portrait} alt={c.definitionId} />
-                    ) : (
-                      <span className="sheet-face" aria-hidden>
-                        {FACES[c.definitionId] ?? "❓"}
-                      </span>
-                    )}
-                    <div className="sheet-body">
-                      <div className="sheet-title">
-                        <strong>{charDef?.name ?? c.definitionId}</strong>
-                        <span className="dim small">
-                          {charDef?.class} · ({c.position.x},{c.position.y})
-                          {c.activatedThisRound ? " · done" : ""}
-                        </span>
-                      </div>
-                      <div className="sheet-hp" title={`Health ${c.health}/${c.maxHealth}`}>
-                        <span className="sheet-hp-fill" style={{ width: `${hpPct}%` }} />
-                        <span className="sheet-hp-text">❤ {c.health}/{c.maxHealth}</span>
-                      </div>
-                      <div className="sheet-row">
-                        <span title="Focus">◉ {c.focus}</span>
-                        <span title="Movement spent">👣 {c.movementSpent}</span>
-                        {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
-                      </div>
-                      {c.statuses.length > 0 && (
-                        <div className="sheet-row statuses">
-                          {c.statuses.map((s) => s.statusId).join(" · ")}
-                        </div>
-                      )}
-                      {gearNames !== "" && <div className="sheet-row dim small">⚙ {gearNames}</div>}
-                      <div className="sheet-row dim small">
-                        Card: {ad ? ad.name : "facedown/none"}
-                      </div>
-                      {c.avatarState && !c.avatarState.active && (
-                        <div className="sheet-row dim small">
-                          Res {c.avatarState.resonance}/{avatarThreshold(c.definitionId)}
-                        </div>
-                      )}
-                      {c.avatarState?.active && (
-                        <div className="sheet-row avatar-warn">🌀 ACTIVE — lose if KO'd!</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              .filter((c) => c.ownerId === "p1")
+              .map((c) => (
+                <SheetCard
+                  key={c.id}
+                  c={c}
+                  selected={c.id === selected}
+                  assignedName={assignedDef(c.id)?.name ?? null}
+                  onSelect={onCharClick}
+                />
+              ))}
           </section>
 
           <section className="turn-feed">
@@ -551,35 +610,6 @@ export default function App() {
                 ))}
               </ul>
             )}
-          </section>
-
-          <section className="hand">
-            <h2>
-              {actingSide} hand ({me.teamHand.length})
-              {assigning ? " — click one of your characters to assign" : ""}
-            </h2>
-            {me.teamHand.length === 0 && <p className="dim">Hand empty — banked or assigned.</p>}
-            <ul>
-              {me.teamHand.map((c) => {
-                const def = getCardDefinition(c.definitionId);
-                return (
-                  <li key={c.id} className={assigning === c.id ? "assigning" : ""}>
-                    <strong>{def?.name ?? c.definitionId}</strong>{" "}
-                    <span className="dim">
-                      ⚡{def?.energyCost ?? "?"} 🌀{def?.economy?.chiCost ?? "?"} ⇪{def?.economy?.value ?? "?"}
-                    </span>
-                    <div className="dim small">{def?.rulesText}</div>
-                    {def && <div className="dim small">Fits: {fitsWhom(def)}</div>}
-                    <button onClick={() => setAssigning(assigning === c.id ? null : c.id)}>
-                      {assigning === c.id ? "Cancel" : "Assign"}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="dim small">
-              Foe hand: {foe.teamHand.length} cards (hidden). Foe chi: {foe.chi} (secret in competitive play).
-            </p>
           </section>
 
           <section className="activation">
@@ -642,16 +672,34 @@ export default function App() {
               </button>
             </div>
           </section>
-
-          <section className="log">
-            <h2>Battle log</h2>
-            <ul>
-              {state.log.slice(-40).map((entry, i) => (
-                <li key={i}>{entry}</li>
-              ))}
-            </ul>
-          </section>
         </aside>
+
+        {sidebarOpen && (
+          <aside className="info-sidebar">
+            <section className="legend">
+              <h2>Legend</h2>
+              <ul>
+                <li>❤ health · ◉ Focus (Evade + Avatar State)</li>
+                <li>⚡ Energy (4/round) · 🌀 chi bank · 🂠 deck · 🗑 discard</li>
+                <li>🌀 active Avatar (KO = instant loss) · Res n/6 meter</li>
+                <li>⚙n equipped Gear · 🂠 face-down assigned card</li>
+                <li>🧱 wall (blocks) · 🪨 rubble (2 to enter)</li>
+                <li>💧 water (+bonus) · 🔥 fire (1 entry) · 🌋 embers (1 EoR)</li>
+                <li>🧊 ice (difficult + OB) · 🛡 cover (−1 ranged)</li>
+                <li>OB OffBalance · EX Exposed · BD Bound · XH Exhausted</li>
+                <li>Green: reachable · Red: legal target</li>
+              </ul>
+            </section>
+            <section className="log">
+              <h2>Battle log</h2>
+              <ul>
+                {state.log.slice(-60).map((entry, i) => (
+                  <li key={i}>{entry}</li>
+                ))}
+              </ul>
+            </section>
+          </aside>
+        )}
       </main>
     </div>
   );
