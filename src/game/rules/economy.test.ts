@@ -6,6 +6,7 @@ import { applyGameAction } from "./cards";
 import { drawCards, endRound } from "./turns";
 import { movementAllowance } from "./movement";
 import { CARD_DEFINITIONS, getCardDefinition, validateCardDefinitions } from "../content/cards";
+import { CHARACTERS } from "../content/characters";
 import { CARD_ECONOMY, ECONOMY_TUNING, STARTER_DECK_IDS, restrictionSatisfied } from "../content/economy";
 import type { CardDefinition, GameState } from "../types";
 
@@ -39,14 +40,11 @@ describe("starter content validation", () => {
   });
 
   it("universal cards fit everyone; each hero has options", () => {
-    const team = [
-      { definitionId: "aang", element: "avatar", role: "hero" },
-      { definitionId: "katara", element: "water", role: "hero" },
-      { definitionId: "toph", element: "earth", role: "hero" },
-      { definitionId: "zuko", element: "fire", role: "villain" },
-      { definitionId: "sokka", element: "nonbender", role: "hero" },
-      { definitionId: "azula", element: "fire", role: "villain" },
-    ];
+    const team = CHARACTERS.map((d) => ({
+      definitionId: d.id,
+      element: d.element,
+      role: d.role,
+    }));
     for (const id of ["travel-rations", "smoke-bomb", "dust-toss"]) {
       const card = getCardDefinition(id)!;
       expect(card.economy?.restrictions).toEqual([]);
