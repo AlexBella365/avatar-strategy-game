@@ -409,26 +409,28 @@ export default function App() {
     return undefined;
   };
 
-  const doPlayWith = (selection: TargetOption["selection"], reactions: { characterId: string; dest: Position }[]) => {
-    if (!targeting || !selectedChar) return;
+  const doPlayWith = (
+    card: CardDefinition,
+    instanceId: string,
+    selection: TargetOption["selection"],
+    reactions: { characterId: string; dest: Position }[],
+    afterMove: boolean,
+  ) => {
+    if (!selectedChar) return;
     const ok = dispatch({
       type: "PLAY_CARD",
       playerId: actingSide,
       characterId: selectedChar.id,
-      cardInstanceId: targeting.instanceId,
+      cardInstanceId: instanceId,
       selection,
-      card: targeting.card,
+      card,
       reactions,
     });
     if (ok) {
       setTargeting(null);
       setEvade(null);
-      if (plan === "play-first") {
-        setPlan(null);
-        setMoveMode(true); // technique done — move with what is left
-      } else if (plan === "move-first") {
-        setPlan(null);
-      }
+      setPlan(null);
+      if (afterMove) setMoveMode(true); // technique done — move with what is left
     }
   };
 
@@ -438,6 +440,7 @@ export default function App() {
       setMessage(option.illegalReason?.message ?? "Illegal target.");
       return;
     }
+    const afterMove = plan === "play-first";
     // Focused attacks offer the Evade reaction before resolving.
     if (
       targeting.card.targeting.kind === "character" &&
@@ -454,7 +457,7 @@ export default function App() {
           );
           const use =
             escaping.length > 0 ? escaping[Math.floor(Math.random() * escaping.length)] : null;
-          doPlayWith(option.selection, use ? [{ characterId: targetId, dest: use }] : []);
+          doPlayWith(targeting.card, targeting.instanceId, option.selection, use ? [{ characterId: targetId, dest: use }] : [], afterMove);
           return;
         }
         setEvade({
@@ -467,7 +470,7 @@ export default function App() {
         return;
       }
     }
-    doPlayWith(option.selection, []);
+    doPlayWith(targeting.card, targeting.instanceId, option.selection, [], afterMove);
   };
 
   const onTileClick = (x: number, y: number) => {
@@ -486,7 +489,7 @@ export default function App() {
         if (plan === "move-first") {
           setPlan(null);
           setMoveMode(false);
-          startPlay(); // moved first — now play the assigned card
+          startPlay(true); // moved first — now play the assigned card
         } else {
           setMoveMode(false);
         }
@@ -537,7 +540,7 @@ export default function App() {
     }
   };
 
-  const startPlay = () => {
+  const startPlay = (afterMove: boolean) => {
     if (!selectedChar) return;
     const assigned = me.assignments[selectedChar.id];
     if (!assigned) {
@@ -550,11 +553,12 @@ export default function App() {
       return;
     }
     setMenu(null); // targeting takes over from here
+    if (afterMove) setPlan("play-first");
     const options = getLegalTargets(state, selectedChar.id, card);
     const automatic = options.length === 1 && options[0].selection.kind === "automatic";
     if (automatic && options[0].isLegal) {
       setTargeting({ card, instanceId: assigned.id, options });
-      doPlayWith(options[0].selection, []);
+      doPlayWith(card, assigned.id, options[0].selection, [], afterMove);
       return;
     }
     if (card.targeting.kind === "direction") {
@@ -726,7 +730,7 @@ export default function App() {
                   </div>
                   <div className="dim small">Card: {ad ? ad.name : "none assigned"}</div>
                   <div className="btn-row">
-                    <button disabled={!ad} onClick={() => { setPlan("play-first"); startPlay(); }}>
+                    <button disabled={!ad} onClick={() => startPlay(true)}>
                       Play first
                     </button>
                     <button onClick={() => { setPlan("move-first"); setMenu(null); setMoveMode(true); }}>
@@ -802,11 +806,11 @@ export default function App() {
                 inside the area still hits.)
               </p>
               {evade.dests.map((d) => (
-                <button key={`${d.x},${d.y}`} onClick={() => doPlayWith(evade.selection, [{ characterId: evade.targetId, dest: d }])}>
+                <button key={`${d.x},${d.y}`} onClick={() => doPlayWith(evade.card, evade.instanceId, evade.selection, [{ characterId: evade.targetId, dest: d }], plan === "play-first")}>
                   ({d.x},{d.y})
                 </button>
               ))}
-              <button onClick={() => doPlayWith(evade.selection, [])}>Take the hit</button>
+              <button onClick={() => doPlayWith(evade.card, evade.instanceId, evade.selection, [], plan === "play-first")}>Take the hit</button>
             </div>
           )}
         </section>
@@ -868,7 +872,7 @@ export default function App() {
                   );
                 })()}
                 <div className="btn-row">
-                  <button onClick={startPlay} disabled={!assignedDef(selectedChar.id)}>Play</button>
+                  <button onClick={() => startPlay(true)} disabled={!assignedDef(selectedChar.id)}>Play</button>
                   <button
                     onClick={() => {
                       if (dispatch({ type: "SCRAP_ASSIGNED", playerId: actingSide, characterId: selectedChar.id })) {
