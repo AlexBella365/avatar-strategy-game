@@ -83,10 +83,10 @@ function pass(state: GameState, playerId: string, charId: string): void {
 function scriptedTwoRounds(): { state: GameState; snapshots: string[] } {
   const state = demoMatch();
   const snapshots: string[] = [];
-  // --- Round 1: both sides advance across the neutral zone ---
-  move(state, "p1", "p1-c0", { x: 1, y: 3 }); // aang
-  move(state, "p1", "p1-c1", { x: 3, y: 3 }); // katara
-  move(state, "p1", "p1-c2", { x: 5, y: 3 }); // toph
+  // --- Round 1: both sides step across the neutral zone ---
+  move(state, "p1", "p1-c0", { x: 1, y: 2 }); // aang
+  move(state, "p1", "p1-c1", { x: 3, y: 2 }); // katara
+  move(state, "p1", "p1-c2", { x: 5, y: 2 }); // toph
   pass(state, "p1", "p1-c0");
   pass(state, "p1", "p1-c1");
   pass(state, "p1", "p1-c2");
@@ -98,11 +98,12 @@ function scriptedTwoRounds(): { state: GameState; snapshots: string[] } {
   pass(state, "p2", "p2-c2");
   expect(pendingActivations(state)).toHaveLength(0);
   endRound(state);
-  // --- Round 2: engaged lines trade blows ---
+  // --- Round 2: engaged lines trade blows (toph steps in first) ---
   expect(state.round).toBe(2);
   assignKnown(state, "p1", "p1-c0", "air-blast"); // aang
   assignKnown(state, "p1", "p1-c1", "water-whip"); // katara
   assignKnown(state, "p1", "p1-c2", "earth-sweep"); // toph
+  move(state, "p1", "p1-c2", { x: 5, y: 3 });
   const r1 = playAssigned(state, "p1", "p1-c0", { kind: "character", characterId: "p2-c0" });
   snapshots.push(JSON.stringify(r1.events));
   const r2 = playAssigned(state, "p1", "p1-c1", { kind: "character", characterId: "p2-c1" });
@@ -132,8 +133,8 @@ describe("playable demo", () => {
     expect(zuko.position).toEqual({ x: 1, y: 5 });
     // azula took earth sweep (2)
     expect(state.characters.find((c) => c.id === "p2-c2")!.health).toBe(14 - 2);
-    // mid-round snapshot: sokka held at (3,4), azula OffBalanced
-    expect(snapshots[3]).toBe('sokka:{"x":3,"y":4},azula-offbalance:true');
+    // mid-round snapshot: sokka pulled to (3,3), azula OffBalanced
+    expect(snapshots[3]).toBe('sokka:{"x":3,"y":3},azula-offbalance:true');
     // aang practiced air => resonance 1
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     expect(aang.avatarState!.resonance).toBe(1);

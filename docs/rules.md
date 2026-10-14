@@ -52,7 +52,7 @@ Play rounds in this order:
 When you activate a character, you reveal its assigned card and facing token, then do these two in either order:
 
 - **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing).
-- **Move (one block):** Move up to 2 tiles orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early or skip moving.
+- **Move (one block):** Move 1 tile orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may skip moving.
 
 You may also pass (counts as activated; assigned card auto-scraps, move lost).
 
@@ -152,7 +152,7 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 
 ## Example
 
-> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just move 2 tiles.
+> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just move 1 tile.
 
 ## Tips
 

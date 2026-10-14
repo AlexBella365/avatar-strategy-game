@@ -454,9 +454,9 @@ describe("support effects and actions", () => {
 
   it("MOVE finds the cheapest path; SET_INTENTION hides values; PASS marks activation", () => {
     const state = setup();
-    const moved = applyGameAction(state, { type: "MOVE", playerId: "p1", characterId: "p1-c0", to: { x: 2, y: 2 } });
+    const moved = applyGameAction(state, { type: "MOVE", playerId: "p1", characterId: "p1-c0", to: { x: 2, y: 1 } });
     expect(moved.errors).toEqual([]);
-    expect(moved.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 2 });
+    expect(moved.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 1 });
     const intent = applyGameAction(moved.state, {
       type: "SET_INTENTION",
       playerId: "p1",

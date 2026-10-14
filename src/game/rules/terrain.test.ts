@@ -69,6 +69,7 @@ describe("terrain entry triggers", () => {
     createTerrain(state, { x: 2, y: 2 }, "bonfire", "permanent", "fail");
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.position = { x: 0, y: 2 };
+    state.players[0].intentions["p1-c0"] = "Reposition"; // +1 tile for the 2-step path
     const hp = aang.health;
     applyMove(state, "p1-c0", [
       { x: 1, y: 2 },

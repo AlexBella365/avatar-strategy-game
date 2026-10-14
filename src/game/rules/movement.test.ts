@@ -19,27 +19,24 @@ import { applyStatus } from "./statuses";
 const AANG = "p1-c0"; // (1,1)
 
 describe("voluntary movement", () => {
-  it("moves along a legal path and spends allowance", () => {
+  it("moves one tile and spends the allowance", () => {
     const state = setup();
-    const path: Position[] = [
-      { x: 1, y: 2 },
-      { x: 2, y: 2 },
-    ];
-    const result = applyMove(state, AANG, path);
+    const result = applyMove(state, AANG, [{ x: 1, y: 2 }]);
     expect(result.ok).toBe(true);
-    expect(state.characters.find((c) => c.id === AANG)!.position).toEqual({ x: 2, y: 2 });
-    expect(state.characters.find((c) => c.id === AANG)!.movementSpent).toBe(2);
+    expect(state.characters.find((c) => c.id === AANG)!.position).toEqual({ x: 1, y: 2 });
+    expect(state.characters.find((c) => c.id === AANG)!.movementSpent).toBe(1);
+    // a second step exceeds the 1-tile allowance
+    const again = applyMove(state, AANG, [{ x: 2, y: 2 }]);
+    expect(again.ok).toBe(false);
+    expect(again.errors[0].code).toBe("INSUFFICIENT_MOVEMENT");
   });
 
   it("difficult terrain costs 2; over-allowance fails without mutation", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "rubble", "permanent", "fail");
     const before = JSON.stringify(state.characters);
-    // rubble (2) + open tile (1) = 3 > allowance 2
-    const result = applyMove(state, AANG, [
-      { x: 1, y: 2 },
-      { x: 2, y: 2 },
-    ]);
+    // rubble (2) > allowance 1
+    const result = applyMove(state, AANG, [{ x: 1, y: 2 }]);
     expect(result.ok).toBe(false);
     expect(result.errors[0].code).toBe("INSUFFICIENT_MOVEMENT");
     expect(JSON.stringify(state.characters)).toBe(before);
@@ -78,17 +75,18 @@ describe("voluntary movement", () => {
 
   it("Reposition intention grants +1 tile on the first movement", () => {
     const state = setup();
-    expect(movementAllowance(state, AANG)).toBe(2);
+    expect(movementAllowance(state, AANG)).toBe(1);
     state.players[0].intentions[AANG] = "Reposition";
-    expect(movementAllowance(state, AANG)).toBe(3);
+    expect(movementAllowance(state, AANG)).toBe(2);
     applyMove(state, AANG, [{ x: 1, y: 2 }]);
-    expect(movementAllowance(state, AANG)).toBe(2); // bonus consumed
+    expect(movementAllowance(state, AANG)).toBe(1); // bonus consumed
   });
 
   it("can move into a tile freed by knockout", () => {
     const state = setup();
     state.characters.find((c) => c.id === "p1-c1")!.health = 0; // katara (3,1) KO'd
-    const result = applyMove(state, AANG, [{ x: 2, y: 1 }, { x: 3, y: 1 }]);
+    state.characters.find((c) => c.id === AANG)!.position = { x: 2, y: 1 };
+    const result = applyMove(state, AANG, [{ x: 3, y: 1 }]);
     expect(result.ok).toBe(true);
   });
 });

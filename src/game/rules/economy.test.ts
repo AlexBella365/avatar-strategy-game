@@ -126,12 +126,12 @@ describe("draw, assign, scrap, bank", () => {
     s2.players[0].teamHand.push({ id: "rf", definitionId: "rising-flame" });
     const assigned = assign(s2, "p1", "p1-c2", "rf");
     expect(assigned.errors).toEqual([]);
-    // close in: zuko (5,1) -> (5,3), azula (5,5) now in range 3
+    // close in: zuko (5,1) -> (5,2), azula (5,5) now in range 3
     const moved = applyGameAction(assigned.state, {
       type: "MOVE",
       playerId: "p1",
       characterId: "p1-c2",
-      to: { x: 5, y: 3 },
+      to: { x: 5, y: 2 },
     });
     expect(moved.errors).toEqual([]);
     const noChi = applyGameAction(moved.state, {
@@ -188,8 +188,8 @@ describe("gear slots and bonuses", () => {
     expect(result.errors).toEqual([]);
     const aang = result.state.characters.find((c) => c.id === "p1-c0")!;
     expect(aang.equippedGear).toHaveLength(1);
-    // movement allowance 2 + 1 glider
-    expect(movementAllowance(result.state, "p1-c0")).toBe(3);
+    // movement allowance 1 + 1 glider
+    expect(movementAllowance(result.state, "p1-c0")).toBe(2);
     endRound(result.state);
     expect(
       result.state.characters.find((c) => c.id === "p1-c0")!.equippedGear,

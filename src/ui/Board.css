@@ -1,11 +1,12 @@
 .grid-board {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 .tile {
   height: 64px;
   overflow: hidden;
   border: 1px solid #888;
+  background-color: #aaa;;
   border-radius: 5px;
   padding: 2px;
   position: relative;

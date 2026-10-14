@@ -152,9 +152,9 @@ describe("line of sight", () => {
 describe("movement paths", () => {
   const empty = { blocked: new Set<string>(), occupied: new Set<string>(), difficult: new Set<string>() };
 
-  it("allowance 2 from open center reaches Manhattan ≤ 2", () => {
-    const reach = reachableTiles({ x: 3, y: 2 }, { ...empty, allowance: 2 });
-    expect(reach.size).toBe(12); // 13 tiles within radius 2, minus start
+  it("allowance 1 from open center reaches Manhattan ≤ 1", () => {
+    const reach = reachableTiles({ x: 3, y: 2 }, { ...empty, allowance: 1 });
+    expect(reach.size).toBe(4); // 4 orthogonal neighbors
     for (const [k, cost] of reach) {
       const [x, y] = k.split(",").map(Number);
       expect(cost).toBe(manhattan({ x: 3, y: 2 }, { x, y }));
@@ -169,6 +169,12 @@ describe("movement paths", () => {
     expect(reach.get("3,1")).toBe(2);
     // beyond the difficult tile would cost 3: unreachable
     expect(reach.has("3,0")).toBe(false);
+    // ...and with the standard allowance of 1 it cannot be entered at all
+    const short = reachableTiles(
+      { x: 3, y: 2 },
+      { ...empty, allowance: 1, difficult: new Set(["3,1"]) },
+    );
+    expect(short.has("3,1")).toBe(false);
   });
 
   it("cannot enter or pass through blocked/occupied tiles", () => {
