@@ -10,7 +10,7 @@
 - On activation reveal: **Play (reveal + discard, except Gear) or Scrap (bank chi, kept secret)**. Scrapped characters may still move. Pass = auto-scrap.
 - **Chi is a spendable team currency** (not a threshold): strong cards cost chi + Energy/Focus. Bank persists across rounds, starts at 0, uncapped in prototype. **Chi totals and banked-card identities are hidden information** (opponent sees only played cards + board).
 - **Tokens unchanged**: 4 team Energy refresh per round; per-character Focus 0–4; Momentum 0–1. No new currency.
-- **Restrictions** gate assignment/play (never banking): `unique` (character id) / `element` / `alignment` (Hero/Villain, mapped from roster `role`: `hero`→Hero, `villain`→Villain; `antihero`/`neutral` satisfy only cards that name them explicitly).
+- **Restrictions** gate assignment/play (never banking): `unique` (character id) / `element` / `alignment` (Hero/Villain, mapped from roster `role`: `hero`→Hero, `villain`→Villain; `antihero`/`neutral` satisfy only cards that name them explicitly) / `team` (named crew, resolved against a per-scenario list — starter `team-avatar` = Aang, Katara, Sokka, Toph; Zuko joins in later scenarios, mirroring his hero flip).
 
 ## Turn structure delta (replaces v0.2 §8 intentions)
 
@@ -36,6 +36,14 @@ Framework: innate (never occupy M slots); conditions on public info only (HP tot
 - **Sokka — Scavenger:** his first scrap each round banks +1 chi (economy-bender, hence capped).
 - **Azula — Charged Strike:** +1 damage if she spent 0 movement points this activation (rewards telegraphed setup).
 
+## Companions (ability cards, playtest v1)
+
+Framework: named-animal one-shots that resolve then discard. Slot families for future card-data mapping: Appa → defense, Momo → attack. Neither opens an Evade window (neither is a focused attack); Momo is not reactable. Costs below are reference tuning, not final.
+
+- **Appa — Sky Bison Lift:** `team(team-avatar)` — the Gaang (starter: Aang, Katara, Sokka, Toph), not the Avatar character. Self-teleport to any legal tile (empty, non-blocking, in-bounds; destination chosen at reveal, standard fizzle-if-illegal). Ignores intervening tiles, hazards, LOS, and Bound (carried, not voluntary movement — an explicit bind counter). Reference: 2 Energy + 2 chi.
+- **Momo — Snatch:** no restriction (universal). Target: adjacent enemy character with an assigned face-down card (i.e. not yet activated — a legality condition, so spent activations can't be targeted). Peek at the card (owner-only intel), then bank it to your chi pool; the victim activates cardless (move only). Stolen-card replay is out of scope for v1 (bank only). Reference: 1 Energy + 2 chi; note the steal refunds the victim card's chi, so net cost floats with the victim's draw luck.
+- Future companions (Naga, Pabu) follow the same framework; gate each with `unique` or leave universal per flavor.
+
 ## Card data delta (extends v0.2 §9)
 
 ```ts
@@ -43,7 +51,8 @@ type CardKind = "gear" | "attack" | "defense";
 type Restriction =
   | { type: "unique"; characterId: string }        // e.g. glider→aang
   | { type: "element"; element: "water" | "earth" | "fire" | "air" | "nonbender" | "avatar" }
-  | { type: "alignment"; alignment: "hero" | "villain" };
+  | { type: "alignment"; alignment: "hero" | "villain" }
+  | { type: "team"; team: string };                // e.g. team-avatar; scenario list
 // CardDefinition +=
 interface CardEconomy {
   kind: CardKind;

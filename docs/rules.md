@@ -30,6 +30,7 @@ Each card has one type, one chi value (1–3), and a restriction tag:
 - **Gear (equip):** You play it and it stays (e.g. Aang's Glider: +1 movement). It modifies a spec while equipped.
 - **Attack:** You play it for damage / push / status, then you discard it.
 - **Defense:** You play it for shield / heal / cleanse (some are reactions), then you discard it.
+- **Companion (ability):** You call a named animal ally for a one-shot feat, then you discard it. Appa flies you anywhere; Momo steals from the enemy.
 
 Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
 
@@ -73,6 +74,7 @@ Every card lists who can take it. You check all that apply:
 - **Unique:** `Aang only` (Glider), `Sokka only` (Boomerang).
 - **Element:** `Water / Earth / Fire / Air / Nonbender / Avatar`. Water Whip needs Water or Avatar; Earth Wall needs Earth or Avatar.
 - **Alignment:** `Hero / Villain`. Starter split: Heroes = Aang, Katara, Toph, Sokka. Villains = Zuko, Azula. (Zuko flips to Hero in later scenarios.)
+- **Team:** named crews, e.g. `Team Avatar` (Aang, Katara, Sokka, Toph — Appa only flies for them).
 - A card can combine them (e.g. `Fire + Villain`).
 
 If it doesn't fit, you cannot assign or play it on that character. You can still bank it for chi.
@@ -89,6 +91,13 @@ Talents are innate — they never use slots. Each works only while its stated co
 - **Azula — Charged Strike:** +1 damage if she didn't move this activation.
 
 Playtest v1 — all numbers tunable.
+
+## Companions
+
+Companion cards are one-shot animal allies. They resolve, then you discard them. Neither can be Evaded.
+
+- **Appa — Sky Bison Lift (Team Avatar only — Aang, Katara, Sokka, Toph):** You fly yourself to any empty, non-blocking tile, ignoring everything in between — walls, hazards, even your own Bound (he carries you). Pick an illegal tile and the flight fizzles (you still paid).
+- **Momo — Snatch (anyone):** You target an adjacent enemy who hasn't activated yet, peek at their assigned face-down card, then bank it for its chi. They activate with no card — move only. Momo answers to no master, so anyone can play him. (Future: Naga, Pabu.)
 
 ## Cards and targeting
 
