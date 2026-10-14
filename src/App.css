@@ -1,0 +1,56 @@
+.app {
+  font-family: system-ui, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.lane {
+  border: 1px solid #888;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+.lane h2 {
+  text-transform: capitalize;
+  margin: 0 0 0.5rem;
+}
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.rank-label {
+  width: 40px;
+  font-size: 0.8rem;
+  color: #555;
+}
+.slot {
+  flex: 1;
+  min-height: 44px;
+  border: 1px dashed #aaa;
+  border-radius: 6px;
+  padding: 4px;
+}
+.slot.p0 {
+  background: #eef6ff;
+}
+.slot.p1 {
+  background: #ffeef0;
+}
+.char {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+.empty {
+  color: #aaa;
+}
+.log {
+  margin-top: 1rem;
+  border-top: 1px solid #ccc;
+}

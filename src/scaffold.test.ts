@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest";
+import { aggressionModifier, attackVsEvasion, rawDamage } from "./game/rules/damage";
+import { adjacentLanes } from "./game/rules/targeting";
+import { isAdjacentStep } from "./game/rules/movement";
+import { maxHealthFor } from "./game/state";
+
+describe("scaffold smoke tests (spec §6 health/damage, §4 movement/lanes)", () => {
+  it("health formula: 16 + 2*(RES-3), min 10", () => {
+    expect(maxHealthFor(3)).toBe(16);
+    expect(maxHealthFor(5)).toBe(20);
+    expect(maxHealthFor(1)).toBe(12);
+  });
+
+  it("aggression modifier clamps to -1..+1", () => {
+    expect(aggressionModifier(1)).toBe(-1);
+    expect(aggressionModifier(3)).toBe(0);
+    expect(aggressionModifier(5)).toBe(1);
+  });
+
+  it("raw damage respects scalesWithAggression", () => {
+    expect(rawDamage(2, 5, true)).toBe(3);
+    expect(rawDamage(2, 5, false)).toBe(2);
+  });
+
+  it("evasion: greater evades, tie deals base w/o secondary, greater hits", () => {
+    expect(attackVsEvasion(3, 0, 5, 0)).toBe("evaded");
+    expect(attackVsEvasion(3, 0, 3, 0)).toBe("tie");
+    expect(attackVsEvasion(5, 0, 3, 0)).toBe("hit");
+  });
+
+  it("lane adjacency: center<->both, left/right not adjacent", () => {
+    expect(adjacentLanes("center")).toEqual(["left", "right"]);
+    expect(adjacentLanes("left")).toEqual(["center"]);
+    expect(adjacentLanes("right")).toEqual(["center"]);
+  });
+
+  it("movement is one step (lane xor rank)", () => {
+    expect(
+      isAdjacentStep({ lane: "left", rank: "front" }, { lane: "center", rank: "front" }),
+    ).toBe(true);
+    expect(
+      isAdjacentStep({ lane: "left", rank: "front" }, { lane: "left", rank: "rear" }),
+    ).toBe(true);
+    expect(
+      isAdjacentStep({ lane: "left", rank: "front" }, { lane: "right", rank: "front" }),
+    ).toBe(false);
+    expect(
+      isAdjacentStep({ lane: "left", rank: "front" }, { lane: "center", rank: "rear" }),
+    ).toBe(false);
+  });
+});
