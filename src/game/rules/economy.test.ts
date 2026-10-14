@@ -5,8 +5,8 @@ import { setup } from "../testutils";
 import { applyGameAction } from "./cards";
 import { drawCards, endRound } from "./turns";
 import { movementAllowance } from "./movement";
-import { getCardDefinition, validateCardDefinitions } from "../content/cards";
-import { CARD_ECONOMY, ECONOMY_TUNING, restrictionSatisfied } from "../content/economy";
+import { CARD_DEFINITIONS, getCardDefinition, validateCardDefinitions } from "../content/cards";
+import { CARD_ECONOMY, ECONOMY_TUNING, STARTER_DECK_IDS, restrictionSatisfied } from "../content/economy";
 import type { CardDefinition, GameState } from "../types";
 
 function realCard(id: string): CardDefinition {
@@ -30,15 +30,39 @@ function handIds(state: GameState, playerId = "p0"): string[] {
 }
 
 describe("starter content validation", () => {
-  it("all 15 cards have complete data and economy entries", () => {
+  it("all cards have complete data and economy entries; deck matches", () => {
     expect(validateCardDefinitions()).toEqual([]);
-    for (const id of [
-      "earth-sweep", "air-blast", "rising-flame", "water-whip", "air-shield",
-      "earth-wall", "fire-sweep", "ice-bind", "sokkas-feint", "precision-strike",
-      "water-recovery", "seismic-read", "aang-glider", "sokka-boomerang", "comet-strike",
-    ]) {
+    expect(new Set(Object.keys(CARD_ECONOMY))).toEqual(new Set(Object.keys(CARD_DEFINITIONS)));
+    for (const id of STARTER_DECK_IDS) {
       expect(getCardDefinition(id), id).toBeDefined();
-      expect(CARD_ECONOMY[id], id).toBeDefined();
+    }
+  });
+
+  it("universal cards fit everyone; each hero has options", () => {
+    const team = [
+      { definitionId: "aang", element: "avatar", role: "hero" },
+      { definitionId: "katara", element: "water", role: "hero" },
+      { definitionId: "toph", element: "earth", role: "hero" },
+      { definitionId: "zuko", element: "fire", role: "villain" },
+      { definitionId: "sokka", element: "nonbender", role: "hero" },
+      { definitionId: "azula", element: "fire", role: "villain" },
+    ];
+    for (const id of ["travel-rations", "smoke-bomb", "dust-toss"]) {
+      const card = getCardDefinition(id)!;
+      expect(card.economy?.restrictions).toEqual([]);
+      for (const char of team) {
+        expect(
+          (card.economy?.restrictions ?? []).every((r) => restrictionSatisfied(char, r)),
+          `${id} should fit ${char.definitionId}`,
+        ).toBe(true);
+      }
+    }
+    // everyone (incl. nonbender sokka) has at least 3 playable cards
+    for (const char of team) {
+      const playable = Object.values(CARD_DEFINITIONS).filter((card) =>
+        (card.economy?.restrictions ?? []).every((r) => restrictionSatisfied(char, r)),
+      );
+      expect(playable.length, char.definitionId).toBeGreaterThanOrEqual(3);
     }
   });
 });
@@ -79,7 +103,7 @@ describe("draw, assign, scrap, bank", () => {
     draw(b);
     expect(handIds(a)).toHaveLength(5);
     expect(handIds(a)).toEqual(handIds(b));
-    expect(a.players[0].deck).toHaveLength(18 - 5);
+    expect(a.players[0].deck).toHaveLength(STARTER_DECK_IDS.length - 5);
   });
 
   it("play-or-scrap reveal: scrap banks chi secretly, play spends chi", () => {

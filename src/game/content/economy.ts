@@ -42,6 +42,10 @@ export const STARTER_DECK_IDS: string[] = [
   "aang-glider",
   "sokka-boomerang",
   "comet-strike",
+  "travel-rations",
+  "travel-rations",
+  "smoke-bomb",
+  "dust-toss",
 ];
 
 /** chi value / chi cost / energy / restrictions / slot per card. */
@@ -61,6 +65,9 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "aang-glider": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "unique", characterId: "aang" }], slotType: "gear" },
   "sokka-boomerang": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "unique", characterId: "sokka" }], slotType: "gear" },
   "comet-strike": { value: 3, chiCost: 3, energy: 2, restrictions: [{ type: "element", elements: ["fire"] }], slotType: "attack" },
+  "travel-rations": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "smoke-bomb": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "dust-toss": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "attack" },
 };
 
 /** Restriction gate for assign AND play (banking is always legal). */
