@@ -2,7 +2,6 @@
 // Spec v2 §4.4, §4.7, §4A + test list §17.
 import { describe, expect, it } from "vitest";
 import { setup } from "../testutils";
-import type { Position } from "../types";
 import {
   applyEvade,
   applyMove,
