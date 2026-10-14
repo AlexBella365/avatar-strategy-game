@@ -150,7 +150,7 @@
 }
 .layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 350px;
+  grid-template-columns: 300px minmax(0, 1fr) 400px;
   gap: 1rem;
   align-items: start;
 }

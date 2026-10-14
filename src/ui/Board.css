@@ -22,7 +22,8 @@
   background: #fdf6e3;
 }
 .tile.move-hl {
-  outline: 2px solid #2a9d48;
+  outline: 2px solid #c19a1b;
+  background: #fef9e7;
 }
 .tile.target-hl {
   outline: 2px solid #d62728;
