@@ -1,5 +1,9 @@
 // Core game types. v2 grid model (§4, §9).
 // Keep this file free of logic: pure data shapes only.
+//
+// Engine convention: rule functions MUTATE the GameState passed to them and
+// return event strings for the battle log. The single public action entry
+// point clones the state first (see cloneState); tests build fresh states.
 
 /** Grid tile. x: 0..6 (west→east), y: 0..4 (top edge→bottom). */
 export interface Position {
@@ -61,11 +65,19 @@ export interface CharacterState {
   focus: number; // 0..4
   position: Position;
   statuses: StatusInstance[];
+  shields: ShieldInstance[]; // absorb damage FIFO; expiry handled by round loop
   passiveUsesThisRound: Record<string, number>;
   reactionUsedThisRound: boolean;
   activatedThisRound: boolean;
+  movementSpent: number; // movement points spent this activation; reset by round loop
   momentum: number; // 0..1 in MVP
   avatarState?: AvatarStateStatus;
+}
+
+/** One shield pool on a character. */
+export interface ShieldInstance {
+  id: string; // stable instance id
+  amount: number;
 }
 
 export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
@@ -182,6 +194,22 @@ export interface TerrainState {
   y: number;
   terrainId: string;
   remainingRounds: number | null; // null = permanent
+}
+
+/** Data-driven terrain definition (spec §5.1–§5.2). */
+export interface TerrainDefinition {
+  id: string;
+  name: string;
+  blocking: boolean; // cannot be entered; blocks line of sight
+  difficult: boolean; // costs 2 movement points to enter
+  cover?: { reduction: number; vs: ("melee" | "ranged" | "aoe")[] };
+  elementalSource?: "water" | "earth" | "fire" | "air";
+  hazard?: {
+    amount: number;
+    timing: "onEntry" | "endOfRound" | "endOfActivation";
+    label: string;
+  };
+  onEntryStatus?: { statusId: StatusId; duration: number };
 }
 
 export type Intention = "Attack" | "Defend" | "Reposition" | "Prepare";

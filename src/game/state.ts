@@ -63,9 +63,11 @@ export function createCharacter(
     focus: STARTING_FOCUS,
     position: { ...position },
     statuses: [],
+    shields: [],
     passiveUsesThisRound: {},
     reactionUsedThisRound: false,
     activatedThisRound: false,
+    movementSpent: 0,
     momentum: 0,
     avatarState: initialAvatarStatus(def),
   };
