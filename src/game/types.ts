@@ -222,6 +222,8 @@ export interface CardDefinition {
   };
   /** Persistent bonus while equipped (gear only). */
   gearBonus?: GearBonus;
+  /** Center art emoji for the playing-card face (unique per card). */
+  art?: string;
 }
 
 export interface CardInstance {

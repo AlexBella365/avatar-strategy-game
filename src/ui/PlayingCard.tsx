@@ -35,7 +35,7 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
         <span className="pc-suit">{suit}</span>
       </div>
       <div className="pc-name">{def.name}</div>
-      <div className="pc-art">{suit}</div>
+      <div className="pc-art">{def.art ?? suit}</div>
       <div className="pc-kind">{kind}</div>
       <div className="pc-rules">{def.rulesText}</div>
       <div className="pc-fits">Fits: {fits}</div>
