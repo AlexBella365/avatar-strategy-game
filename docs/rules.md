@@ -20,18 +20,18 @@ If both teams survive after round 8, you compare:
 1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
 2. You place your 3 characters on 3 different tiles in your zone: Team A rows 0–1, Team B rows 3–4. Row 2 starts empty.
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
-4. You shuffle your team deck. Your Value bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
+4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
 
 ## Your cards
 
-Each card has one type, one value (1–3), and a restriction tag:
+Each card has one type, one chi value (1–3), and a restriction tag:
 
 - **Gear (equip):** You play it and it stays (e.g. Aang's Glider: +1 movement). It modifies a spec while equipped.
 - **Attack:** You play it for damage / push / status, then you discard it.
 - **Defense:** You play it for shield / heal / cleanse (some are reactions), then you discard it.
 
-Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses. Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
+Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
 
 You can only assign a card to a character it fits (see Restrictions).
 
@@ -40,16 +40,16 @@ You can only assign a card to a character it fits (see Restrictions).
 Play rounds in this order:
 
 1. **Start:** Set Energy to 4. Reset activations and reactions. Resolve start-of-round effects.
-2. **Draw & assign:** You draw **N = 5** cards. You secretly assign 1 face-down to each living character (3 assigned). The 2 unassigned go straight to your Value bank (you gain their printed value).
+2. **Draw & assign:** You draw **N = 5** cards. You secretly assign 1 face-down to each living character (3 assigned). The 2 unassigned go straight to your chi bank (you gain their printed chi).
 3. **Activate:** You alternate with your opponent, one character at a time. On your turn you reveal that character's card and choose **Play or Scrap** (see below). You may also move (see On your activation). Initiative swaps each round.
-4. **End:** Resolve end-of-round damage, remove expired statuses/terrain/Momentum, check victory. Discard played cards. Unplayed assigned cards do not carry over — you scrap them (gain value) at end of round if still unused (e.g. character was KO'd before activating).
+4. **End:** Resolve end-of-round damage, remove expired statuses/terrain/Momentum, check victory. Discard played cards. Unplayed assigned cards do not carry over — you scrap them (gain chi) at end of round if still unused (e.g. character was KO'd before activating).
 
 ## On your activation
 
 When you activate a character, you reveal its assigned card and pick one:
 
-- **Play:** Pay its Energy (team pool) + Focus (that character) + Value (team bank, if it has a Value cost). Resolve it. Gear stays in its slot; Attack/Defense resolves then discards.
-- **Scrap:** Don't play it. Bank its printed value immediately. You may still move and use an already-equipped bonus, but you play no card this activation.
+- **Play:** Pay its Energy (team pool) + Focus (that character) + chi (team bank, if it has a chi cost). Resolve it, then discard it — except Gear, which stays equipped. You reveal the card.
+- **Scrap:** Don't play it. Bank its printed chi immediately and keep it secret. You may still move and use an already-equipped bonus, but you play no card this activation.
 
 Then, whether you played or scrapped, you may:
 
@@ -57,14 +57,14 @@ Then, whether you played or scrapped, you may:
 
 You may also pass (counts as activated; assigned card auto-scraps).
 
-## Bank & Value (spend, not threshold)
+## Bank & chi (spend, not threshold)
 
-Your bank is a spendable pool, shared by your team:
+Your bank is a spendable pool of chi, shared by your team. **Your chi total and which cards you banked are secret** — your opponent only sees played cards and the board.
 
-- You gain Value by banking unassigned cards (auto) and scrapping assigned ones (live choice).
-- Strong cards cost Value **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 Value, 5 damage.** Weak cards cost 0 Value.
-- Typical income: ~2–4 Value/round if you bank 2 unassigned. A bomb costing 5 Value means you must scrap ~2 extra assigned cards over rounds 1–2 to fire it on round 3. That's the tension: play your good cards now, or scrap them to afford bombs later.
-- Value does not cap in the prototype. It does not carry characters — it belongs to your team.
+- You gain chi by banking unassigned cards (auto) and scrapping assigned ones (live choice).
+- Strong cards cost chi **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 chi, 5 damage.** Weak cards cost 0 chi.
+- Typical income: ~2–4 chi/round if you bank 2 unassigned. A bomb costing 5 chi means you must scrap ~2 extra assigned cards over rounds 1–2 to fire it on round 3. That's the tension: play your good cards now, or scrap them to afford bombs later.
+- Chi does not cap in the prototype. It belongs to your team, not your characters.
 
 ## Restrictions (who fits what)
 
@@ -75,7 +75,7 @@ Every card lists who can take it. You check all that apply:
 - **Alignment:** `Hero / Villain`. Starter split: Heroes = Aang, Katara, Toph, Sokka. Villains = Zuko, Azula. (Zuko flips to Hero in later scenarios.)
 - A card can combine them (e.g. `Fire + Villain`).
 
-If it doesn't fit, you cannot assign or play it on that character. You can still bank it for Value.
+If it doesn't fit, you cannot assign or play it on that character. You can still bank it for chi.
 
 ## Cards and targeting
 
@@ -128,7 +128,7 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 
 ## Example
 
-> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 Value (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 Value to fund Comet Strike next round, and just move 2 tiles.
+> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just move 2 tiles.
 
 ## Tips
 
