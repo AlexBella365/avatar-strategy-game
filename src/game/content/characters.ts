@@ -132,6 +132,7 @@ export const CHARACTERS: CharacterDefinition[] = [
     role: "hero",
     class: "Air",
     releaseWave: "Wave 1",
+    companion: true,
   },
   {
     id: "momo",
@@ -143,5 +144,6 @@ export const CHARACTERS: CharacterDefinition[] = [
     role: "hero",
     class: "Non-bending",
     releaseWave: "Wave 1",
+    companion: true,
   },
 ];

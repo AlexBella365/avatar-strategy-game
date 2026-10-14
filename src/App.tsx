@@ -41,6 +41,9 @@ const P2_SLOTS: Position[] = [
   { x: 5, y: 5 },
 ];
 
+/** Draftable fighters (companions like Appa/Momo enter through team rules). */
+const FIGHTERS = CHARACTERS.filter((d) => !d.companion);
+
 function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
   const pickDefs = (ids: string[]) =>
     ids.map((id) => CHARACTERS.find((d) => d.id === id)!).filter(Boolean);
@@ -307,7 +310,7 @@ export default function App() {
               <h3>P1</h3>
               {[0, 1, 2].map((i) => versusSlot("p1", i))}
             </div>
-            <div className="draft-grid">{CHARACTERS.map((d) => draftTile(d.id))}</div>
+            <div className="draft-grid">{FIGHTERS.map((d) => draftTile(d.id))}</div>
             <div className="versus-side">
               <h3>P2</h3>
               {[0, 1, 2].map((i) => versusSlot("p2", i))}
