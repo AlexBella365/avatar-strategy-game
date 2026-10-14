@@ -17,7 +17,7 @@ volume or visual polish.
 
 ## v0.2 Change Summary
 
-This revision replaces the lane/front-rear battlefield with a 7×5 grid and introduces explicit orthogonal movement, grid range and line of sight, tile-level elemental terrain, directional/line/AoE targeting, deterministic forced movement, and the universal Evade reaction. Avatar State rules remain in place and must work with grid positioning, hazards, and AoE. Where older v0.1 wording conflicts with these grid rules, the v0.2 rules take precedence.
+This revision replaces the lane/front-rear battlefield with a 7×7 grid and introduces explicit orthogonal movement, grid range and line of sight, tile-level elemental terrain, directional/line/AoE targeting, deterministic forced movement, and the universal Evade reaction. Avatar State rules remain in place and must work with grid positioning, hazards, and AoE. Where older v0.1 wording conflicts with these grid rules, the v0.2 rules take precedence.
 
 ------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ through data-driven cards.
 -   Local hot-seat / pass-and-play match against another human.
 -   3v3 teams.
 -   Turn-based rounds with alternating character activations.
--   A 7×5 grid with orthogonal movement and tile-level terrain.
+-   A 7×7 grid with orthogonal movement and tile-level terrain.
 -   Card hands, energy, focus, reactions, movement, terrain, statuses,
     damage, knockouts.
 -   Small initial roster and card pool.
@@ -95,7 +95,7 @@ Each player selects a team of three characters and a legal loadout.
 -   Focus cap: **4 per character**
 -   Character attributes: integers from **1 to 5**
 -   Battlefield: **7 columns × 5 rows**
--   Coordinates: columns `0..6`, rows `0..4`; row 0 is the top edge
+-   Coordinates: columns `0..6`, rows `0..6`; row 0 is the top edge
 -   Each team starts on its own two-row deployment zone at opposite ends
 -   Each player draws from:
     -   A team tactical deck.
@@ -122,7 +122,7 @@ characters can have different maximum health.
 
 ### 4.1 Grid and coordinates
 
-The battlefield is a fixed **7-column × 5-row** rectangular grid. Each tile is addressed by integer coordinates `{ x: 0..6, y: 0..4 }`. The board does not wrap at edges. Orthogonal neighbors share an edge; diagonal tiles are not adjacent unless a card explicitly says otherwise.
+The battlefield is a fixed **7-column × 7-row** rectangular grid. Each tile is addressed by integer coordinates `{ x: 0..6, y: 0..6 }`. The board does not wrap at edges. Orthogonal neighbors share an edge; diagonal tiles are not adjacent unless a card explicitly says otherwise.
 
 - Each tile can contain at most one living character across both teams.
 - A tile may also contain terrain. Terrain occupancy is separate from character occupancy.
@@ -133,7 +133,7 @@ The battlefield is a fixed **7-column × 5-row** rectangular grid. Each tile is 
 
 ### 4.2 Deployment
 
-For a standard match, Team A deploys in rows 0–1 and Team B in rows 3–4. Each team selects three distinct legal starting tiles in its deployment zone. Row 2 begins neutral. The UI should offer sensible default starting positions, but the rules engine must validate any selected positions. Teams may not deploy on blocking terrain or on the same tile.
+For a standard match, Team A deploys in rows 0–1 and Team B in rows 5–6. Each team selects three distinct legal starting tiles in its deployment zone. Rows 2–4 begin neutral. The UI should offer sensible default starting positions, but the rules engine must validate any selected positions. Teams may not deploy on blocking terrain or on the same tile.
 
 ### 4.3 Distance and adjacency
 
@@ -1043,7 +1043,7 @@ The interface must expose tactical information clearly without relying on color 
 
 ### Battlefield view
 
-- Render a 7×5 grid with coordinate-consistent tiles.
+- Render a 7×7 grid with coordinate-consistent tiles.
 - Show deployment zones before match start.
 - Show each character's portrait, health, Focus, statuses, activation state, and Evade availability.
 - Distinguish blocking terrain, difficult terrain, cover, elemental sources, and hazards with icons plus labels/tooltips.
@@ -1240,7 +1240,7 @@ Do not start with elaborate animations or a large card library.
 The MVP is complete when:
 
 -   [ ] A local match can be started with two teams of three.
--   [ ] All six characters occupy valid, non-overlapping tiles on the 7×5 grid.
+-   [ ] All six characters occupy valid, non-overlapping tiles on the 7×7 grid.
 -   [ ] Each round refreshes Energy and resets per-round flags
     correctly.
 -   [ ] Players can choose intentions and alternate character
