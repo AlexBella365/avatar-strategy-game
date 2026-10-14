@@ -487,7 +487,7 @@ export default function App() {
         </section>
       )}
 
-      <main className={sidebarOpen ? "layout with-sidebar" : "layout"}>
+      <main className="layout">
         <aside className="sheets-col">
           <section className="sheets">
             <h2>
@@ -676,6 +676,9 @@ export default function App() {
 
         {sidebarOpen && (
           <aside className="info-sidebar">
+            <button className="drawer-close" onClick={() => setSidebarOpen(false)}>
+              Close ✕
+            </button>
             <section className="legend">
               <h2>Legend</h2>
               <ul>
