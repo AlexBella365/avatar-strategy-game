@@ -43,6 +43,38 @@ export function requiresAttributesMet(
   );
 }
 
+export interface DamageInput {
+  base: number;
+  scalesWithAggression?: boolean;
+  attackerAggression: number;
+  /** Card conditional modifiers (status/displaced/empowered bonuses). */
+  conditionalBonus?: number;
+  /** Avatar State +1 (after normal mods, before mitigation). */
+  avatarBonus?: number;
+  /** Exposed +1 on focused hits. */
+  exposedBonus?: number;
+  coverReduction?: number;
+}
+
+/**
+ * Attack damage order: base+aggression → card conditionals → Avatar →
+ * Exposed → Cover, floored at 0. Shields/HP handled by dealDamage.
+ */
+export function calculateDamage(input: DamageInput): number {
+  const raw = Math.max(
+    0,
+    input.base + (input.scalesWithAggression ? aggressionModifier(input.attackerAggression) : 0),
+  );
+  return Math.max(
+    0,
+    raw +
+      (input.conditionalBonus ?? 0) +
+      (input.avatarBonus ?? 0) +
+      (input.exposedBonus ?? 0) -
+      (input.coverReduction ?? 0),
+  );
+}
+
 // TODO(step 3): applyDamage with shields, Cover, Avatar bonus ordering,
 // knockout + Avatar instant-loss check.
 export interface DamageOutcome {

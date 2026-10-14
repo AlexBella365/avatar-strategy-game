@@ -100,7 +100,7 @@ export type Targeting =
       requiresLineOfSight?: boolean; // default true
     }
   | { kind: "tile"; range: number | "any"; allowsOccupiedTile: boolean }
-  | { kind: "direction"; maxLength: number; directions: Direction[] }
+  | { kind: "direction"; maxLength: number; directions: Direction[]; includeBlocker?: boolean }
   | {
       kind: "area";
       shape: AreaShapeName;
@@ -111,6 +111,7 @@ export type Targeting =
       height?: number;
       maxLength?: number;
       requiresLineOfSight?: boolean; // default true
+      includeBlocker?: boolean; // line shapes: include first blocking tile (default false)
     };
 
 export interface MovementEffect {
@@ -129,11 +130,20 @@ export interface TerrainEffect {
 }
 
 export type CardEffect =
-  | { type: "damage"; amount: number; scalesWithAggression?: boolean }
+  | {
+      type: "damage";
+      amount: number;
+      scalesWithAggression?: boolean;
+      /** Generic synergy conditions (tag/state-based, never card-name checks). */
+      bonusVsStatus?: { statusId: string; amount: number };
+      bonusIfTargetDisplaced?: number;
+      waterEmpoweredBonus?: number;
+    }
   | { type: "heal"; amount: number }
   | {
       type: "shield";
       amount: number;
+      waterEmpoweredBonus?: number;
       duration?: "untilNextRound" | "untilConsumed";
     }
   | { type: "applyStatus"; statusId: string; duration: number }
@@ -237,13 +247,19 @@ export interface GameState {
 
 export type GameAction =
   | { type: "SET_INTENTION"; playerId: string; characterId: string; intention: Intention }
-  | { type: "MOVE"; playerId: string; characterId: string; to: Position }
+  | { type: "MOVE"; playerId: string; characterId: string; to: Position; path?: Position[] }
   | {
       type: "PLAY_CARD";
       playerId: string;
       characterId: string;
       cardInstanceId: string;
       selection: TargetSelection;
+      /** Card data; the engine checks the instance is in hand and IDs match. */
+      card: CardDefinition;
+      /** Explicit movement path for cards with movement effects. */
+      movePath?: Position[];
+      /** Declared Evade reactions (defender characterId -> destination). */
+      reactions?: { characterId: string; dest: Position }[];
     }
   | { type: "PASS_ACTIVATION"; playerId: string; characterId: string }
   | { type: "ACTIVATE_AVATAR_STATE"; playerId: string; characterId: string }

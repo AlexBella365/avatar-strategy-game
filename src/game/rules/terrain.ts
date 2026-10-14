@@ -1,6 +1,6 @@
 // Tile terrain: creation, entry triggers, expiry. Spec §5.
 // Definitions live in content/terrain.ts; this module owns all mutations.
-import { inBounds } from "./grid";
+import { inBounds, orthogonalNeighbors } from "./grid";
 import { applyStatus } from "./statuses";
 import { dealDamage } from "./damage";
 import { nextId } from "../state";
@@ -35,6 +35,18 @@ export function blockingTiles(state: GameState): Set<string> {
 /** Tiles with difficult terrain (2 movement points to enter). */
 export function difficultTiles(state: GameState): Set<string> {
   return setsFor(state).difficult;
+}
+
+/**
+ * Water techniques used from a water-source tile or an orthogonally
+ * adjacent tile gain WaterSourceEmpowered (spec §5.2).
+ */
+export function isWaterEmpowered(state: GameState, pos: Position): boolean {
+  const tiles = [pos, ...orthogonalNeighbors(pos)];
+  return tiles.some((t) => {
+    const terrain = terrainAt(state, t);
+    return terrain !== undefined && getTerrainDefinition(terrain.terrainId)?.elementalSource === "water";
+  });
 }
 
 export interface CreateTerrainResult {

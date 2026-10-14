@@ -114,6 +114,56 @@ export function applyMove(
 // card resolution (step 4).
 // ---------------------------------------------------------------------------
 
+/** Cheapest orthogonal path to `dest` ignoring allowance (validate first).
+ * Returns null when unreachable (blocked/occupied/off-board). */
+export function findCheapestPath(
+  state: GameState,
+  characterId: string,
+  dest: Position,
+): Position[] | null {
+  const c = state.characters.find((ch) => ch.id === characterId);
+  if (!c || c.health <= 0 || !inBounds(dest)) return null;
+  const blocked = blockingTiles(state);
+  const difficult = difficultTiles(state);
+  const startKey = key(c.position);
+  const destKey = key(dest);
+  if (blocked.has(destKey)) return null;
+  const destOccupant = occupantAt(state, dest);
+  if (destOccupant && destOccupant.id !== characterId) return null;
+  const costs = new Map<string, number>([[startKey, 0]]);
+  const cameFrom = new Map<string, Position | null>([[startKey, null]]);
+  const frontier: Position[] = [{ ...c.position }];
+  while (frontier.length > 0) {
+    let best = 0;
+    for (let i = 1; i < frontier.length; i++) {
+      if ((costs.get(key(frontier[i])) ?? Infinity) < (costs.get(key(frontier[best])) ?? Infinity)) best = i;
+    }
+    const cur = frontier.splice(best, 1)[0];
+    if (key(cur) === destKey) break;
+    for (const nb of Object.values(DIRECTION_VECTORS).map((v) => ({ x: cur.x + v.x, y: cur.y + v.y }))) {
+      if (!inBounds(nb)) continue;
+      const k = key(nb);
+      if (blocked.has(k)) continue;
+      const occ = occupantAt(state, nb);
+      if (occ && occ.id !== characterId) continue;
+      const next = (costs.get(key(cur)) ?? Infinity) + (difficult.has(k) ? 2 : 1);
+      if (next < (costs.get(k) ?? Infinity)) {
+        costs.set(k, next);
+        cameFrom.set(k, cur);
+        frontier.push(nb);
+      }
+    }
+  }
+  if (!cameFrom.has(destKey)) return null;
+  const path: Position[] = [];
+  let cursor: Position | null | undefined = dest;
+  while (cursor) {
+    path.unshift(cursor);
+    cursor = cameFrom.get(key(cursor));
+  }
+  return path.filter((p) => key(p) !== startKey);
+}
+
 /** Legal Evade destinations: in-bounds, unoccupied, non-blocking neighbors. */
 export function getEvadeDestinations(state: GameState, characterId: string): Position[] {
   const c = getCharacterOrThrow(state, characterId);
