@@ -91,9 +91,6 @@ export default function Board({
           return (
             <div key={k} className={cls} onClick={() => onTileClick(x, y)}>
               <div className="tile-top">
-                <span className="coords">
-                  {x},{y}
-                </span>
                 {terrain && (
                   <span className="terrain" title={`${terrain.terrainId} (${terrain.remainingRounds ?? "∞"})`}>
                     {TERRAIN_SHORT[terrain.terrainId] ?? terrain.terrainId}
@@ -134,19 +131,22 @@ export default function Board({
                     </span>
                     <span
                       className="hp-bar"
+                      title={`${c.definitionId} ❤ ${c.health}/${c.maxHealth}`}
                       style={{ width: `${Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100))}%` }}
                     />
                   </div>
-                  <span className="puck-caption">
-                    {c.definitionId} {c.health}/{c.maxHealth}
-                  </span>
-                  {c.statuses.length > 0 && (
-                    <span className="statuses" title={c.statuses.map((s) => s.statusId).join(", ")}>
-                      {c.statuses.map((s) => STATUS_SHORT[s.statusId] ?? s.statusId).join(" ")}
-                    </span>
-                  )}
-                  {c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0 && (
-                    <span className="resonance">Res {c.avatarState.resonance}</span>
+                  {(c.statuses.length > 0 ||
+                    (c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0)) && (
+                    <div className="puck-badges">
+                      {c.statuses.length > 0 && (
+                        <span className="statuses" title={c.statuses.map((s) => s.statusId).join(", ")}>
+                          {c.statuses.map((s) => STATUS_SHORT[s.statusId] ?? s.statusId).join(" ")}
+                        </span>
+                      )}
+                      {c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0 && (
+                        <span className="resonance">Res {c.avatarState.resonance}</span>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

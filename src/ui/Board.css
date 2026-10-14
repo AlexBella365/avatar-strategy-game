@@ -25,14 +25,11 @@
 }
 .tile-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   min-height: 12px;
 }
-.coords {
-  font-size: 0.6rem;
-  color: #888;
-}
+/* NOTE: .coords removed (tiles no longer numbered). */
 .terrain {
   font-size: 0.62rem;
   white-space: nowrap;
@@ -53,18 +50,19 @@
   flex-direction: column;
   align-items: center;
   cursor: pointer;
+  position: relative;
 }
 .puck {
   position: relative;
-  width: 27px;
-  height: 27px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   margin: 1px auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
-  border: 2px solid #666;
+  border: 3px solid #666;
 }
 .puck.p1 {
   border-color: #1e78ff;
@@ -97,15 +95,15 @@
   opacity: 0.55;
 }
 .puck .face {
-  font-size: 0.8rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 /* Circular-cropped portrait photo layered over the emoji fallback. */
 .puck .face-photo {
   position: absolute;
-  inset: 2px;
-  width: calc(100% - 4px);
-  height: calc(100% - 4px);
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
   border-radius: 50%;
   object-fit: cover;
   object-position: top center;
@@ -118,20 +116,30 @@
 }
 .puck .hp-bar {
   position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 3px;
-  height: 3px;
+  left: 6px;
+  right: 6px;
+  bottom: 4px;
+  height: 4px;
   border-radius: 2px;
   background: #2a9d48;
 }
-.puck-caption {
-  font-size: 0.58rem;
-  color: #333;
-  text-align: center;
-  margin-top: 1px;
+.puck-badges {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
   white-space: nowrap;
 }
+.puck-badges .statuses,
+.puck-badges .resonance {
+  font-size: 0.55rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+  padding: 0 4px;
+}
+/* NOTE: .puck-caption removed (HP bar + tooltip carry it). */
 .char.p1 {
   background: rgba(30, 120, 255, 0.12);
 }

@@ -23,9 +23,6 @@
   font-size: 0.85rem;
   color: #555;
 }
-.setup {
-  max-width: 1080px;
-}
 .phase-banner {
   text-align: center;
   letter-spacing: 2px;
@@ -84,7 +81,7 @@
 }
 .draft-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 }
 .draft-tile {
