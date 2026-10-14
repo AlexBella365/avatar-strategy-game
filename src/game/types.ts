@@ -130,6 +130,12 @@ export interface CardDefinition {
   accuracyModifier?: number;
   cannotBeEvaded?: boolean;
   requiresAttributes?: Partial<AttributeSet>;
+  /** Who lane/area effects can hit. Default: "enemies" for attacks, "allies" otherwise. */
+  allegiance?: AllegianceFilter;
+  /** Whether lane/area effects include rear-rank characters. Default true. */
+  canHitRear?: boolean;
+  /** Whether a ranged attack ignores Obstacle blocking. Default false. */
+  ignoresObstacle?: boolean;
   rulesText: string;
 }
 
@@ -187,6 +193,30 @@ export type GameAction =
 export interface ActionError {
   code: string;
   message: string;
+}
+
+export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
+
+/** Player's target choice. UI builds these; the engine validates them. */
+export type TargetSelection =
+  | { kind: "character"; characterId: string }
+  | { kind: "lane"; lane: Lane }
+  | { kind: "automatic" }; // shapes with no choice (self, lane:"all", most areas)
+
+/** One selectable option, including *illegal* candidates so the UI can explain why. */
+export interface TargetOption {
+  selection: TargetSelection;
+  label: string;
+  isLegal: boolean;
+  illegalReason?: ActionError;
+  /** Preview of affected characters (stable order); empty when illegal. */
+  affectedCharacterIds: string[];
+  primaryCharacterId?: string;
+}
+
+export interface ValidationResult {
+  ok: boolean;
+  errors: ActionError[];
 }
 
 export interface ActionResult {
