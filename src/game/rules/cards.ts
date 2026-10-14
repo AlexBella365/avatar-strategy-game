@@ -4,7 +4,7 @@
 // Conventions (documented where the spec is silent):
 // - PLAY_CARD carries its CardDefinition; the engine checks the instance is
 //   in hand and its definitionId matches. (Content registry lookup wires up
-//   in step 7; hands are dealt by the round loop in step 5.)
+//   in step 7; hands are managed externally until decks exist.)
 // - All pre-payment validation (ownership, hand, attributes, target, costs,
 //   mustBeLegal movement) runs before any mutation. Post-payment fizzles keep
 //   costs (spec §8).
@@ -22,6 +22,13 @@
 import { CHARACTERS } from "../content/characters";
 import { getTerrainDefinition } from "../content/terrain";
 import { cloneState, occupantAt } from "../state";
+import {
+  activateAvatarState,
+  creditPressure,
+  creditProtection,
+  gainResonance,
+  noteElementResolved,
+} from "./avatar";
 import {
   attackVsEvasion,
   calculateDamage,
@@ -137,7 +144,19 @@ export function applyGameAction(state: GameState, action: GameAction): ActionRes
         break;
       }
       actor.activatedThisRound = true;
+      actor.techniqueBlockedThisActivation = false;
       events.push(`${actor.definitionId} passes.`);
+      break;
+    }
+    case "ACTIVATE_AVATAR_STATE": {
+      const actor = next.characters.find((c) => c.id === action.characterId);
+      if (!actor || actor.ownerId !== action.playerId) {
+        errors.push(err("NOT_YOUR_CHARACTER", "That character is not yours."));
+        break;
+      }
+      const activation = activateAvatarState(next, actor.id);
+      errors.push(...activation.errors);
+      events.push(...activation.events);
       break;
     }
     case "PLAY_CARD": {
@@ -201,6 +220,11 @@ function resolvePlayCard(
     return { errors: [err("NOT_YOUR_CHARACTER", "That character is not yours.")], events };
   if (actor.health <= 0)
     return { errors: [err("CHARACTER_KNOCKED_OUT", "Knocked-out characters cannot act.")], events };
+  if (actor.techniqueBlockedThisActivation)
+    return {
+      errors: [err("TECHNIQUE_SPENT", "This activation's technique play is already spent.")],
+      events,
+    };
   const def = defOf(actor);
   if (!def)
     return { errors: [err("UNKNOWN_CHARACTER", "No definition for that character.")], events };
@@ -229,6 +253,15 @@ function resolvePlayCard(
   if (!targetCheck.ok) return { errors: targetCheck.errors, events };
 
   const player = state.players.find((p) => p.id === action.playerId)!;
+  // A single resolution event triggers at most one Resonance gain per
+  // character (spec §12A.2); per-round caps live in the credit functions.
+  const gainedThisResolution = new Set<string>();
+  const creditFor = (characterId: string, fn: () => string | null): string | null => {
+    if (gainedThisResolution.has(characterId)) return null;
+    const message = fn();
+    if (message) gainedThisResolution.add(characterId);
+    return message;
+  };
   let energyCost = card.energyCost;
   const exhausted = hasStatus(actor, "Exhausted");
   if (exhausted) energyCost += 1;
@@ -389,6 +422,14 @@ function resolvePlayCard(
           const outcome = dealDamage(state, targetId, total, card.name);
           events.push(...outcome.events);
           if (exposed > 0) events.push(removeStatus(state, targetId, "Exposed"));
+          if (
+            outcome.hpLost >= 3 &&
+            target.ownerId !== actor.ownerId &&
+            target.avatarState !== undefined
+          ) {
+            const pressure = creditFor(targetId, () => creditPressure(state, targetId));
+            if (pressure) events.push(pressure);
+          }
           if (outcome.matchEnded) return { errors, events };
           break;
         }
@@ -396,6 +437,16 @@ function resolvePlayCard(
           const before = target.health;
           target.health = Math.min(target.maxHealth, target.health + effect.amount);
           events.push(`${target.definitionId} recovers ${target.health - before}.`);
+          if (
+            card.cardType === "defense" &&
+            target.ownerId === actor.ownerId &&
+            target.id !== actor.id &&
+            target.health - before > 0 &&
+            def.avatarState?.enabled
+          ) {
+            const credit = creditFor(actor.id, () => creditProtection(state, actor.id));
+            if (credit) events.push(credit);
+          }
           break;
         }
         case "shield": {
@@ -405,8 +456,17 @@ function resolvePlayCard(
             amount += def.avatarState?.shieldBonus ?? 0;
             avatarShieldUsed = true;
           }
-          target.shields.push({ id: `shield-${target.shields.length}-${targetId}`, amount });
+          target.shields.push({ id: `shield-${target.shields.length}-${targetId}`, amount, duration: effect.duration });
           events.push(`${target.definitionId} gains ${amount} shield.`);
+          if (
+            card.cardType === "defense" &&
+            target.ownerId === actor.ownerId &&
+            target.id !== actor.id &&
+            def.avatarState?.enabled
+          ) {
+            const credit = creditFor(actor.id, () => creditProtection(state, actor.id));
+            if (credit) events.push(credit);
+          }
           break;
         }
         case "applyStatus": {
@@ -519,6 +579,18 @@ function resolvePlayCard(
   // --- Movement afterTechnique. ---
   if (card.movement && card.movement.timing === "afterTechnique") {
     runMovementEffect(state, actor, card, action.movePath ?? [], events);
+  }
+
+  // Elemental practice: a fully resolved technique credits its element
+  // (Avatar-capable actors only; fizzles return earlier and earn nothing).
+  // Element usage is recorded even when this event's gain goes elsewhere.
+  if (card.element) {
+    if (noteElementResolved(state, actor.id, card.element)) {
+      const credit = creditFor(actor.id, () =>
+        gainResonance(state, actor.id, `elemental practice (${card.element})`),
+      );
+      if (credit) events.push(credit);
+    }
   }
 
   return { errors, events };

@@ -68,6 +68,7 @@ export function createCharacter(
     reactionUsedThisRound: false,
     activatedThisRound: false,
     movementSpent: 0,
+    techniqueBlockedThisActivation: false,
     momentum: 0,
     avatarState: initialAvatarStatus(def),
   };

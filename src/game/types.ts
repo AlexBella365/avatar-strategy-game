@@ -70,6 +70,7 @@ export interface CharacterState {
   reactionUsedThisRound: boolean;
   activatedThisRound: boolean;
   movementSpent: number; // movement points spent this activation; reset by round loop
+  techniqueBlockedThisActivation: boolean; // Avatar State activation consumes the technique play
   momentum: number; // 0..1 in MVP
   avatarState?: AvatarStateStatus;
 }
@@ -78,6 +79,7 @@ export interface CharacterState {
 export interface ShieldInstance {
   id: string; // stable instance id
   amount: number;
+  duration?: "untilNextRound" | "untilConsumed";
 }
 
 export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";

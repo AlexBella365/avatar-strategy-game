@@ -19,26 +19,63 @@ If both teams survive after round 8, you compare:
 
 1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
 2. You place your 3 characters on 3 different tiles in your zone: Team A rows 0–1, Team B rows 3–4. Row 2 starts empty.
-3. You start each character at full health, 1 Focus, 0 Momentum, no statuses.
-4. You start each round with 4 Team Energy (shared by your 3 characters).
+3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
+4. You shuffle your team deck. Your Value bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
+5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
+
+## Your cards
+
+Each card has one type, one value (1–3), and a restriction tag:
+
+- **Gear (equip):** You play it and it stays (e.g. Aang's Glider: +1 movement). It modifies a spec while equipped.
+- **Attack:** You play it for damage / push / status, then you discard it.
+- **Defense:** You play it for shield / heal / cleanse (some are reactions), then you discard it.
+
+Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses. Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
+
+You can only assign a card to a character it fits (see Restrictions).
 
 ## Round loop
 
 Play rounds in this order:
 
-1. **Start:** Set Energy to 4. Reset activations and reactions. Draw up to hand size. Resolve start-of-round effects.
-2. **Choose intentions:** You secretly pick one per living character: `Attack`, `Defend` (+1 defense to your first reaction), `Reposition` (+1 tile to your first move), `Prepare` (+1 Focus on activation).
-3. **Activate:** You alternate with your opponent, one character at a time, until all living characters have gone. Initiative swaps each round.
-4. **End:** Resolve end-of-round damage, remove expired statuses/terrain/Momentum, check victory.
+1. **Start:** Set Energy to 4. Reset activations and reactions. Resolve start-of-round effects.
+2. **Draw & assign:** You draw **N = 5** cards. You secretly assign 1 face-down to each living character (3 assigned). The 2 unassigned go straight to your Value bank (you gain their printed value).
+3. **Activate:** You alternate with your opponent, one character at a time. On your turn you reveal that character's card and choose **Play or Scrap** (see below). You may also move (see On your activation). Initiative swaps each round.
+4. **End:** Resolve end-of-round damage, remove expired statuses/terrain/Momentum, check victory. Discard played cards. Unplayed assigned cards do not carry over — you scrap them (gain value) at end of round if still unused (e.g. character was KO'd before activating).
 
 ## On your activation
 
-When you activate a character, you may do each once, in either order:
+When you activate a character, you reveal its assigned card and pick one:
 
-- **Move up to 2 tiles.** You move orthogonally (no diagonals). You cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early.
-- **Play 1 technique card.** You pay its Energy (team pool) + Focus (that character) cost first. If your target becomes illegal, you still paid.
+- **Play:** Pay its Energy (team pool) + Focus (that character) + Value (team bank, if it has a Value cost). Resolve it. Gear stays in its slot; Attack/Defense resolves then discards.
+- **Scrap:** Don't play it. Bank its printed value immediately. You may still move and use an already-equipped bonus, but you play no card this activation.
 
-You may also pass.
+Then, whether you played or scrapped, you may:
+
+- **Move up to 2 tiles** (orthogonally, + Gear bonuses). You cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may stop early.
+
+You may also pass (counts as activated; assigned card auto-scraps).
+
+## Bank & Value (spend, not threshold)
+
+Your bank is a spendable pool, shared by your team:
+
+- You gain Value by banking unassigned cards (auto) and scrapping assigned ones (live choice).
+- Strong cards cost Value **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 Value, 5 damage.** Weak cards cost 0 Value.
+- Typical income: ~2–4 Value/round if you bank 2 unassigned. A bomb costing 5 Value means you must scrap ~2 extra assigned cards over rounds 1–2 to fire it on round 3. That's the tension: play your good cards now, or scrap them to afford bombs later.
+- Value does not cap in the prototype. It does not carry characters — it belongs to your team.
+
+## Restrictions (who fits what)
+
+Every card lists who can take it. You check all that apply:
+
+- **Unique:** `Aang only` (Glider), `Sokka only` (Boomerang).
+- **Element:** `Water / Earth / Fire / Air / Nonbender / Avatar`. Water Whip needs Water or Avatar; Earth Wall needs Earth or Avatar.
+- **Alignment:** `Hero / Villain`. Starter split: Heroes = Aang, Katara, Toph, Sokka. Villains = Zuko, Azula. (Zuko flips to Hero in later scenarios.)
+- A card can combine them (e.g. `Fire + Villain`).
+
+If it doesn't fit, you cannot assign or play it on that character. You can still bank it for Value.
 
 ## Cards and targeting
 
@@ -91,7 +128,7 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 
 ## Example
 
-> Zuko activates with `Reposition`. You move him 2 tiles next to Toph, play **Rising Flame** (3 damage, +1 if target was displaced). You pay 2 Energy. Toph spends 1 Focus to Evade 1 tile away — but she is still adjacent, so you still hit for 3.
+> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 Value (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 Value to fund Comet Strike next round, and just move 2 tiles.
 
 ## Tips
 

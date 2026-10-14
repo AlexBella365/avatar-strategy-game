@@ -54,7 +54,7 @@ active-Avatar instant-loss rule live in the shared engine, not in card data.
 2. ✅ Pure geometry (bounds, Manhattan, LOS, paths, AoE shapes)
 3. ✅ Movement + terrain (normal moves, Evade, push/pull/swap, entry/expiry)
 4. ✅ Card resolution (focused/tile/directional/AoE, reactions, statuses)
-5. ⬜ Round loop + victory
+5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
 6. ⬜ Minimal UI interactions (movement/path previews, target previews)
 7. ⬜ 6 characters + 12 cards complete data
 8. ⬜ Full test suite (geometry, movement, terrain, reactions, Avatar State, end-to-end)

@@ -81,6 +81,8 @@ export interface DamageOutcome {
   events: string[];
   knockedOut: boolean;
   matchEnded: boolean;
+  /** HP actually lost after shields (for triggers like spiritual pressure). */
+  hpLost: number;
 }
 
 /**
@@ -95,7 +97,8 @@ export function dealDamage(
 ): DamageOutcome {
   const events: string[] = [];
   const c = getCharacterOrThrow(state, characterId);
-  if (c.health <= 0) return { events, knockedOut: false, matchEnded: false };
+  if (c.health <= 0) return { events, knockedOut: false, matchEnded: false, hpLost: 0 };
+  const hpBefore = c.health;
   let remaining = Math.max(0, amount);
   while (remaining > 0 && c.shields.length > 0) {
     const shield = c.shields[0];
@@ -117,5 +120,10 @@ export function dealDamage(
     events.push(`${c.definitionId} is knocked out.`);
   }
   updateMatchResult(state);
-  return { events, knockedOut, matchEnded: state.winnerId !== null || state.isDraw };
+  return {
+    events,
+    knockedOut,
+    matchEnded: state.winnerId !== null || state.isDraw,
+    hpLost: hpBefore - c.health,
+  };
 }
