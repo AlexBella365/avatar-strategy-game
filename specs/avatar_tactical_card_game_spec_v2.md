@@ -186,7 +186,7 @@ Forced movement is deterministic and resolved one tile at a time.
 
 ### 4A.1 Standard movement allowance
 
-Each character may move up to **2 tiles per activation**. Normal movement costs no Energy and is separate from the one-technique-per-activation limit. A character may move before or after playing a technique, but cannot exceed its total allowance for that activation. Cards may specify `moveBefore`, `moveAfter`, `bonusMovement`, `retreat`, `dash`, or `ignoreDifficultTerrain` effects.
+Each character may move up to **1 tile per activation**. Normal movement costs no Energy and is separate from the one-technique-per-activation limit. A character may move before or after playing a technique, but cannot exceed its total allowance for that activation. Cards may specify `moveBefore`, `moveAfter`, `bonusMovement`, `retreat`, `dash`, or `ignoreDifficultTerrain` effects.
 
 - Each orthogonal tile entered costs 1 movement point.
 - Diagonal movement is not allowed by default.

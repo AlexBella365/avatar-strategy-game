@@ -46,10 +46,10 @@ Run `make help` for all targets.
 
 A 30-character fan pool across five classes (Water / Earth / Fire / Air / Non-bending),
 drawing on characters from both animated series, with series/role/class metadata for
-alignment restrictions. The MVP starts with a core
-six: Aang, Katara, Toph, Zuko, Sokka, Azula. Aang is currently the only Avatar
-State–capable character; Resonance buildup, activation cost, duration, and the
-active-Avatar instant-loss rule live in the shared engine, not in card data.
+alignment restrictions. The demo drafts 10 fighters (core six + Iroh, Ozai, Suki,
+Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
+the only Avatar State–capable character; Resonance buildup, activation cost,
+duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
 
 ## Cards (18)
 
