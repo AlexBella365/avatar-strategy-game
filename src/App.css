@@ -345,7 +345,7 @@ header p {
   opacity: 0.55;
 }
 .sheet-portrait {
-  width: 112px;
+  width: 80px;
   align-self: stretch;
   object-fit: cover;
   object-position: top center;
@@ -353,8 +353,8 @@ header p {
   background: #dfe6ee;
 }
 .sheet-face {
-  font-size: 2.2rem;
-  width: 112px;
+  font-size: 1.8rem;
+  width: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,10 +364,10 @@ header p {
 .sheet-body {
   min-width: 0;
   flex: 1;
-  padding: 6px 8px 6px 0;
+  padding: 4px 6px 4px 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 .sheet-title {
   display: flex;
@@ -383,8 +383,8 @@ header p {
 }
 .sheet-hp {
   position: relative;
-  height: 16px;
-  border-radius: 8px;
+  height: 12px;
+  border-radius: 6px;
   background: #e3e3e3;
   overflow: hidden;
 }
@@ -395,14 +395,14 @@ header p {
 }
 .sheet-hp-text {
   position: relative;
-  font-size: 0.72rem;
-  padding-left: 6px;
-  line-height: 16px;
+  font-size: 0.66rem;
+  padding-left: 5px;
+  line-height: 12px;
 }
 .sheet-row {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .sheet-row.statuses {
