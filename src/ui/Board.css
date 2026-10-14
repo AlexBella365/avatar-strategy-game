@@ -3,7 +3,8 @@
   gap: 4px;
 }
 .tile {
-  min-height: 45px;
+  height: 64px;
+  overflow: hidden;
   border: 1px solid #888;
   border-radius: 5px;
   padding: 2px;
@@ -22,13 +23,21 @@
 .tile.target-hl {
   outline: 2px solid #d62728;
 }
+.tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 12px;
+}
 .coords {
   font-size: 0.6rem;
   color: #888;
 }
 .terrain {
-  display: block;
   font-size: 0.62rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .char {
   font-size: 0.8rem;
@@ -117,10 +126,11 @@
   background: #2a9d48;
 }
 .puck-caption {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: #333;
   text-align: center;
   margin-top: 1px;
+  white-space: nowrap;
 }
 .char.p1 {
   background: rgba(30, 120, 255, 0.12);

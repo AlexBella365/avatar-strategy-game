@@ -90,14 +90,16 @@ export default function Board({
             .join(" ");
           return (
             <div key={k} className={cls} onClick={() => onTileClick(x, y)}>
-              <span className="coords">
-                {x},{y}
-              </span>
-              {terrain && (
-                <span className="terrain" title={`${terrain.terrainId} (${terrain.remainingRounds ?? "∞"})`}>
-                  {TERRAIN_SHORT[terrain.terrainId] ?? terrain.terrainId}
+              <div className="tile-top">
+                <span className="coords">
+                  {x},{y}
                 </span>
-              )}
+                {terrain && (
+                  <span className="terrain" title={`${terrain.terrainId} (${terrain.remainingRounds ?? "∞"})`}>
+                    {TERRAIN_SHORT[terrain.terrainId] ?? terrain.terrainId}
+                  </span>
+                )}
+              </div>
               {chars.map((c) => (
                 <div
                   key={c.id}
