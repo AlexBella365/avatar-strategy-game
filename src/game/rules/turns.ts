@@ -1,6 +1,8 @@
-// Authoritative victory checker + round loop. Spec §3, §8, §12A.5–§12A.6.
+// Authoritative victory checker + round loop. Spec §3, §8, §12A.5–§12A.6 + v0.3.
 import type { GameState } from "../types";
-import { ENERGY_PER_ROUND, MAX_ROUNDS } from "../state";
+import { ENERGY_PER_ROUND, MAX_ROUNDS, nextRandom } from "../state";
+import { CARD_ECONOMY } from "../content/economy";
+import { ECONOMY_TUNING } from "../content/economy";
 import { tickStatusesEndOfRound } from "./statuses";
 import { tickTerrainEndOfRound } from "./terrain";
 
@@ -73,6 +75,65 @@ export function updateMatchResult(
   }
 }
 
+/**
+ * Draw up to `n` cards from deck to team hand (reshuffling discard when the
+ * deck runs dry). Deterministic via state.rng.
+ */
+export function drawCards(state: GameState, playerId: string, n: number): string[] {
+  const events: string[] = [];
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) return events;
+  let drawn = 0;
+  for (let i = 0; i < n; i++) {
+    if (player.deck.length === 0) {
+      if (player.discard.length === 0) break;
+      player.deck = [...player.discard];
+      player.discard = [];
+      // Fisher-Yates with the match PRNG stream.
+      for (let k = player.deck.length - 1; k > 0; k--) {
+        const j = Math.floor(nextRandom(state) * (k + 1));
+        [player.deck[k], player.deck[j]] = [player.deck[j], player.deck[k]];
+      }
+      events.push(`${playerId} reshuffles the discard into the deck.`);
+    }
+    player.teamHand.push(player.deck.shift()!);
+    drawn += 1;
+  }
+  if (drawn > 0) events.push(`${playerId} draws ${drawn}.`);
+  return events;
+}
+
+/**
+ * Bank leftover team-hand cards for their chi (identities hidden).
+ * Assigned-but-unplayed cards auto-scrap the same way.
+ */
+export function bankLeftovers(state: GameState, playerId: string): string[] {
+  const events: string[] = [];
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) return events;
+  for (const [characterId, assigned] of Object.entries(player.assignments)) {
+    if (assigned) {
+      const value = CARD_ECONOMY[assigned.definitionId]?.value ?? 1;
+      player.chi += value;
+      player.discard.push(assigned);
+      player.assignments[characterId] = null;
+      events.push(`${playerId} auto-scraps an unplayed card (+${value} chi; identity hidden).`);
+    }
+  }
+  if (player.teamHand.length > 0) {
+    let gained = 0;
+    for (const instance of player.teamHand) {
+      gained += CARD_ECONOMY[instance.definitionId]?.value ?? 1;
+      player.discard.push(instance);
+    }
+    const count = player.teamHand.length;
+    player.teamHand = [];
+    player.chi += gained;
+    events.push(`${playerId} auto-banks ${count} unassigned card(s) (+${gained} chi).`);
+  }
+  return events;
+}
+
 /** Living characters that have not activated this round. */
 export function pendingActivations(state: GameState): string[] {
   return state.characters
@@ -98,6 +159,8 @@ export function endRound(state: GameState): string[] {
     events.push("The match is already over.");
     return events;
   }
+  // v0.3: unplayed assignments auto-scrap, leftovers auto-bank — then effects.
+  for (const player of state.players) events.push(...bankLeftovers(state, player.id));
   // Avatar State duration counts down each end-of-round (§12A.5).
   for (const c of state.characters) {
     if (c.avatarState?.active) {
@@ -138,6 +201,7 @@ export function endRound(state: GameState): string[] {
   for (const player of state.players) {
     player.energy = ENERGY_PER_ROUND;
     player.intentions = {};
+    events.push(...drawCards(state, player.id, ECONOMY_TUNING.drawPerRound));
   }
   for (const c of state.characters) {
     c.activatedThisRound = false;

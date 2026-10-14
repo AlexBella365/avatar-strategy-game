@@ -20,6 +20,8 @@
 //   bonusIfTargetDisplaced, waterEmpoweredBonus), never card-name checks.
 // - A target cannot be hit twice by one resolution (deduped by id).
 import { CHARACTERS } from "../content/characters";
+import { getCardDefinition } from "../content/cards";
+import { CARD_ECONOMY, ECONOMY_TUNING, restrictionSatisfied } from "../content/economy";
 import { getTerrainDefinition } from "../content/terrain";
 import { cloneState, occupantAt } from "../state";
 import {
@@ -40,6 +42,7 @@ import {
   applyMove,
   canEvade,
   findCheapestPath,
+  gearDamageBonus,
   resolveForcedMove,
   resolveSwap,
 } from "./movement";
@@ -143,9 +146,28 @@ export function applyGameAction(state: GameState, action: GameAction): ActionRes
         errors.push(err("NOT_YOUR_CHARACTER", "That character is not yours."));
         break;
       }
+      // Pass = auto-scrap any assigned card, then mark activated.
+      const player = next.players.find((p) => p.id === action.playerId)!;
+      const assigned = player.assignments[action.characterId];
+      if (assigned) {
+        bankCard(next, action.playerId, assigned, "scrapped on pass");
+        player.assignments[action.characterId] = null;
+      }
       actor.activatedThisRound = true;
       actor.techniqueBlockedThisActivation = false;
       events.push(`${actor.definitionId} passes.`);
+      break;
+    }
+    case "ASSIGN_CARD": {
+      const outcome = resolveAssign(next, action.playerId, action.characterId, action.cardInstanceId);
+      errors.push(...outcome.errors);
+      events.push(...outcome.events);
+      break;
+    }
+    case "SCRAP_ASSIGNED": {
+      const outcome = resolveScrap(next, action.playerId, action.characterId);
+      errors.push(...outcome.errors);
+      events.push(...outcome.events);
       break;
     }
     case "ACTIVATE_AVATAR_STATE": {
@@ -186,6 +208,7 @@ interface PlayCardAction {
   selection: TargetSelection;
   movePath?: Position[];
   reactions?: { characterId: string; dest: Position }[];
+  replaceGearInstanceId?: string;
   card: CardDefinition;
 }
 
@@ -204,6 +227,88 @@ function removeFromHand(state: GameState, playerId: string, characterId: string,
     return true;
   }
   return false;
+}
+
+/** Restriction gate shared by assign and play (banking always skips it). */
+function restrictionErrors(
+  def: CharacterDefinition,
+  card: CardDefinition,
+): ActionError[] {
+  const restrictions = card.economy?.restrictions ?? [];
+  for (const restriction of restrictions) {
+    if (
+      !restrictionSatisfied(
+        { definitionId: def.id, element: def.element, role: def.role },
+        restriction,
+      )
+    ) {
+      return [
+        err(
+          "RESTRICTION_MISMATCH",
+          `${card.name} cannot be assigned to or played by ${def.name}.`,
+        ),
+      ];
+    }
+  }
+  return [];
+}
+
+/** Bank a card instance for its chi value (identity stays secret in the log). */
+function bankCard(
+  state: GameState,
+  playerId: string,
+  instance: { id: string; definitionId: string },
+  reason: string,
+): string {
+  const player = state.players.find((p) => p.id === playerId)!;
+  const value = CARD_ECONOMY[instance.definitionId]?.value ?? 1;
+  player.chi += value;
+  player.discard.push({ ...instance });
+  return `${playerId} banks ${value} chi (${reason}; card identity hidden).`;
+}
+
+function resolveAssign(
+  state: GameState,
+  playerId: string,
+  characterId: string,
+  instanceId: string,
+): { errors: ActionError[]; events: string[] } {
+  const actor = state.characters.find((c) => c.id === characterId);
+  if (!actor || actor.ownerId !== playerId)
+    return { errors: [err("NOT_YOUR_CHARACTER", "That character is not yours.")], events: [] };
+  if (actor.health <= 0)
+    return { errors: [err("CHARACTER_KNOCKED_OUT", "Knocked-out characters take no cards.")], events: [] };
+  const player = state.players.find((p) => p.id === playerId)!;
+  if (player.assignments[characterId])
+    return { errors: [err("ASSIGNMENT_TAKEN", "That character already holds a card.")], events: [] };
+  const idx = player.teamHand.findIndex((c) => c.id === instanceId);
+  if (idx < 0)
+    return { errors: [err("CARD_NOT_IN_HAND", "That card is not in the team hand.")], events: [] };
+  const def = defOf(actor);
+  if (!def) return { errors: [err("UNKNOWN_CHARACTER", "No definition.")], events: [] };
+  const card = getCardDefinition(player.teamHand[idx].definitionId);
+  if (!card) return { errors: [err("UNKNOWN_CARD", "No definition for that card.")], events: [] };
+  const restriction = restrictionErrors(def, card);
+  if (restriction.length > 0) return { errors: restriction, events: [] };
+  const [instance] = player.teamHand.splice(idx, 1);
+  player.assignments[characterId] = instance;
+  return { errors: [], events: [`${def.name} is assigned a face-down card.`] };
+}
+
+function resolveScrap(
+  state: GameState,
+  playerId: string,
+  characterId: string,
+): { errors: ActionError[]; events: string[] } {
+  const actor = state.characters.find((c) => c.id === characterId);
+  if (!actor || actor.ownerId !== playerId)
+    return { errors: [err("NOT_YOUR_CHARACTER", "That character is not yours.")], events: [] };
+  const player = state.players.find((p) => p.id === playerId)!;
+  const assigned = player.assignments[characterId];
+  if (!assigned)
+    return { errors: [err("NOTHING_ASSIGNED", "That character holds no card.")], events: [] };
+  player.assignments[characterId] = null;
+  return { errors: [], events: [bankCard(state, playerId, assigned, "scrapped")] };
 }
 
 function resolvePlayCard(
@@ -228,15 +333,15 @@ function resolvePlayCard(
   const def = defOf(actor);
   if (!def)
     return { errors: [err("UNKNOWN_CHARACTER", "No definition for that character.")], events };
-  if (
-    !state.players
-      .find((p) => p.id === action.playerId)
-      ?.characterHands[action.characterId]?.some((c) => c.id === action.cardInstanceId) &&
-    !state.players
-      .find((p) => p.id === action.playerId)
-      ?.teamHand.some((c) => c.id === action.cardInstanceId)
-  )
-    return { errors: [err("CARD_NOT_IN_HAND", "That card is not in hand.")], events };
+  const assigned = state.players
+    .find((p) => p.id === action.playerId)
+    ?.assignments[action.characterId];
+  if (!assigned || assigned.id !== action.cardInstanceId)
+    return { errors: [err("NO_ASSIGNED_CARD", "Play the card assigned to that character.")], events };
+  if (assigned.definitionId !== card.id)
+    return { errors: [err("DEFINITION_MISMATCH", "Card data does not match the assigned card.")], events };
+  const restriction = restrictionErrors(def, card);
+  if (restriction.length > 0) return { errors: restriction, events };
   if (!requiresAttributesMet(def.attributes, card.requiresAttributes))
     return {
       errors: [err("ATTRIBUTE_REQUIREMENT", "Attribute requirements not met.")],
@@ -284,6 +389,27 @@ function resolvePlayCard(
       errors: [err("INSUFFICIENT_FOCUS", `Needs ${card.focusCost} Focus, has ${actor.focus}.`)],
       events,
     };
+  const chiCost = card.economy?.chiCost ?? 0;
+  if (player.chi < chiCost)
+    return {
+      errors: [err("INSUFFICIENT_CHI", `Needs ${chiCost} chi, bank holds ${player.chi}.`)],
+      events,
+    };
+  // Gear slot cap (replace flow swaps one equipped gear out).
+  const isGear = card.economy?.kind === "gear";
+  if (isGear && actor.equippedGear.length >= ECONOMY_TUNING.gearCap && !action.replaceGearInstanceId) {
+    return {
+      errors: [err("SLOT_FULL", "Gear slots are full; replace one equipped gear.")],
+      events,
+    };
+  }
+  if (
+    isGear &&
+    action.replaceGearInstanceId &&
+    !actor.equippedGear.some((g) => g.id === action.replaceGearInstanceId)
+  ) {
+    return { errors: [err("UNKNOWN_GEAR", "That gear is not equipped.")], events };
+  }
   // mustBeLegal movement is validated pre-payment (no loss on failure).
   // `fizzle` fails at execution (costs lost); stopBeforeIllegal never fails.
   if (card.movement && card.movement.maxSteps > 0 && card.movement.destinationRule === "mustBeLegal") {
@@ -294,15 +420,35 @@ function resolvePlayCard(
   // --- 2. Payment. ---
   player.energy -= energyCost;
   actor.focus -= card.focusCost;
+  player.chi -= chiCost;
   if (exhausted) events.push(removeStatus(state, actor.id, "Exhausted"));
   if (discounted) {
     actor.passiveUsesThisRound["disciplineDiscount"] = 1;
     events.push(`${actor.definitionId} uses Discipline focus (-1 Energy).`);
   }
+  player.assignments[actor.id] = null;
   removeFromHand(state, action.playerId, actor.id, action.cardInstanceId);
+  // The played card leaves play at commit: gear equips, the rest discards
+  // (even if the technique later fizzles).
+  if (isGear) {
+    actor.equippedGear.push({ id: action.cardInstanceId, definitionId: card.id });
+    events.push(`${actor.definitionId} equips ${card.name}.`);
+  } else {
+    player.discard.push({ id: action.cardInstanceId, definitionId: card.id });
+  }
   events.push(
-    `${actor.definitionId} plays ${card.name} (-${energyCost} Energy${card.focusCost > 0 ? `, -${card.focusCost} Focus` : ""}).`,
+    `${actor.definitionId} plays ${card.name} (-${energyCost} Energy${card.focusCost > 0 ? `, -${card.focusCost} Focus` : ""}${chiCost > 0 ? `, -${chiCost} chi` : ""}).`,
   );
+  // Gear replacement drops the old bonus immediately.
+  if (isGear && action.replaceGearInstanceId) {
+    const idx = actor.equippedGear.findIndex((g) => g.id === action.replaceGearInstanceId);
+    if (idx >= 0) {
+      const [old] = actor.equippedGear.splice(idx, 1);
+      player.discard.push(old);
+      const oldDef = getCardDefinition(old.definitionId);
+      events.push(`${actor.definitionId} replaces ${oldDef?.name ?? old.definitionId} (bonus lost).`);
+    }
+  }
 
   // --- Movement beforeTechnique / insteadOfTechnique. ---
   if (card.movement && card.movement.timing !== "afterTechnique") {
@@ -399,7 +545,7 @@ function resolvePlayCard(
       if (state.winnerId !== null || state.isDraw) break;
       switch (effect.type) {
         case "damage": {
-          let conditional = 0;
+          let conditional = gearDamageBonus(state, actor.id);
           if (effect.bonusVsStatus && hasStatus(target, effect.bonusVsStatus.statusId as never))
             conditional += effect.bonusVsStatus.amount;
           if (effect.bonusIfTargetDisplaced && state.roundEventLog.includes(`displaced:${targetId}`))
@@ -471,6 +617,12 @@ function resolvePlayCard(
         }
         case "applyStatus": {
           if (tieNoStatus) break;
+          if (effect.requiresTargetStatus && !hasStatus(target, effect.requiresTargetStatus)) {
+            events.push(
+              `${target.definitionId} resists ${effect.statusId} (requires ${effect.requiresTargetStatus}).`,
+            );
+            break;
+          }
           events.push(applyStatus(state, targetId, effect.statusId as never, effect.duration));
           break;
         }

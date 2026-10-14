@@ -1,5 +1,6 @@
 // Voluntary + forced grid movement. Spec §4.4, §4.7, §4A.
 //Movement allowance: 2 tiles/activation (+1 Reposition intention, first move).
+import { CARD_DEFINITIONS } from "../content/cards";
 import {
   BASE_MOVEMENT,
   DIRECTION_VECTORS,
@@ -20,15 +21,27 @@ function tileCost(difficult: Set<string>, pos: Position): number {
   return difficult.has(key(pos)) ? 2 : 1;
 }
 
-/** Movement allowance, including the Reposition-intention bonus (spec §8). */
+/** Movement allowance: base 2 + equipped Gear bonuses (+ legacy Reposition). */
 export function movementAllowance(state: GameState, characterId: string): number {
   const c = getCharacterOrThrow(state, characterId);
   let allowance = BASE_MOVEMENT;
+  for (const gear of c.equippedGear) {
+    allowance += CARD_DEFINITIONS[gear.definitionId]?.gearBonus?.movement ?? 0;
+  }
   const player = state.players.find((p) => p.id === c.ownerId);
   if (player?.intentions[characterId] === "Reposition" && c.movementSpent === 0) {
     allowance += 1;
   }
   return allowance;
+}
+
+/** Equipped Gear damage bonus for the attacker's damage rolls. */
+export function gearDamageBonus(state: GameState, characterId: string): number {
+  const c = getCharacterOrThrow(state, characterId);
+  return c.equippedGear.reduce(
+    (sum, gear) => sum + (CARD_DEFINITIONS[gear.definitionId]?.gearBonus?.damage ?? 0),
+    0,
+  );
 }
 
 export interface MoveValidation {

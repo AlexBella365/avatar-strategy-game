@@ -43,9 +43,10 @@ function play(
   const player = opts.player ?? "p0";
   const char = opts.char ?? "p0-c0";
   const instanceId = opts.instanceId ?? `inst-${Math.random()}`;
-  state.players.find((p) => p.id === player)!.characterHands[char] = [
-    { id: instanceId, definitionId: opts.card.id },
-  ];
+  state.players.find((p) => p.id === player)!.assignments[char] = {
+    id: instanceId,
+    definitionId: opts.card.id,
+  };
   return applyGameAction(state, {
     type: "PLAY_CARD",
     playerId: player,

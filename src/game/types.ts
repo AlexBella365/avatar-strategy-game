@@ -54,6 +54,11 @@ export interface CharacterDefinition {
   maxHealthOverride?: number;
   passiveDescription: string;
   avatarState?: AvatarStateDefinition;
+  /** Roster v2 metadata (role drives alignment restrictions). */
+  series?: "ATLA" | "LOK";
+  role?: "hero" | "villain" | "antihero" | "neutral";
+  class?: "Water" | "Earth" | "Fire" | "Air" | "Non-bending";
+  releaseWave?: string;
 }
 
 export interface CharacterState {
@@ -71,6 +76,7 @@ export interface CharacterState {
   activatedThisRound: boolean;
   movementSpent: number; // movement points spent this activation; reset by round loop
   techniqueBlockedThisActivation: boolean; // Avatar State activation consumes the technique play
+  equippedGear: CardInstance[]; // persistent gear (max 2); bonuses apply while equipped
   momentum: number; // 0..1 in MVP
   avatarState?: AvatarStateStatus;
 }
@@ -148,7 +154,7 @@ export type CardEffect =
       waterEmpoweredBonus?: number;
       duration?: "untilNextRound" | "untilConsumed";
     }
-  | { type: "applyStatus"; statusId: string; duration: number }
+  | { type: "applyStatus"; statusId: string; duration: number; requiresTargetStatus?: StatusId }
   | { type: "removeStatus"; statusId: string }
   | {
       type: "move";
@@ -171,6 +177,19 @@ export type CardEffect =
 
 export type CardType = "attack" | "defense" | "setup" | "support" | "reaction";
 
+/** v0.3 card economy: kind/slot/chi/restrictions (amendment §Card data delta). */
+export type CardKind = "gear" | "attack" | "defense";
+
+export type Restriction =
+  | { type: "unique"; characterId: string } // definition id, e.g. glider→aang
+  | { type: "element"; elements: string[] } // any-of match
+  | { type: "alignment"; alignment: "hero" | "villain" };
+
+export interface GearBonus {
+  movement?: number;
+  damage?: number;
+}
+
 export interface CardDefinition {
   id: string;
   name: string;
@@ -191,6 +210,16 @@ export interface CardDefinition {
   requiresReaction?: boolean;
   requiresAttributes?: Partial<AttributeSet>;
   rulesText: string;
+  /** v0.3 economy. Absent = legacy test fixture (no kind/slot/chi/restrictions). */
+  economy?: {
+    kind: CardKind;
+    value: number; // chi gained when banked/scrapped
+    chiCost: number; // chi spent from team bank to Play
+    restrictions: Restriction[];
+    slotType: "gear" | "attack" | "defense";
+  };
+  /** Persistent bonus while equipped (gear only). */
+  gearBonus?: GearBonus;
 }
 
 export interface CardInstance {
@@ -229,9 +258,15 @@ export type Intention = "Attack" | "Defend" | "Reposition" | "Prepare";
 export interface PlayerState {
   id: string; // "p0" | "p1"
   energy: number;
+  /** v0.3 chi bank: spendable team currency, persists across rounds. */
+  chi: number;
+  deck: CardInstance[];
+  discard: CardInstance[];
   teamHand: CardInstance[];
-  characterHands: Record<string, CardInstance[]>; // characterId -> hand
-  intentions: Record<string, Intention>; // characterId -> hidden intention
+  characterHands: Record<string, CardInstance[]>; // legacy direct deals (tests)
+  intentions: Record<string, Intention>; // legacy (v0.2 intentions removed in v0.3)
+  /** Face-down assignments: characterId -> assigned instance (revealed on activation). */
+  assignments: Record<string, CardInstance | null>;
 }
 
 export interface GameState {
@@ -245,6 +280,8 @@ export interface GameState {
   winnerId: string | null;
   isDraw: boolean;
   roundEventLog: string[]; // tags like "displaced:<charId>" for synergy checks
+  /** Deterministic PRNG state (mulberry32) for shuffles/draws. */
+  rng: number;
 }
 
 export type GameAction =
@@ -262,7 +299,11 @@ export type GameAction =
       movePath?: Position[];
       /** Declared Evade reactions (defender characterId -> destination). */
       reactions?: { characterId: string; dest: Position }[];
+      /** Gear replacement target when at the gear cap. */
+      replaceGearInstanceId?: string;
     }
+  | { type: "ASSIGN_CARD"; playerId: string; characterId: string; cardInstanceId: string }
+  | { type: "SCRAP_ASSIGNED"; playerId: string; characterId: string }
   | { type: "PASS_ACTIVATION"; playerId: string; characterId: string }
   | { type: "ACTIVATE_AVATAR_STATE"; playerId: string; characterId: string }
   | { type: "END_ROUND"; playerId: string };

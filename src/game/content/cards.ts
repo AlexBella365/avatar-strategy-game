@@ -1,16 +1,262 @@
-// Card pool stubs. Spec §13 — 12 complete cards land in step 6.
-// This file only reserves IDs + names so engine/UI can reference them.
-export const CARD_IDS = [
-  "earth-sweep",
-  "air-blast",
-  "rising-flame",
-  "water-whip",
-  "air-shield",
-  "earth-wall",
-  "fire-sweep",
-  "ice-bind",
-  "sokkas-feint",
-  "precision-strike",
-  "water-recovery",
-  "seismic-read",
-] as const;
+// Complete starter card definitions (spec §13 + v0.3 amendment).
+// Numbers (energy/chi/restrictions/slots) come from content/economy.ts.
+import { CARD_ECONOMY } from "./economy";
+import type { CardDefinition } from "../types";
+
+function withEconomy(
+  id: string,
+  kind: "gear" | "attack" | "defense",
+): NonNullable<CardDefinition["economy"]> {
+  const { value, chiCost, restrictions, slotType } = CARD_ECONOMY[id];
+  return { kind, value, chiCost, restrictions, slotType };
+}
+
+const econEnergy = (id: string): number => CARD_ECONOMY[id].energy;
+
+export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
+  "earth-sweep": {
+    id: "earth-sweep",
+    name: "Earth Sweep",
+    cardType: "attack",
+    element: "earth",
+    energyCost: econEnergy("earth-sweep"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: "melee" },
+    tags: ["Melee", "Displace", "Expose"],
+    effects: [
+      { type: "damage", amount: 2, scalesWithAggression: true },
+      { type: "applyStatus", statusId: "OffBalance", duration: 1 },
+    ],
+    economy: withEconomy("earth-sweep", "attack"),
+    rulesText: "Melee. 2 damage + OffBalance.",
+  },
+  "air-blast": {
+    id: "air-blast",
+    name: "Air Blast",
+    cardType: "attack",
+    element: "air",
+    energyCost: econEnergy("air-blast"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 3 },
+    tags: ["Ranged", "Displace", "FollowUp"],
+    effects: [
+      { type: "damage", amount: 2, bonusVsStatus: { statusId: "OffBalance", amount: 1 } },
+      { type: "push", steps: 1 },
+    ],
+    economy: withEconomy("air-blast", "attack"),
+    rulesText: "Ranged 3. 2 damage (+1 vs OffBalance) and push 1.",
+  },
+  "rising-flame": {
+    id: "rising-flame",
+    name: "Rising Flame",
+    cardType: "attack",
+    element: "fire",
+    energyCost: econEnergy("rising-flame"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 3 },
+    tags: ["Ranged", "FollowUp"],
+    effects: [
+      { type: "damage", amount: 3, scalesWithAggression: true, bonusIfTargetDisplaced: 1 },
+    ],
+    economy: withEconomy("rising-flame", "attack"),
+    rulesText: "Ranged 3. 3 damage (+1 if the target was displaced this round).",
+  },
+  "water-whip": {
+    id: "water-whip",
+    name: "Water Whip",
+    cardType: "attack",
+    element: "water",
+    energyCost: econEnergy("water-whip"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 3 },
+    tags: ["Ranged", "Displace"],
+    effects: [
+      { type: "damage", amount: 2, waterEmpoweredBonus: 1 },
+      { type: "pull", steps: 1 },
+    ],
+    economy: withEconomy("water-whip", "attack"),
+    rulesText: "Ranged 3. 2 damage and pull 1 (+1 damage when Water empowered).",
+  },
+  "air-shield": {
+    id: "air-shield",
+    name: "Air Shield",
+    cardType: "defense",
+    element: "air",
+    energyCost: econEnergy("air-shield"),
+    focusCost: 0,
+    targeting: { kind: "area", shape: "sourceAndAdjacent", allegiance: "allies" },
+    tags: ["Guard", "AoE"],
+    effects: [{ type: "shield", amount: 2, duration: "untilNextRound" }],
+    economy: withEconomy("air-shield", "defense"),
+    rulesText: "Shield 2 to self and adjacent allies until next round.",
+  },
+  "earth-wall": {
+    id: "earth-wall",
+    name: "Earth Wall",
+    cardType: "support",
+    element: "earth",
+    energyCost: econEnergy("earth-wall"),
+    focusCost: 0,
+    targeting: { kind: "tile", range: 3, allowsOccupiedTile: false },
+    terrainEffects: [
+      { terrainId: "rock-wall", target: "targetTile", durationRounds: 2, replacementPolicy: "fail" },
+    ],
+    tags: ["Terrain", "Guard"],
+    effects: [],
+    economy: withEconomy("earth-wall", "defense"),
+    rulesText: "Create a Rock Wall (blocking, 2 rounds) on an empty tile in range 3.",
+  },
+  "fire-sweep": {
+    id: "fire-sweep",
+    name: "Fire Sweep",
+    cardType: "attack",
+    element: "fire",
+    energyCost: econEnergy("fire-sweep"),
+    focusCost: 0,
+    targeting: { kind: "direction", maxLength: 2, directions: ["north", "east", "south", "west"] },
+    tags: ["AoE", "Ranged"],
+    effects: [{ type: "damage", amount: 1, scalesWithAggression: true }],
+    economy: withEconomy("fire-sweep", "attack"),
+    rulesText: "Line 2 in a chosen direction. 1 damage to each enemy (not split).",
+  },
+  "ice-bind": {
+    id: "ice-bind",
+    name: "Ice Bind",
+    cardType: "attack",
+    element: "water",
+    energyCost: econEnergy("ice-bind"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 3 },
+    tags: ["Ranged", "Bind"],
+    effects: [
+      { type: "damage", amount: 1 },
+      { type: "applyStatus", statusId: "Bound", duration: 2, requiresTargetStatus: "OffBalance" },
+    ],
+    economy: withEconomy("ice-bind", "attack"),
+    rulesText: "Ranged 3. 1 damage; Bound (2) if the target is OffBalance.",
+  },
+  "sokkas-feint": {
+    id: "sokkas-feint",
+    name: "Sokka's Feint",
+    cardType: "attack",
+    element: "nonbender",
+    energyCost: econEnergy("sokkas-feint"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 3 },
+    tags: ["Ranged", "Expose"],
+    effects: [
+      { type: "applyStatus", statusId: "Exposed", duration: 1 },
+      { type: "gainFocus", amount: 1 },
+    ],
+    economy: withEconomy("sokkas-feint", "attack"),
+    rulesText: "Ranged 3. Expose the target and gain 1 Focus. Sokka only.",
+  },
+  "precision-strike": {
+    id: "precision-strike",
+    name: "Precision Strike",
+    cardType: "attack",
+    element: "nonbender",
+    energyCost: econEnergy("precision-strike"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 4 },
+    tags: ["Ranged"],
+    effects: [{ type: "damage", amount: 2, scalesWithAggression: true }],
+    accuracyModifier: 2,
+    cannotBeEvaded: true,
+    requiresAttributes: { perception: 4 },
+    economy: withEconomy("precision-strike", "attack"),
+    rulesText: "Ranged 4, Perception 4+. 2 damage, +2 accuracy, cannot be evaded.",
+  },
+  "water-recovery": {
+    id: "water-recovery",
+    name: "Water Recovery",
+    cardType: "support",
+    element: "water",
+    energyCost: econEnergy("water-recovery"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "allies", range: 3 },
+    tags: ["Guard"],
+    effects: [{ type: "heal", amount: 3 }],
+    economy: withEconomy("water-recovery", "defense"),
+    rulesText: "Heal an ally in range 3 for 3.",
+  },
+  "seismic-read": {
+    id: "seismic-read",
+    name: "Seismic Read",
+    cardType: "support",
+    element: "earth",
+    energyCost: econEnergy("seismic-read"),
+    focusCost: 0,
+    targeting: { kind: "character", allegiance: "enemies", range: 4 },
+    tags: ["Expose", "Charge"],
+    effects: [
+      { type: "applyStatus", statusId: "Exposed", duration: 1 },
+      { type: "gainFocus", amount: 1 },
+    ],
+    economy: withEconomy("seismic-read", "attack"),
+    rulesText: "Ranged 4. Expose the target and gain 1 Focus.",
+  },
+  "aang-glider": {
+    id: "aang-glider",
+    name: "Aang's Glider",
+    cardType: "support",
+    energyCost: econEnergy("aang-glider"),
+    focusCost: 0,
+    targeting: { kind: "self" },
+    tags: ["Gear"],
+    effects: [],
+    gearBonus: { movement: 1 },
+    economy: withEconomy("aang-glider", "gear"),
+    rulesText: "Gear (Aang only). +1 movement while equipped.",
+  },
+  "sokka-boomerang": {
+    id: "sokka-boomerang",
+    name: "Sokka's Boomerang",
+    cardType: "support",
+    energyCost: econEnergy("sokka-boomerang"),
+    focusCost: 0,
+    targeting: { kind: "self" },
+    tags: ["Gear"],
+    effects: [],
+    gearBonus: { damage: 1 },
+    economy: withEconomy("sokka-boomerang", "gear"),
+    rulesText: "Gear (Sokka only). +1 damage on your attacks while equipped.",
+  },
+  "comet-strike": {
+    id: "comet-strike",
+    name: "Comet Strike",
+    cardType: "attack",
+    element: "fire",
+    energyCost: econEnergy("comet-strike"),
+    focusCost: 0,
+    targeting: {
+      kind: "area",
+      shape: "radiusManhattan",
+      allegiance: "enemies",
+      radius: 1,
+      maxRange: 4,
+    },
+    tags: ["AoE", "Ranged"],
+    effects: [{ type: "damage", amount: 5 }],
+    economy: withEconomy("comet-strike", "attack"),
+    rulesText: "Radius-1 bomb at an origin within 4. 5 damage to each enemy. 2 Energy + 3 chi.",
+  },
+};
+
+export const CARDS: CardDefinition[] = Object.values(CARD_DEFINITIONS);
+
+export function getCardDefinition(id: string): CardDefinition | undefined {
+  return CARD_DEFINITIONS[id];
+}
+
+/** Validate every card has complete data (no TODO placeholders). */
+export function validateCardDefinitions(): string[] {
+  const problems: string[] = [];
+  for (const card of CARDS) {
+    if (!card.name || card.name.includes("TODO")) problems.push(`${card.id}: bad name`);
+    if (!card.rulesText || card.rulesText.includes("TODO")) problems.push(`${card.id}: bad rulesText`);
+    if (!card.economy) problems.push(`${card.id}: missing economy`);
+    if (card.energyCost < 0) problems.push(`${card.id}: bad energyCost`);
+  }
+  return problems;
+}

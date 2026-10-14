@@ -1,9 +1,6 @@
-// Starter roster stubs. Spec §13 — full stats + passives land in step 6.
+// Core roster: attributes + roster v2 metadata (spec §13, roster v2).
+// Passives are descriptive for now; mechanical passives land with playtesting.
 import type { CharacterDefinition } from "../types";
-
-const base = {
-  passiveDescription: "TODO(step 6)",
-} as const;
 
 export const CHARACTERS: CharacterDefinition[] = [
   {
@@ -11,8 +8,11 @@ export const CHARACTERS: CharacterDefinition[] = [
     name: "Aang",
     element: "avatar",
     attributes: { aggression: 2, perception: 4, agility: 5, discipline: 3, resilience: 2 },
-    ...base,
     passiveDescription: "Gains Focus after a successful evasion, once per round.",
+    series: "ATLA",
+    role: "hero",
+    class: "Air",
+    releaseWave: "MVP",
     avatarState: {
       enabled: true,
       threshold: 6,
@@ -28,39 +28,54 @@ export const CHARACTERS: CharacterDefinition[] = [
     name: "Katara",
     element: "water",
     attributes: { aggression: 3, perception: 4, agility: 3, discipline: 4, resilience: 3 },
-    ...base,
-    passiveDescription: "TODO(step 6): water control / healing / binding.",
+    passiveDescription: "Versatile controller / support: damage, healing, and binding.",
+    series: "ATLA",
+    role: "hero",
+    class: "Water",
+    releaseWave: "MVP",
   },
   {
     id: "toph",
-    name: "Toph",
+    name: "Toph Beifong",
     element: "earth",
     attributes: { aggression: 3, perception: 5, agility: 2, discipline: 3, resilience: 4 },
-    ...base,
-    passiveDescription: "TODO(step 6): terrain shaping / counters / disruption.",
+    passiveDescription: "Counterattacker / terrain expert.",
+    series: "ATLA",
+    role: "hero",
+    class: "Earth",
+    releaseWave: "MVP",
   },
   {
     id: "zuko",
     name: "Zuko",
     element: "fire",
     attributes: { aggression: 5, perception: 3, agility: 3, discipline: 3, resilience: 3 },
-    ...base,
-    passiveDescription: "TODO(step 6): offensive chains / guard-breaking.",
+    passiveDescription: "Adaptive duelist: momentum through consecutive attacks.",
+    series: "ATLA",
+    role: "villain",
+    class: "Fire",
+    releaseWave: "MVP",
   },
   {
     id: "sokka",
     name: "Sokka",
     element: "nonbender",
     attributes: { aggression: 3, perception: 4, agility: 3, discipline: 4, resilience: 2 },
-    ...base,
-    passiveDescription: "TODO(step 6): tactical support / feints / traps.",
+    passiveDescription: "Tactical utility / setup: feints, traps, gadgets.",
+    series: "ATLA",
+    role: "hero",
+    class: "Non-bending",
+    releaseWave: "MVP",
   },
   {
     id: "azula",
     name: "Azula",
     element: "fire",
     attributes: { aggression: 5, perception: 4, agility: 3, discipline: 4, resilience: 2 },
-    ...base,
-    passiveDescription: "TODO(step 6): precise pressure / charged attacks.",
+    passiveDescription: "High-pressure precision attacker.",
+    series: "ATLA",
+    role: "villain",
+    class: "Fire",
+    releaseWave: "MVP",
   },
 ];

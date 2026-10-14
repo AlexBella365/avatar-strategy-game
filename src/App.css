@@ -1,40 +1,132 @@
 .app {
   font-family: system-ui, sans-serif;
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
 }
-.grid-board {
+.fan-note {
+  font-size: 0.85rem;
+  color: #555;
+}
+.setup {
+  max-width: 640px;
+}
+.layout {
   display: grid;
-  gap: 4px;
+  grid-template-columns: 1fr 340px;
+  gap: 1rem;
+  align-items: start;
 }
-.tile {
-  min-height: 72px;
-  border: 1px solid #888;
-  border-radius: 6px;
-  padding: 4px;
-  position: relative;
+.board-col {
+  min-width: 0;
 }
-.tile.zone-a {
-  background: #eef6ff;
-}
-.tile.zone-b {
-  background: #ffeef0;
-}
-.tile.zone-neutral {
-  background: #f5f5f0;
-}
-.coords {
-  font-size: 0.7rem;
-  color: #888;
-}
-.char {
-  font-size: 0.8rem;
-  margin-top: 2px;
+.side-col {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
+.hand ul,
+.log ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+.hand li {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px;
+  margin-bottom: 6px;
+}
+.hand li.assigning {
+  outline: 2px solid #1e78ff;
+}
+.dim {
+  color: #666;
+}
+.small {
+  font-size: 0.8rem;
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+button {
+  cursor: pointer;
+  padding: 4px 10px;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.active-side {
+  font-weight: bold;
+  outline: 2px solid #1e78ff;
+}
+.message {
+  background: #fff3cd;
+  border: 1px solid #e0c36a;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.legend {
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+.legend summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+.legend ul {
+  margin: 6px 0 2px;
+  padding-left: 1.2rem;
+}
+.legend li {
+  margin-bottom: 2px;
+}
+.evade-prompt {
+  background: #ffeef0;
+  border: 1px solid #d62728;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 8px;
+}
+.directions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.log ul {
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+.log li {
+  border-bottom: 1px dotted #ddd;
+  padding: 2px 0;
+}
+.gameover {
+  background: #e8f5e9;
+  border: 2px solid #2a9d48;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.resources {
+  font-size: 0.95rem;
+}
+.activation,
+.hand,
 .log {
-  margin-top: 1rem;
-  border-top: 1px solid #ccc;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+h2 {
+  font-size: 1rem;
+  margin: 0 0 4px;
 }

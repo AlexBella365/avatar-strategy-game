@@ -1,7 +1,9 @@
-// Match state: init + immutable helpers. Spec v2 §3, §4, §6, §8.
+// Match state: init + immutable helpers. Spec v2 §3, §4, §6, §8 + v0.3 economy.
+import { STARTER_DECK_IDS } from "./content/economy";
 import { GRID_COLS, GRID_ROWS, inBounds, key } from "./rules/grid";
 import type {
   AvatarStateStatus,
+  CardInstance,
   CharacterDefinition,
   CharacterState,
   GameState,
@@ -69,6 +71,7 @@ export function createCharacter(
     activatedThisRound: false,
     movementSpent: 0,
     techniqueBlockedThisActivation: false,
+    equippedGear: [],
     momentum: 0,
     avatarState: initialAvatarStatus(def),
   };
@@ -111,7 +114,7 @@ export function deploymentErrors(teams: [TeamSetup, TeamSetup]): string[] {
 }
 
 /** Create a fresh match with empty hands (hands dealt in round setup later). */
-export function createInitialState(teams: [TeamSetup, TeamSetup]): GameState {
+export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): GameState {
   const errors = deploymentErrors(teams);
   if (errors.length > 0) throw new Error(`Illegal deployment:\n${errors.join("\n")}`);
   const characters: CharacterState[] = [];
@@ -130,16 +133,44 @@ export function createInitialState(teams: [TeamSetup, TeamSetup]): GameState {
     players: teams.map((t) => ({
       id: t.playerId,
       energy: ENERGY_PER_ROUND,
+      chi: 0,
+      deck: buildStarterDeck(t.playerId, seed),
+      discard: [],
       teamHand: [],
       characterHands: {},
       intentions: {},
+      assignments: {},
     })),
     terrain: [],
     log: ["Match created."],
     winnerId: null,
     isDraw: false,
     roundEventLog: [],
+    rng: seed,
   };
+}
+
+/** Deterministic PRNG (mulberry32); advances state.rng. */
+export function nextRandom(state: { rng: number }): number {
+  let a = (state.rng + 0x6d2b79f5) | 0;
+  state.rng = a;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/** Deterministic starter deck (STARTER_DECK_IDS order, seeded shuffle). */
+export function buildStarterDeck(playerId: string, seed: number): CardInstance[] {
+  const deck = STARTER_DECK_IDS.map((definitionId, i) => ({
+    id: `${playerId}-deck-${i}`,
+    definitionId,
+  }));
+  const rngState = { rng: seed };
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRandom(rngState) * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
 }
 
 /** Deep-clone serializable state (engine must never mutate inputs). */

@@ -1,0 +1,64 @@
+.grid-board {
+  display: grid;
+  gap: 4px;
+}
+.tile {
+  min-height: 76px;
+  border: 1px solid #888;
+  border-radius: 6px;
+  padding: 4px;
+  position: relative;
+  cursor: pointer;
+}
+.tile.zone-a {
+  background: #eef6ff;
+}
+.tile.zone-b {
+  background: #ffeef0;
+}
+.tile.zone-neutral {
+  background: #f5f5f0;
+}
+.tile.move-hl {
+  outline: 2px solid #2a9d48;
+}
+.tile.target-hl {
+  outline: 2px solid #d62728;
+}
+.coords {
+  font-size: 0.7rem;
+  color: #888;
+}
+.terrain {
+  display: block;
+  font-size: 0.75rem;
+}
+.char {
+  font-size: 0.8rem;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+.char.p0 {
+  background: rgba(30, 120, 255, 0.12);
+}
+.char.p1 {
+  background: rgba(255, 60, 60, 0.12);
+}
+.char.selected {
+  outline: 2px solid #1e78ff;
+}
+.char.target-hl {
+  outline: 2px solid #d62728;
+}
+.char.ko {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.statuses,
+.resonance {
+  font-size: 0.72rem;
+  color: #555;
+}

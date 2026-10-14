@@ -50,9 +50,10 @@ function play(
   const player = opts.player ?? "p0";
   const char = opts.char ?? "p0-c0";
   const instanceId = opts.instanceId ?? "inst-1";
-  state.players.find((p) => p.id === player)!.characterHands[char] = [
-    { id: instanceId, definitionId: opts.card.id },
-  ];
+  state.players.find((p) => p.id === player)!.assignments[char] = {
+    id: instanceId,
+    definitionId: opts.card.id,
+  };
   return applyGameAction(state, {
     type: "PLAY_CARD",
     playerId: player,
@@ -85,7 +86,7 @@ describe("validation and costs", () => {
       selection: sel("p1-c0"),
       card: strike([{ type: "damage", amount: 2 }]),
     });
-    expect(missing.errors[0].code).toBe("CARD_NOT_IN_HAND");
+    expect(missing.errors[0].code).toBe("NO_ASSIGNED_CARD");
 
     const outOfRange = play(setup(), {
       card: strike([{ type: "damage", amount: 2 }], {}),
@@ -127,7 +128,8 @@ describe("validation and costs", () => {
     });
     expect(result.errors).toEqual([]);
     expect(result.state.players[0].energy).toBe(3);
-    expect(result.state.players[0].characterHands["p0-c0"]).toHaveLength(0);
+    expect(result.state.players[0].assignments["p0-c0"]).toBeNull();
+    expect(result.state.players[0].discard).toHaveLength(1);
     expect(result.state.characters.find((c) => c.id === "p1-c0")!.health).toBe(18 - 1); // agg 2 -> -1
     expect(result.state.log.some((l) => l.includes("Test Card"))).toBe(true);
   });
@@ -382,7 +384,7 @@ describe("card movement and terrain effects", () => {
     const result = play(state, { card, selection: sel("p1-c0"), movePath: [{ x: 1, y: 2 }] });
     expect(result.errors[0].code).toBe("TILE_BLOCKED");
     expect(result.state.players[0].energy).toBe(4);
-    expect(result.state.players[0].characterHands["p0-c0"]).toHaveLength(1);
+    expect(result.state.players[0].assignments["p0-c0"]).not.toBeNull();
   });
 
   it("insteadOfTechnique moves without resolving effects", () => {

@@ -48,13 +48,13 @@ six: Aang, Katara, Toph, Zuko, Sokka, Azula. Aang is currently the only Avatar
 State–capable character; Resonance buildup, activation cost, duration, and the
 active-Avatar instant-loss rule live in the shared engine, not in card data.
 
-## Roadmap (grid model)
+## Roadmap (grid model + v0.3 economy)
 
 1. ✅ Types + state (grid coords, deployment, occupancy)
 2. ✅ Pure geometry (bounds, Manhattan, LOS, paths, AoE shapes)
 3. ✅ Movement + terrain (normal moves, Evade, push/pull/swap, entry/expiry)
 4. ✅ Card resolution (focused/tile/directional/AoE, reactions, statuses)
 5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
-6. ⬜ Minimal UI interactions (movement/path previews, target previews)
-7. ⬜ 6 characters + 12 cards complete data
-8. ⬜ Full test suite (geometry, movement, terrain, reactions, Avatar State, end-to-end)
+6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
+7. ✅ Starter content (core six + 15 complete cards) + playable hot-seat UI
+8. ⬜ End-to-end polish (passives, AI opponent, animations, roster waves)
