@@ -132,11 +132,13 @@ export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): Gam
     maxRounds: MAX_ROUNDS,
     initiativePlayerId: "p1",
     characters,
-    players: teams.map((t) => ({
+    players: teams.map((t, ti) => ({
       id: t.playerId,
       energy: ENERGY_PER_ROUND,
       chi: 0,
-      deck: buildStarterDeck(t.playerId, seed),
+      // Each side shuffles independently (seed offset per team) so opening
+      // hands differ while staying fully deterministic per match seed.
+      deck: buildStarterDeck(t.playerId, seed + ti * 7919),
       discard: [],
       teamHand: [],
       characterHands: {},

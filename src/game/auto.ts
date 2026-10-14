@@ -95,29 +95,37 @@ export function chooseAutoAction(
 
   const assigned = player.assignments[c.id];
   if (assigned) {
-    // Sometimes stroll before playing.
-    if (c.movementSpent === 0 && random() < 0.6) {
+    // Technique spent (Avatar activation): may still move, then pass.
+    if (!c.techniqueBlockedThisActivation) {
+      // Sometimes stroll before playing.
+      if (c.movementSpent === 0 && random() < 0.6) {
+        const dest = randomReachable(state, c.id, random);
+        if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
+      }
+      const card = getCardDefinition(assigned.definitionId);
+      if (card && canAfford(state, playerId, c.id, card) && random() >= 0.25) {
+        const options = getLegalTargets(state, c.id, card).filter((o) => o.isLegal);
+        if (options.length > 0) {
+          const pick = options[Math.floor(random() * options.length)];
+          // Auto never evades on behalf of defenders (reactions: none).
+          return {
+            type: "PLAY_CARD",
+            playerId,
+            characterId: c.id,
+            cardInstanceId: assigned.id,
+            selection: pick.selection,
+            card,
+            reactions: [],
+          };
+        }
+      }
+      return { type: "SCRAP_ASSIGNED", playerId, characterId: c.id };
+    }
+    if (c.movementSpent === 0) {
       const dest = randomReachable(state, c.id, random);
       if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
     }
-    const card = getCardDefinition(assigned.definitionId);
-    if (card && canAfford(state, playerId, c.id, card) && random() >= 0.25) {
-      const options = getLegalTargets(state, c.id, card).filter((o) => o.isLegal);
-      if (options.length > 0) {
-        const pick = options[Math.floor(random() * options.length)];
-        // Auto never evades on behalf of defenders (reactions: none).
-        return {
-          type: "PLAY_CARD",
-          playerId,
-          characterId: c.id,
-          cardInstanceId: assigned.id,
-          selection: pick.selection,
-          card,
-          reactions: [],
-        };
-      }
-    }
-    return { type: "SCRAP_ASSIGNED", playerId, characterId: c.id };
+    return { type: "PASS_ACTIVATION", playerId, characterId: c.id };
   }
 
   const fitting = player.teamHand.filter((instance) => {

@@ -3,6 +3,21 @@
   max-width: 1440px;
   margin: 0 auto;
   padding: 1rem;
+  background: #eef1f5;
+  min-height: 100vh;
+}
+.app > header {
+  background: #1f2937;
+  color: #f9fafb;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 1rem;
+}
+.app > header .fan-note {
+  color: #9ca3af;
+}
+.app > header .active-side {
+  outline-color: #fbbf24;
 }
 .fan-note {
   font-size: 0.85rem;
@@ -19,6 +34,26 @@
 }
 .board-col {
   min-width: 0;
+}
+.board-wrap {
+  position: relative;
+}
+.puck-menu {
+  position: absolute;
+  transform: translate(-50%, -115%);
+  background: #fff;
+  border: 2px solid #333;
+  border-radius: 10px;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.25);
+  padding: 8px 10px;
+  z-index: 20;
+  min-width: 190px;
+}
+.puck-menu-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 .info-sidebar {
   position: fixed;
@@ -47,9 +82,6 @@
 }
 .info-sidebar .legend li {
   margin-bottom: 2px;
-}
-.board-col {
-  min-width: 0;
 }
 .side-col {
   display: flex;

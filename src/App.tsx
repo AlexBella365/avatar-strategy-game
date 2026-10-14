@@ -155,6 +155,8 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoSide, setAutoSide] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
+  const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
 
   // Test-only auto-player loop (all hooks stay above the early return).
   useEffect(() => {
@@ -257,6 +259,8 @@ export default function App() {
     setEvade(null);
     setMoveMode(false);
     setAssigning(null);
+    setMenu(null);
+    setPlan(null);
   };
 
   const switchSide = (side: string) => {
@@ -315,6 +319,12 @@ export default function App() {
     if (ok) {
       setTargeting(null);
       setEvade(null);
+      if (plan === "play-first") {
+        setPlan(null);
+        setMoveMode(true); // technique done — move with what is left
+      } else if (plan === "move-first") {
+        setPlan(null);
+      }
     }
   };
 
@@ -369,7 +379,13 @@ export default function App() {
     }
     if (moveMode && selectedChar && moveTiles.has(key({ x, y }))) {
       if (dispatch({ type: "MOVE", playerId: actingSide, characterId: selectedChar.id, to: { x, y } })) {
-        setMoveMode(false);
+        if (plan === "move-first") {
+          setPlan(null);
+          setMoveMode(false);
+          startPlay(); // moved first — now play the assigned card
+        } else {
+          setMoveMode(false);
+        }
       }
       return;
     }
@@ -378,6 +394,8 @@ export default function App() {
     else {
       setSelected(null);
       setMoveMode(false);
+      setMenu(null);
+      setPlan(null);
     }
   };
 
@@ -406,8 +424,10 @@ export default function App() {
     }
     if (c.ownerId === actingSide && c.health > 0) {
       setSelected(id);
-      setMoveMode(false);
+      setMoveMode(true); // show where this character can move
       setTargeting(null);
+      setMenu({ charId: id, x: c.position.x, y: c.position.y });
+      setPlan(null);
     } else {
       setMessage(c.health <= 0 ? "That character is knocked out." : "That character is not yours.");
     }
@@ -425,6 +445,7 @@ export default function App() {
       setMessage("Unknown card.");
       return;
     }
+    setMenu(null); // targeting takes over from here
     const options = getLegalTargets(state, selectedChar.id, card);
     const automatic = options.length === 1 && options[0].selection.kind === "automatic";
     if (automatic && options[0].isLegal) {
@@ -570,15 +591,56 @@ export default function App() {
           </section>
         </aside>
         <section className="board-col">
-          <Board
-            state={state}
-            selectedChar={selected}
-            moveTiles={moveTiles}
-            legalTargetTiles={legalTargetTiles}
-            legalTargetChars={legalTargetChars}
-            onTileClick={onTileClick}
-            onCharClick={onCharClick}
-          />
+          <div className="board-wrap">
+            <Board
+              state={state}
+              selectedChar={selected}
+              moveTiles={moveTiles}
+              legalTargetTiles={legalTargetTiles}
+              legalTargetChars={legalTargetChars}
+              onTileClick={onTileClick}
+              onCharClick={onCharClick}
+            />
+            {menu && (() => {
+              const menuChar = state.characters.find((c) => c.id === menu.charId);
+              if (!menuChar || menuChar.health <= 0) return null;
+              const ad = assignedDef(menu.charId);
+              return (
+                <div
+                  className="puck-menu"
+                  style={{
+                    left: `${Math.min(88, Math.max(12, ((menu.x + 0.5) / 7) * 100))}%`,
+                    top: `${Math.min(88, Math.max(12, ((menu.y + 0.5) / 7) * 100))}%`,
+                  }}
+                >
+                  <div className="puck-menu-title">
+                    <strong>{menuChar.definitionId}</strong>
+                    <button onClick={() => { setMenu(null); setPlan(null); }}>✕</button>
+                  </div>
+                  <div className="dim small">Card: {ad ? ad.name : "none assigned"}</div>
+                  <div className="btn-row">
+                    <button disabled={!ad} onClick={() => { setPlan("play-first"); startPlay(); }}>
+                      Play first
+                    </button>
+                    <button onClick={() => { setPlan("move-first"); setMenu(null); setMoveMode(true); }}>
+                      Move first
+                    </button>
+                    <button
+                      disabled={!ad}
+                      onClick={() => {
+                        if (dispatch({ type: "SCRAP_ASSIGNED", playerId: actingSide, characterId: menu.charId })) {
+                          setMenu(null);
+                          setMoveMode(true);
+                        }
+                      }}
+                    >
+                      Scrap
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
           {message && <p className="message">{message}</p>}
           <section className="hand">
             <h2>
