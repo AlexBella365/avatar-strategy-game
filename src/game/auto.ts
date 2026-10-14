@@ -201,14 +201,14 @@ export function chooseAutoAction(
   }
 
   const assigned = player.assignments[c.id];
+  // Advance first, card or not: marching costs nothing and sets up the play.
+  if (c.movementSpent === 0 && random() < 0.85) {
+    const dest = advanceTowardEnemy(state, c.id, random);
+    if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
+  }
   if (assigned) {
-    // Technique spent (Avatar activation): may still move, then pass.
+    // Technique spent (Avatar activation): pass (auto-scraps the hold).
     if (!c.techniqueBlockedThisActivation) {
-      // Close in before playing.
-      if (c.movementSpent === 0 && random() < 0.85) {
-        const dest = advanceTowardEnemy(state, c.id, random);
-        if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
-      }
       const card = getCardDefinition(assigned.definitionId);
       if (card && canAfford(state, playerId, c.id, card) && random() >= 0.15) {
         const pick = pickFightTarget(state, c.id, card, random);
@@ -226,10 +226,6 @@ export function chooseAutoAction(
         }
       }
       return { type: "SCRAP_ASSIGNED", playerId, characterId: c.id };
-    }
-    if (c.movementSpent === 0) {
-      const dest = advanceTowardEnemy(state, c.id, random);
-      if (dest) return { type: "MOVE", playerId, characterId: c.id, to: dest };
     }
     return { type: "PASS_ACTIVATION", playerId, characterId: c.id };
   }
