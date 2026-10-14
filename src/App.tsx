@@ -30,27 +30,26 @@ import type { Restriction } from "./game/types";
 import { key, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
-function demoState(): GameState {
+const P1_SLOTS: Position[] = [
+  { x: 1, y: 1 },
+  { x: 3, y: 1 },
+  { x: 5, y: 1 },
+];
+const P2_SLOTS: Position[] = [
+  { x: 1, y: 5 },
+  { x: 3, y: 5 },
+  { x: 5, y: 5 },
+];
+
+function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
+  const pickDefs = (ids: string[]) =>
+    ids.map((id) => CHARACTERS.find((d) => d.id === id)!).filter(Boolean);
+  const p1 = picks && picks.p1.length === 3 ? pickDefs(picks.p1) : [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]];
+  const p2 = picks && picks.p2.length === 3 ? pickDefs(picks.p2) : [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]];
   const state = createInitialState(
     [
-      {
-        playerId: "p1",
-        characterDefs: [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]],
-        positions: [
-          { x: 1, y: 1 },
-          { x: 3, y: 1 },
-          { x: 5, y: 1 },
-        ],
-      },
-      {
-        playerId: "p2",
-        characterDefs: [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]],
-        positions: [
-          { x: 1, y: 5 },
-          { x: 3, y: 5 },
-          { x: 5, y: 5 },
-        ],
-      },
+      { playerId: "p1", characterDefs: p1, positions: P1_SLOTS },
+      { playerId: "p2", characterDefs: p2, positions: P2_SLOTS },
     ],
     1,
   );
@@ -157,6 +156,10 @@ export default function App() {
   const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
+  const [draft, setDraft] = useState<{ p1: string[]; p2: string[] }>({
+    p1: ["aang", "katara", "toph"],
+    p2: ["zuko", "sokka", "azula"],
+  });
 
   const toggleAuto = (side: string) => {
     setAutoSides((prev) => {
@@ -213,6 +216,75 @@ export default function App() {
   }, [state, autoSides]);
 
   if (!state) {
+    const toggleDraft = (side: "p1" | "p2", id: string) => {
+      setDraft((prev) => {
+        const cur = prev[side];
+        if (cur.includes(id)) return { ...prev, [side]: cur.filter((c) => c !== id) };
+        if (cur.length >= 3) return prev;
+        return { ...prev, [side]: [...cur, id] };
+      });
+    };
+    const phase: "p1" | "p2" | "done" =
+      draft.p1.length < 3 ? "p1" : draft.p2.length < 3 ? "p2" : "done";
+    const pickForPhase = (defId: string) => {
+      if (phase === "done") {
+        // Deselect (prefer the side that picked first on mirrors).
+        if (draft.p1.includes(defId)) toggleDraft("p1", defId);
+        else if (draft.p2.includes(defId)) toggleDraft("p2", defId);
+        return;
+      }
+      toggleDraft(phase, defId);
+    };
+    const draftTile = (defId: string) => {
+      const def = CHARACTERS.find((d) => d.id === defId)!;
+      const inP1 = draft.p1.includes(defId);
+      const inP2 = draft.p2.includes(defId);
+      const portrait = PORTRAITS[defId];
+      return (
+        <div
+          key={defId}
+          className={`draft-tile ${(inP1 || inP2) ? "picked" : ""} ${phase !== "done" && !inP1 && !inP2 ? "choosable" : ""}`}
+          style={{ borderColor: bendingColor(defId) }}
+          onClick={() => pickForPhase(defId)}
+          title={`${def.name} — ${def.element}`}
+        >
+          {portrait ? (
+            <img className="draft-photo" src={portrait} alt={def.name} />
+          ) : (
+            <span className="draft-face" aria-hidden>
+              {FACES[defId] ?? "❓"}
+            </span>
+          )}
+          <span className="draft-name">{def.name}</span>
+          {inP1 && <span className="draft-badge badge-p1">P1</span>}
+          {inP2 && <span className="draft-badge badge-p2">P2</span>}
+        </div>
+      );
+    };
+    const versusSlot = (side: "p1" | "p2", index: number) => {
+      const defId = draft[side][index];
+      const def = defId ? CHARACTERS.find((d) => d.id === defId)! : null;
+      const portrait = defId ? PORTRAITS[defId] : undefined;
+      return (
+        <div
+          key={`${side}-${index}`}
+          className={`versus-slot ${def ? "filled" : "empty"}`}
+          style={def ? { borderColor: bendingColor(def.id) } : undefined}
+        >
+          {def && portrait ? (
+            <img className="versus-photo" src={portrait} alt={def.name} />
+          ) : def ? (
+            <span className="versus-face" aria-hidden>
+              {FACES[def.id] ?? "❓"}
+            </span>
+          ) : (
+            <span className="versus-empty">?</span>
+          )}
+          <span className="versus-name">{def ? def.name : "—"}</span>
+        </div>
+      );
+    };
+    const ready = phase === "done";
     return (
       <div className="app">
         <header>
@@ -221,14 +293,32 @@ export default function App() {
             Unofficial fan prototype. Non-commercial, no affiliation with Nickelodeon or Avatar Studios.
           </p>
         </header>
-        <section className="setup">
+        <section className="setup versus">
           <p>
-            Hot-seat 3v3 duel on a 7×7 grid. P1: Aang, Katara, Toph. P2: Zuko, Sokka, Azula.
-            Each round: draw 5, assign 1 face-down per character, alternate activations
-            (Play or Scrap + move), end the round to bank leftovers and draw again.
+            Hot-seat 3v3 duel on a 7×7 grid. P1 drafts first, then P2 (mirror picks
+            allowed), then each round: draw 5, assign 1 face-down per character, alternate
+            activations (Play or Scrap + move), end the round to bank leftovers and draw again.
           </p>
-          <button onClick={() => { setState(demoState()); setActingSide("p1"); }}>
-            Start match
+          <h2 className="phase-banner">
+            {phase === "done" ? "READY — FIGHT!" : `${phase.toUpperCase()} — CHOOSE YOUR FIGHTERS`}
+          </h2>
+          <div className="versus-grid">
+            <div className="versus-side">
+              <h3>P1</h3>
+              {[0, 1, 2].map((i) => versusSlot("p1", i))}
+            </div>
+            <div className="draft-grid">{CHARACTERS.map((d) => draftTile(d.id))}</div>
+            <div className="versus-side">
+              <h3>P2</h3>
+              {[0, 1, 2].map((i) => versusSlot("p2", i))}
+            </div>
+          </div>
+          <button
+            disabled={!ready}
+            className="fight-button"
+            onClick={() => { setState(demoState(draft)); setActingSide("p1"); }}
+          >
+            {ready ? "⚔ FIGHT!" : `P1 ${draft.p1.length}/3 · P2 ${draft.p2.length}/3`}
           </button>
         </section>
       </div>

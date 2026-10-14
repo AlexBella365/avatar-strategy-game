@@ -24,7 +24,132 @@
   color: #555;
 }
 .setup {
-  max-width: 640px;
+  max-width: 1080px;
+}
+.phase-banner {
+  text-align: center;
+  letter-spacing: 2px;
+  background: #1f2937;
+  color: #fbbf24;
+  border-radius: 8px;
+  padding: 8px;
+}
+.versus-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px;
+  gap: 1rem;
+  align-items: start;
+  margin: 1rem 0;
+}
+.versus-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.versus-side h3 {
+  text-align: center;
+  margin: 0;
+}
+.versus-slot {
+  border: 2px dashed #999;
+  border-radius: 10px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+.versus-slot.filled {
+  border-style: solid;
+}
+.versus-photo {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  object-position: top center;
+}
+.versus-face {
+  font-size: 2.4rem;
+}
+.versus-empty {
+  font-size: 2rem;
+  color: #bbb;
+}
+.versus-name {
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 2px 0;
+}
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.draft-tile {
+  position: relative;
+  border: 3px solid #666;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #111;
+  aspect-ratio: 3 / 3.6;
+}
+.draft-tile:hover {
+  transform: scale(1.04);
+}
+.draft-tile.choosable {
+  box-shadow: 0 0 0 2px #fbbf24;
+}
+.draft-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.draft-face {
+  font-size: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.draft-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 2px;
+}
+.draft-badge {
+  position: absolute;
+  top: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #fff;
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.badge-p1 {
+  left: 4px;
+  background: #1e78ff;
+}
+.badge-p2 {
+  right: 4px;
+  background: #d62728;
+}
+.fight-button {
+  font-size: 1.2rem;
+  padding: 10px 28px;
+  display: block;
+  margin: 0 auto;
 }
 .layout {
   display: grid;
