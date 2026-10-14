@@ -21,7 +21,7 @@ Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pu
 
 ## Layout
 
-- `src/game/types.ts` — data shapes only (7×5 grid model + v0.3 economy)
+- `src/game/types.ts` — data shapes only (7×7 grid model + v0.3 economy)
 - `src/game/state.ts` — match init, deployment validation, seeded decks, occupancy helpers
 - `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
 - `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
@@ -67,4 +67,5 @@ fits at least 6 cards; the hand list shows each card's requirement and who fits.
 5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
 6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
 7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (legend, fits, e2e)
-8. ⬜ End-to-end polish (passives, AI opponent, animations, roster waves)
+8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
+9. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)

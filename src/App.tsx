@@ -154,17 +154,25 @@ export default function App() {
   const [evade, setEvade] = useState<EvadeState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [autoSide, setAutoSide] = useState<string | null>(null);
+  const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
 
+  const toggleAuto = (side: string) => {
+    setAutoSides((prev) => {
+      const next = new Set(prev);
+      if (next.has(side)) next.delete(side);
+      else next.add(side);
+      return next;
+    });
+  };
+
   // Test-only auto-player loop (all hooks stay above the early return).
   useEffect(() => {
-    if (!autoSide || !state) return;
+    if (autoSides.size === 0 || !state) return;
     if (state.winnerId !== null || state.isDraw) return;
-    const autoPending = pendingActivations(state).filter(
-      (id) => state.characters.find((c) => c.id === id)?.ownerId === autoSide,
-    );
+    const ownerOf = (id: string) => state.characters.find((c) => c.id === id)?.ownerId;
+    const autoPending = pendingActivations(state).filter((id) => autoSides.has(ownerOf(id) ?? ""));
     if (autoPending.length === 0) {
       if (pendingActivations(state).length > 0) return; // waiting on human
       const t = setTimeout(() => {
@@ -176,7 +184,8 @@ export default function App() {
       }, 600);
       return () => clearTimeout(t);
     }
-    const action = chooseAutoAction(state, autoSide);
+    const side = ownerOf(autoPending[0])!;
+    const action = chooseAutoAction(state, side);
     if (!action) return;
     const t = setTimeout(() => {
       const result = applyGameAction(state, action);
@@ -185,12 +194,12 @@ export default function App() {
         const characterId = (action as { characterId: string }).characterId;
         const fallback = applyGameAction(state, {
           type: "PASS_ACTIVATION",
-          playerId: autoSide,
+          playerId: side,
           characterId,
         });
         if (fallback.errors.length === 0) {
           setState(fallback.state);
-          setMessage(`Auto (${autoSide}) passed after: ${result.errors[0].message}`);
+          setMessage(`Auto (${side}) passed after: ${result.errors[0].message}`);
         } else {
           setMessage(result.errors[0].message);
         }
@@ -201,7 +210,7 @@ export default function App() {
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, autoSide]);
+  }, [state, autoSides]);
 
   if (!state) {
     return (
@@ -344,7 +353,7 @@ export default function App() {
       const target = state.characters.find((c) => c.id === targetId)!;
       if (canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
         // Auto side decides for itself (coin flip); humans get the prompt.
-        if (target.ownerId === autoSide) {
+        if (autoSides.has(target.ownerId)) {
           const dests = getEvadeDestinations(state, targetId);
           const use =
             dests.length > 0 && Math.random() < 0.5
@@ -555,8 +564,11 @@ export default function App() {
             {sidebarOpen ? "Hide log & legend" : "Show log & legend"}
           </button>
           {" · "}
-          <button onClick={() => setAutoSide(autoSide === "p2" ? null : "p2")}>
-            Auto P2: {autoSide === "p2" ? "on" : "off"}
+          <button onClick={() => toggleAuto("p1")}>
+            Auto P1: {autoSides.has("p1") ? "on" : "off"}
+          </button>
+          <button onClick={() => toggleAuto("p2")}>
+            Auto P2: {autoSides.has("p2") ? "on" : "off"}
           </button>
         </p>
       </header>
