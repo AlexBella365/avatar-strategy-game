@@ -6,8 +6,8 @@
 > game design here are original. Please do not use this project commercially.
 
 A lightweight 3v3 tactical card-game prototype inspired by the Avatar universe
-(ATLA + LOK). The goal is a playable, deterministic rules engine with a minimal
-test UI — mechanics first, visuals later.
+(ATLA + LOK). The goal is a playable, deterministic rules engine with a themed,
+data-driven board — mechanics first, now with tile art and a central palette.
 
 Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pushed).
 
@@ -15,7 +15,8 @@ Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pu
 
 - **Vite + React + TypeScript (strict)** — minimal browser prototype
 - **Vitest** (`npm test` / `make test`) — deterministic rules tests, no animation timing
-- **Plain CSS** — lightweight test UI, no component framework / canvas library (visuals out of scope)
+- **Plain CSS** — a central variable palette (`src/theme.css`); board art is
+  data-driven from `public/tiles/` (no component framework or canvas library)
 - **No backend** — local hot-seat play; a single authoritative engine exposes
   `applyGameAction(state, action)` and the UI never mutates game state directly
 
@@ -25,7 +26,10 @@ Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pu
 - `src/game/state.ts` — match init, deployment validation, seeded decks, occupancy helpers
 - `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
 - `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
+- `src/game/maps/demo.grid.txt` + `src/game/mapGrid.ts` — hand-editable 7×7 board and its parser
 - `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, hands with assign/scrap, activation panel, battle log, icon legend
+- `src/ui/terrainTiles.ts` — terrain → tile art, label, rules blurb (drives the board and legend)
+- `src/theme.css` — every themed colour, as CSS variables
 
 ## Run
 
@@ -41,6 +45,15 @@ make build
 
 Or directly with npm (`npm install`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run build`).
 Run `make help` for all targets.
+
+## Editing the board
+
+The demo board is hand-editable text at `src/game/maps/demo.grid.txt`: seven rows
+of seven tiles, one letter per tile, cells split by `|` (lines starting with `#`
+are comments). Letters: `G` grass, `R` road, `P` pond, `K` rocks, `F` forest,
+`W` wall, `I` ice, `B` blaze, `A` ash — full names and engine ids also work.
+`src/game/mapGrid.ts` parses it (tests: `src/game/mapGrid.test.ts`). Blaze is
+never placed by hand; it only appears in play when fire ignites woodland.
 
 ## Roster
 
@@ -68,4 +81,5 @@ fits at least 6 cards; the hand list shows each card's requirement and who fits.
 6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
 7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
 8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
-9. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)
+9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
+10. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)

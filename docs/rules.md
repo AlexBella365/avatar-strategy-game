@@ -139,17 +139,18 @@ The test map is fixed — learn it like a chessboard. It is deliberately **not**
 - **Rocks:** earth source (earth techs +1, same rule as water).
 - **Forest:** dense, no effect by itself. Fire abilities **ignite** it into **Blaze** (hazard: 1 damage on entry); after 1 full round it burns out into **Ash** (fire source, permanent) — unless water **douses** it first (out immediately, leaving bare **Plains**: no source for fire). Air abilities can stir Ash into **Smoke** (blocks sight, not movement; disperses to Plains at end of next round).
 - **Wall:** blocks movement and sight. Earth abilities **raise** new walls or **level** existing ones back to Plains.
+- **Road:** an open path across the field — no bonus and normal cost. Non-bending civilians are planned to travel here (later).
 
-Test map (`.` plains, `G` grass, `P` pond, `R` rocks, `F` forest, `W` wall; y0 is the top, you deploy on y0–1 / y5–6). No empty tiles — everything without a feature is neutral grass:
+Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is the top, you deploy on y0–1 / y5–6). No empty tiles — everything without a feature is neutral grass. The board is a hand-editable file (`src/game/maps/demo.grid.txt`): 7 rows, one letter per cell, cells split by `|`:
 
 ```
-y0: G G G R G G G
-y1: G G P G F G G
-y2: G F G G G G G
-y3: G G W G W G G
-y4: G G G G G F G
-y5: G G G R P G F
-y6: R G G G G F R
+G|G|W|R|G|G|G
+G|G|P|R|G|G|G
+G|G|G|R|G|P|P
+G|G|G|R|G|F|F
+G|G|G|R|F|F|F
+G|G|P|R|G|G|F
+K|G|W|R|P|G|K
 ```
 
 ## Avatar State (Aang only)
