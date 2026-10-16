@@ -1,0 +1,16 @@
+# Courtyard. A ruined walled courtyard guards a forest heart; one road runs north-south.
+# Walls block movement and sight (earth can level them); the forest flanks the road.
+# Mirror-symmetric on both axes, so neither side has an edge.
+# 7x7 grid, one letter per cell, cells split by "|". Lines starting with # are ignored.
+#
+# Letters:
+#   G grass   R road    P pond   K rocks   F forest
+#   W wall    I ice     B blaze  A ash
+# Blaze is never placed here (it only appears in play when fire ignites forest/grass).
+G|G|G|R|G|G|G
+G|G|G|R|G|G|G
+G|G|W|R|W|G|G
+G|G|F|R|F|G|G
+G|G|W|R|W|G|G
+G|G|G|R|G|G|G
+G|G|G|R|G|G|G
