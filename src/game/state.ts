@@ -1,6 +1,6 @@
 // Match state: init + immutable helpers. Spec v2 §3, §4, §6, §8 + v0.3 economy.
 import { STARTER_DECK_IDS } from "./content/economy";
-import demoGrid from "./maps/demo.grid.txt?raw";
+import { getMap } from "./maps";
 import { parseTerrainGrid } from "./mapGrid";
 import { GRID_COLS, GRID_ROWS, inBounds, key } from "./rules/grid";
 import type {
@@ -47,11 +47,11 @@ export interface TeamSetup {
   positions: Position[];
 }
 
-/** Default board at match start: parsed from the hand-editable grid in
- * maps/demo.grid.txt (see mapGrid.ts for the tile-name mapping). The engine
- * default stays empty so unit tests keep a clean board. */
-export function createTestMapTerrain(): TerrainState[] {
-  return parseTerrainGrid(demoGrid);
+/** Board at match start: parses the selected hand-editable grid from the map
+ *  registry (src/game/maps; see mapGrid.ts for the tile-name mapping). The
+ *  engine default stays empty so unit tests keep a clean board. */
+export function createTestMapTerrain(mapId = "demo"): TerrainState[] {
+  return parseTerrainGrid(getMap(mapId).grid);
 }
 
 let idCounter = 0;

@@ -23,6 +23,7 @@ import {
 import { blockingTiles, difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain } from "./game/state";
+import { MAPS, getMap } from "./game/maps";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
@@ -45,7 +46,7 @@ const P2_SLOTS: Position[] = [
 /** Draftable fighters (companions like Appa/Momo enter through team rules). */
 const FIGHTERS = CHARACTERS.filter((d) => !d.companion);
 
-function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
+function demoState(picks?: { p1: string[]; p2: string[] }, mapId = "demo"): GameState {
   const pickDefs = (ids: string[]) =>
     ids.map((id) => CHARACTERS.find((d) => d.id === id)!).filter(Boolean);
   const p1 = picks && picks.p1.length === 3 ? pickDefs(picks.p1) : [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]];
@@ -61,7 +62,7 @@ function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
-  state.terrain = createTestMapTerrain();
+  state.terrain = createTestMapTerrain(mapId);
   state.log.push("Round 1 begins (initiative: p1). Draw your cards and assign one per character.");
   return state;
 }
@@ -167,6 +168,7 @@ export default function App() {
     p1: ["aang", "katara", "toph"],
     p2: ["zuko", "sokka", "azula"],
   });
+  const [mapId, setMapId] = useState("demo");
 
   const toggleAuto = (side: string) => {
     setAutoSides((prev) => {
@@ -292,6 +294,10 @@ export default function App() {
       );
     };
     const ready = phase === "done";
+    const map = getMap(mapId);
+    const mapIndex = MAPS.findIndex((m) => m.id === map.id);
+    const cycleMap = (dir: 1 | -1) =>
+      setMapId(MAPS[(mapIndex + dir + MAPS.length) % MAPS.length].id);
     return (
       <div className="app">
         <header>
@@ -320,10 +326,34 @@ export default function App() {
               {[0, 1, 2].map((i) => versusSlot("p2", i))}
             </div>
           </div>
+          <div className="map-cycler">
+            <button
+              type="button"
+              className="map-arrow"
+              aria-label="Previous map"
+              onClick={() => cycleMap(-1)}
+            >
+              ‹
+            </button>
+            <div className="map-info" title={map.blurb}>
+              <strong>
+                Map {mapIndex + 1}/{MAPS.length}: {map.name}
+              </strong>
+              <span className="dim small">{map.blurb}</span>
+            </div>
+            <button
+              type="button"
+              className="map-arrow"
+              aria-label="Next map"
+              onClick={() => cycleMap(1)}
+            >
+              ›
+            </button>
+          </div>
           <button
             disabled={!ready}
             className="fight-button"
-            onClick={() => { setState(demoState(draft)); setActingSide("p1"); }}
+            onClick={() => { setState(demoState(draft, mapId)); setActingSide("p1"); }}
           >
             {ready ? "⚔ FIGHT!" : `P1 ${draft.p1.length}/3 · P2 ${draft.p2.length}/3`}
           </button>

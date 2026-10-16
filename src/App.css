@@ -149,6 +149,26 @@
   display: block;
   margin: 0 auto;
 }
+.map-cycler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+.map-arrow {
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 4px 14px;
+}
+.map-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 280px;
+  text-align: center;
+}
 .layout {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 400px;

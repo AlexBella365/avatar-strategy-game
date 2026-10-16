@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GRID_COLS, GRID_ROWS } from "./rules/grid";
 import { parseTerrainGrid } from "./mapGrid";
 import { createTestMapTerrain } from "./state";
+import { MAPS, getMap } from "./maps";
 
 const blankGrid = Array.from({ length: GRID_ROWS }, () =>
   Array.from({ length: GRID_COLS }, () => "G").join("|"),
@@ -118,4 +119,23 @@ describe("demo map", () => {
   it("has a connected road crossing the field", () => {
     expect(roadSpansField(terrain)).toBe(true);
   });
+});
+
+describe("all maps", () => {
+  it("has a unique id per map", () => {
+    const ids = MAPS.map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("falls back to demo for unknown ids", () => {
+    expect(getMap("does-not-exist").id).toBe("demo");
+  });
+
+  for (const map of MAPS) {
+    it(`${map.id} parses to a full 7x7 board with no pre-placed blaze`, () => {
+      const terrain = parseTerrainGrid(map.grid);
+      expect(terrain).toHaveLength(GRID_COLS * GRID_ROWS);
+      expect(terrain.some((t) => t.terrainId === "bonfire")).toBe(false);
+    });
+  }
 });
