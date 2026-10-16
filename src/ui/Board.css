@@ -1,6 +1,6 @@
 .grid-board {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   max-width: 572px;
   width: 100%;
   margin: 0 auto;
@@ -8,39 +8,102 @@
 .tile {
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border: 1px solid #888;
-  background-color: #aaa;;
-  border-radius: 5px;
   padding: 2px;
   position: relative;
+  isolation: isolate;
   cursor: pointer;
-  background: #f7f7f5;
+  border-radius: 2px;
+  border: 0px solid rgba(35, 40, 32, 0.16);
+  background-color: var(--tile-base);
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -2px 0 rgba(30, 30, 20, 0.06);
 }
-.tile.has-terrain {
-  outline: 2px dashed #8a5a00;
-  outline-offset: -2px;
-  background: #fdf6e3;
+
+/* Fine surface variation; deterministic per tile. */
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    radial-gradient(
+      ellipse at 25% 30%,
+      rgba(255, 255, 255, 0.3),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 75% 80%,
+      rgba(35, 30, 20, 0.12),
+      transparent 60%
+    );
 }
+
+/* Deterministic shade variants (hash in Board.tsx). */
+.tile.tv0::before {
+  opacity: 0.32;
+}
+.tile.tv1::before {
+  opacity: 0.22;
+}
+.tile.tv2::before {
+  opacity: 0.12;
+}
+
+/* Keep pieces and highlights above the tile surface. */
+.puck-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* Roads: one path tile drawn per road tile and rotated so the road connects.
+   N-S and E-W are one arm; the crossing overlays both. */
+.road {
+  --road-img: url("/tiles/dirt_road.png");
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--road-img);
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.road-ew {
+  transform: rotate(90deg);
+}
+.road-cross::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--road-img);
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: rotate(90deg);
+}
+
+/* Hints tint the tile without erasing its terrain art. */
 .tile.move-hl {
-  outline: 2px solid #c19a1b;
-  background: #fef9e7;
+  outline: 2px solid var(--accent-move);
+  box-shadow:
+    inset 0 0 0 3px var(--move-glow),
+    inset 0 0 0 999px color-mix(in srgb, var(--accent-move) 16%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -2px 0 rgba(30, 30, 20, 0.06);
 }
 .tile.target-hl {
-  outline: 2px solid #d62728;
+  outline: 2px solid var(--accent-danger);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--accent-danger) 45%, transparent),
+    inset 0 0 0 999px color-mix(in srgb, var(--accent-danger) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -2px 0 rgba(30, 30, 20, 0.06);
 }
-.tile-top {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  min-height: 12px;
-}
-/* NOTE: .coords removed (tiles no longer numbered). */
-.terrain {
-  font-size: 0.62rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 .char {
   font-size: 0.8rem;
   margin-top: 2px;
@@ -49,88 +112,139 @@
   border-radius: 4px;
   padding: 1px 3px;
 }
-/* Round puck token with the character's face. */
+/* Character token: portrait inside an element-coloured ring, with a health
+   bar, owner chip (P1/P2), and Avatar-State glow. */
 .puck-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  position: relative;
 }
 .puck {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 66%;
+  aspect-ratio: 1 / 1;
+  margin: 2px auto 0;
   border-radius: 50%;
-  margin: 1px auto 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
-  border: 4px solid #666;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 28%, var(--puck-bg-1), var(--puck-bg-2) 78%);
+  border: 3px solid var(--element, var(--border-dark));
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.18);
+  transition: transform 0.12s ease;
 }
-.puck.p1 {
-  border-color: #1e78ff;
+.puck-wrap:hover .puck {
+  transform: translateY(-1px);
 }
-.puck.p2 {
-  border-color: #d62728;
-}
-/* NOTE: owner ring colors above are legacy (rings now use bending colors inline). */
-.puck .owner-badge {
+.puck-face {
   position: absolute;
-  left: -6px;
-  bottom: -6px;
-  font-size: 0.62rem;
-  font-weight: bold;
-  background: #222;
-  color: #fff;
-  border-radius: 8px;
-  padding: 0 4px;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
 }
-.puck.selected {
-  outline: 2px solid #1e78ff;
-  outline-offset: 1px;
-}
-.puck.target-hl {
-  outline: 2px solid #d62728;
-  outline-offset: 1px;
-}
-.puck.ko {
-  filter: grayscale(1);
-  opacity: 0.55;
-}
-.puck .face {
-  font-size: 1.6rem;
+.puck-face .face {
+  font-size: 1.7rem;
   line-height: 1;
 }
 /* Circular-cropped portrait photo layered over the emoji fallback. */
-.puck .face-photo {
+.puck-face .face-photo {
   position: absolute;
-  inset: 4px;
-  width: calc(100% - 8px);
-  height: calc(100% - 8px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
   object-position: top center;
 }
-.puck .avatar-ring {
+/* Health bar just below the token; colour tracks remaining HP. */
+.puck-hp {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 1rem;
+  left: 8%;
+  right: 8%;
+  bottom: -30%;
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--hp-track-dark);
+  border: 1px solid var(--hp-outline);
 }
-.puck .hp-bar {
+.puck-hp-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--hp-fill);
+  transition: width 0.2s ease;
+}
+/* Owner chip (P1/P2) reinforces the team colour without relying on it alone. */
+.puck-owner {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 5px;
-  height: 5px;
-  border-radius: 2px;
-  background: #2a9d48;
+  left: -5px;
+  bottom: -5px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  padding: 0 5px;
+  border-radius: 7px;
+  color: var(--on-color);
+  background: var(--owner, var(--border-strong));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.puck-avatar {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 3px var(--on-color));
+}
+.puck.avatar-active {
+  animation: puck-avatar-pulse 1.4s ease-in-out infinite;
+}
+@keyframes puck-avatar-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 9px 3px rgba(255, 244, 180, 0.7),
+      inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 18px 7px rgba(255, 244, 180, 1),
+      inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  }
+}
+.puck.selected {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 0 0 3px var(--accent-warn),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+}
+.puck.target-hl {
+  box-shadow:
+    0 0 0 3px var(--accent-hit),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+}
+.puck.ko {
+  filter: grayscale(1) brightness(0.75);
+  opacity: 0.6;
+}
+.puck.ko::after {
+  content: "✖";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .puck-badges {
   position: absolute;
-  bottom: -2px;
+  bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -140,22 +254,23 @@
 .puck-badges .statuses,
 .puck-badges .resonance {
   font-size: 0.55rem;
-  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink-2);
+  background: var(--badge-bg);
   border-radius: 6px;
   padding: 0 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
-/* NOTE: .puck-caption removed (HP bar + tooltip carry it). */
 .char.p1 {
-  background: rgba(30, 120, 255, 0.12);
+  background: color-mix(in srgb, var(--p1-color) 12%, transparent);
 }
 .char.p2 {
-  background: rgba(255, 60, 60, 0.12);
+  background: color-mix(in srgb, var(--p2-color) 12%, transparent);
 }
 .char.selected {
-  outline: 2px solid #1e78ff;
+  outline: 2px solid var(--accent-select);
 }
 .char.target-hl {
-  outline: 2px solid #d62728;
+  outline: 2px solid var(--accent-danger);
 }
 .char.ko {
   opacity: 0.45;
@@ -165,5 +280,36 @@
 .statuses,
 .resonance {
   font-size: 0.6rem;
-  color: #555;
+  color: var(--text);
+}
+
+/* Terrain legend (collapsible info sidebar): swatch + name + rules blurb. */
+.terrain-legend {
+  list-style: none;
+  margin: 4px 0 2px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.terrain-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+}
+.terrain-swatch {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--on-color);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }

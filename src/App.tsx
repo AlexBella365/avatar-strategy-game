@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
+import { TERRAIN_LEGEND } from "./ui/terrainTiles";
 import { chooseAutoAction, evadeEscapes } from "./game/auto";
 import PlayingCard from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
@@ -21,7 +22,7 @@ import {
 } from "./game/rules/movement";
 import { blockingTiles, difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets } from "./game/rules/targeting";
-import { cloneState, createInitialState } from "./game/state";
+import { cloneState, createInitialState, createTestMapTerrain } from "./game/state";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
@@ -60,6 +61,7 @@ function demoState(picks?: { p1: string[]; p2: string[] }): GameState {
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
+  state.terrain = createTestMapTerrain();
   state.log.push("Round 1 begins (initiative: p1). Draw your cards and assign one per character.");
   return state;
 }
@@ -115,7 +117,7 @@ function SheetCard(props: {
               style={{ backgroundColor: bending }}
               title={bendingLabel(c.definitionId)}
             />{" "}
-            {charDef?.class} · ({c.position.x},{c.position.y})
+            {charDef?.class}
             {c.activatedThisRound ? " · done" : ""}
           </span>
         </div>
@@ -923,11 +925,28 @@ export default function App() {
                 <li>⚡ Energy (4/round) · 🌀 chi bank · 🃏 deck · 🗑 discard</li>
                 <li>🌀 active Avatar (KO = instant loss) · Res n/6 meter</li>
                 <li>⚙n equipped Gear · 🃏 face-down assigned card</li>
-                <li>🧱 wall (blocks) · 🪨 rubble (2 to enter)</li>
-                <li>💧 water (+bonus) · 🔥 fire (1 entry) · 🌋 embers (1 EoR)</li>
-                <li>🧊 ice (difficult + OB) · 🛡 cover (−1 ranged)</li>
                 <li>OB OffBalance · EX Exposed · BD Bound · XH Exhausted</li>
                 <li>Green: reachable · Red: legal target</li>
+              </ul>
+              <h2>Terrain</h2>
+              <ul className="terrain-legend">
+                {TERRAIN_LEGEND.map((t) => (
+                  <li key={t.cls}>
+                    <span
+                      className="terrain-swatch"
+                      style={{
+                        backgroundColor: t.color,
+                        backgroundImage: t.tile ? `url(${t.tile})` : undefined,
+                      }}
+                      aria-hidden
+                    >
+                      {t.tile ? "" : t.glyph}
+                    </span>
+                    <span>
+                      <strong>{t.label}</strong> — {t.blurb}
+                    </span>
+                  </li>
+                ))}
               </ul>
             </section>
             <section className="log">
