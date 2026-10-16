@@ -11,10 +11,10 @@
 #
 # Every tile needs a value (use G for open ground). Blaze is never placed here
 # (it only appears in play when fire ignites forest/grass).
-G|G|W|R|G|G|G
-G|G|P|R|G|G|G
-G|G|G|R|G|P|P
-G|G|G|R|G|F|F
-G|G|G|R|F|F|F
-G|G|P|R|G|G|F
-K|G|W|R|P|G|K
+G|G|G|G|G|G|K
+G|G|G|G|G|G|G
+W|P|G|G|G|P|W
+R|R|R|R|R|R|R
+G|G|G|G|F|G|P
+G|G|P|F|F|G|G
+G|G|P|F|F|F|K

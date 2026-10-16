@@ -55,42 +55,49 @@ describe("parseTerrainGrid", () => {
   });
 });
 
-/** True if the road tiles form one connected path spanning opposite edges. */
+/** True if the road tiles form one connected path spanning opposite edges
+ *  (top-to-bottom or left-to-right). */
 function roadSpansField(terrain: ReadonlyArray<{ x: number; y: number; terrainId: string }>) {
   const roads = new Set(
     terrain.filter((t) => t.terrainId === "road").map((t) => `${t.x},${t.y}`),
   );
-  const seen = new Set<string>();
-  const queue: Array<[number, number]> = [];
-  for (let x = 0; x < GRID_COLS; x++) {
-    if (roads.has(`${x},0`)) {
-      seen.add(`${x},0`);
-      queue.push([x, 0]);
+  const flood = (seeds: Array<[number, number]>) => {
+    const seen = new Set<string>();
+    const queue: Array<[number, number]> = [];
+    for (const [x, y] of seeds) {
+      seen.add(`${x},${y}`);
+      queue.push([x, y]);
     }
-  }
-  let reachesBottom = false;
-  let reachesRight = false;
-  while (queue.length > 0) {
-    const [x, y] = queue.shift() as [number, number];
-    if (y === GRID_ROWS - 1) reachesBottom = true;
-    if (x === GRID_COLS - 1) reachesRight = true;
-    for (const [dx, dy] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ] as const) {
-      const nx = x + dx;
-      const ny = y + dy;
-      const k = `${nx},${ny}`;
-      if (nx < 0 || ny < 0 || nx >= GRID_COLS || ny >= GRID_ROWS) continue;
-      if (roads.has(k) && !seen.has(k)) {
-        seen.add(k);
-        queue.push([nx, ny]);
+    while (queue.length > 0) {
+      const [x, y] = queue.shift() as [number, number];
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const k = `${nx},${ny}`;
+        if (nx < 0 || ny < 0 || nx >= GRID_COLS || ny >= GRID_ROWS) continue;
+        if (roads.has(k) && !seen.has(k)) {
+          seen.add(k);
+          queue.push([nx, ny]);
+        }
       }
     }
+    return seen;
+  };
+  const seedsTop: Array<[number, number]> = [];
+  for (let x = 0; x < GRID_COLS; x++) {
+    if (roads.has(`${x},0`)) seedsTop.push([x, 0]);
   }
-  return reachesBottom || reachesRight;
+  if ([...flood(seedsTop)].some((k) => k.endsWith(`,${GRID_ROWS - 1}`))) return true;
+  const seedsLeft: Array<[number, number]> = [];
+  for (let y = 0; y < GRID_ROWS; y++) {
+    if (roads.has(`0,${y}`)) seedsLeft.push([0, y]);
+  }
+  return [...flood(seedsLeft)].some((k) => k.startsWith(`${GRID_COLS - 1},`));
 }
 
 describe("demo map", () => {
