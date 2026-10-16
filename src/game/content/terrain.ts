@@ -49,6 +49,20 @@ export const TERRAIN_DEFINITIONS: TerrainDefinition[] = [
     difficult: false,
     cover: { reduction: 1, vs: ["ranged"] },
   },
+  {
+    id: "forest",
+    name: "Forest",
+    blocking: false,
+    difficult: false,
+  },
+  // New base terrain: roads. Neutral for now; non-bending civilians are
+  // planned to appear on roads (later). Roads are never ignited.
+  {
+    id: "road",
+    name: "Road",
+    blocking: false,
+    difficult: false,
+  },
 ];
 
 export function getTerrainDefinition(id: string): TerrainDefinition | undefined {
