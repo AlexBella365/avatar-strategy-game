@@ -146,8 +146,8 @@ Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is 
 ```
 G|G|G|G|G|G|K
 G|G|G|G|G|G|G
-W|P|G|G|G|P|W
 R|R|R|R|R|R|R
+W|P|G|G|G|P|W
 G|G|G|G|F|G|P
 G|G|P|F|F|G|G
 G|G|P|F|F|F|K
