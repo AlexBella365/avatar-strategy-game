@@ -1,0 +1,93 @@
+/* Central colour palette. Every themed colour in the UI derives from these
+   custom properties: component stylesheets reference them directly and the
+   data-driven maps (ui/elements.ts, ui/terrainTiles.ts) reference them by name
+   too, so re-theming only ever touches this file. Decorative black/white
+   alpha layers (shadows, textures) stay inline. */
+:root {
+  /* Players */
+  --p1-color: hsl(190, 80%, 50%);
+  --p2-color: hsl(310, 80%, 50%);
+
+  /* Bending / element colours */
+  --element-air: #bfb09f;
+  --element-fire: #d62728;
+  --element-earth: #2a9d48;
+  --element-water: #1e78ff;
+  --element-nonbender: #8765cb;
+  --element-avatar: #c8ccd2;
+
+  /* Terrain fallback colours (drawn behind the tile art) */
+  --terrain-plains: #9ec46a;
+  --terrain-grass: #6f9e4a;
+  --terrain-road: #b08a5a;
+  --terrain-pond: #2f7fa8;
+  --terrain-rocks: #9a9284;
+  --terrain-forest: #2f5c3b;
+  --terrain-wall: #7d7568;
+  --terrain-ice: #cfe9f2;
+  --terrain-blaze: #d9622a;
+  --terrain-ash: #5a4a44;
+  --terrain-smoke: #aeb3ba;
+
+  /* Feedback accents */
+  --accent-select: #1e78ff;
+  --accent-danger: #d62728;
+  --accent-gold: #fbbf24;
+  --accent-warn: #ffd54a;
+  --accent-hit: #ff5a5a;
+  --accent-success: #2a9d48;
+  --accent-move: #c19a1b;
+  --move-glow: rgba(254, 249, 231, 0.85);
+
+  /* Health */
+  --hp-fill: linear-gradient(90deg, #e8a100, #ffd166);
+  --hp-track: #e3e3e3;
+  --hp-track-dark: rgba(8, 10, 12, 0.65);
+  --hp-outline: #000000;
+
+  /* Surfaces */
+  --app-bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #fdfdfb;
+  --tile-base: #cfc8ae;
+  --puck-bg-1: #454b54;
+  --puck-bg-2: #0f1114;
+  --ink: #1f2937;
+  --ink-2: #111111;
+  --on-ink: #f9fafb;
+  --on-ink-muted: #9ca3af;
+  --on-color: #ffffff;
+  --portrait-bg: #dfe6ee;
+  --badge-bg: rgba(255, 255, 255, 0.92);
+
+  /* Text */
+  --text-strong: #333333;
+  --text: #555555;
+  --text-muted: #666666;
+  --text-faint: #999999;
+  --text-ghost: #bbbbbb;
+
+  /* Borders */
+  --border-strong: #333333;
+  --border-dark: #666666;
+  --border-mid: #999999;
+  --border-muted: #bbbbbb;
+  --border-subtle: #cccccc;
+  --border: #dddddd;
+  --border-faint: #e8e8e8;
+
+  /* Cards */
+  --card-face-grad: linear-gradient(160deg, #fffdf7, #f3ecdd);
+  --gear-face-grad: linear-gradient(160deg, #f4f4f5, #d9d9de);
+  --gear-border: #6b7280;
+  --face-grad: radial-gradient(circle at 35% 30%, #ffffff, #cfd8e3 70%, #9fb0c3);
+
+  /* Notices / status text */
+  --notice-bg: #fff3cd;
+  --notice-border: #e0c36a;
+  --danger-bg: #ffeef0;
+  --danger-ink: #b00020;
+  --status-ink: #8a5a00;
+  --success-bg: #e8f5e9;
+}

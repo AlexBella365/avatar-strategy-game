@@ -1,13 +1,14 @@
 import { CHARACTERS } from "../game/content/characters";
 
-/** Bending colors: yellow=air, red=fire, green=earth, blue=water, grey=nonbender. */
+/** Bending colors (CSS vars from theme.css): grey=air, red=fire, green=earth,
+ *  blue=water, purple=nonbender. */
 export const ELEMENT_COLORS: Record<string, string> = {
-  air: "#d9a406",
-  fire: "#d62728",
-  earth: "#2a9d48",
-  water: "#1e78ff",
-  nonbender: "#6b7280",
-  avatar: "#d9a406", // Aang reads as Air (roster base class)
+  air: "var(--element-air)",
+  fire: "var(--element-fire)",
+  earth: "var(--element-earth)",
+  water: "var(--element-water)",
+  nonbender: "var(--element-nonbender)",
+  avatar: "var(--element-avatar)", // Aang reads as Air (roster base class)
 };
 
 export function bendingOf(definitionId: string): string {
