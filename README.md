@@ -9,7 +9,7 @@ A lightweight 3v3 tactical card-game prototype inspired by the Avatar universe
 (ATLA + LOK). The goal is a playable, deterministic rules engine with a themed,
 data-driven board — mechanics first, now with tile art and a central palette.
 
-Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pushed).
+Player-facing rules live in `docs/rules.md`; engine and card design specs live in `specs/`.
 
 ## Tech stack
 
@@ -27,7 +27,9 @@ Player-facing rules live in `docs/rules.md`. Engine spec: local `specs/` (not pu
 - `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
 - `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
 - `src/game/maps/demo.grid.txt` + `src/game/mapGrid.ts` — hand-editable 7×7 board and its parser
-- `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, hands with assign/scrap, activation panel, battle log, icon legend
+- `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, character sheets with card slots, hands with assign/scrap, activation panel, battle log, icon legend
+- `src/ui/animationTiming.ts` — single source of truth for combat-animation durations (injected as CSS variables)
+- `src/ui/attackFx.ts` + `src/ui/combatText.ts` — element→attack-FX mapping and floating damage/heal numbers
 - `src/ui/terrainTiles.ts` — terrain → tile art, label, rules blurb (drives the board and legend)
 - `src/theme.css` — every themed colour, as CSS variables
 
@@ -52,8 +54,10 @@ The demo board is hand-editable text at `src/game/maps/demo.grid.txt`: seven row
 of seven tiles, one letter per tile, cells split by `|` (lines starting with `#`
 are comments). Letters: `G` grass, `R` road, `P` pond, `K` rocks, `F` forest,
 `W` wall, `I` ice, `B` blaze, `A` ash — full names and engine ids also work.
-`src/game/mapGrid.ts` parses it (tests: `src/game/mapGrid.test.ts`). Blaze is
-never placed by hand; it only appears in play when fire ignites woodland.
+`src/game/mapGrid.ts` parses it (tests: `src/game/mapGrid.test.ts`). A `P` pond
+blocks movement (you cannot enter, cross, or be pushed onto it) but not line of
+sight; a `W` wall blocks both. Blaze is never placed by hand; it only appears in
+play when fire ignites woodland.
 
 ## Roster
 
@@ -71,6 +75,21 @@ duration, and the active-Avatar instant-loss rule live in the shared engine, not
 **Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed). Every character
 fits at least 6 cards; the hand list shows each card's requirement and who fits.
 
+## Card presentation
+
+Every card face is **5:7** (matching the card-back art `public/card_back.png`, 300×420)
+and prints its full `rulesText` **verbatim** — never truncated or replaced with
+icons. The hot-seat sheets flank each character with two card slots: a **gear** slot
+and an **ability** slot. A face-down assignment is shown as the card face to its
+owner and as the card back to the opponent; both sides' sheet columns share the
+space either side of the board, and the acting player's hand sits under their own
+sheets.
+
+Combat feedback is CSS-only: each attack type (fire/water/air/earth/slash) plays a
+short overlay animation, and affected characters show a floating red `-x` (or green
+`+y` heal). All durations live in `src/ui/animationTiming.ts` and are injected as CSS
+custom properties, so the keyframes and the JS dismissal timers stay in sync.
+
 ## Roadmap (grid model + v0.3 economy)
 
 1. ✅ Types + state (grid coords, deployment, occupancy)
@@ -82,4 +101,6 @@ fits at least 6 cards; the hand list shows each card's requirement and who fits.
 7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
 8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
 9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
-10. ⬜ End-to-end polish (passives, real AI opponent, animations, roster waves)
+10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers)
+11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
+12. ⬜ End-to-end polish (passives, real AI opponent, roster waves)
