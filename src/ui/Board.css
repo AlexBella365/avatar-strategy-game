@@ -4,6 +4,7 @@
   max-width: 572px;
   width: 100%;
   margin: 0 auto;
+  position: relative;
 }
 .tile {
   aspect-ratio: 1 / 1;
@@ -53,12 +54,6 @@
   opacity: 0.12;
 }
 
-/* Keep pieces and highlights above the tile surface. */
-.puck-wrap {
-  position: relative;
-  z-index: 1;
-}
-
 /* Roads: one path tile drawn per road tile and rotated so the road connects.
    N-S and E-W are one arm; the crossing overlays both. */
 .road {
@@ -104,18 +99,11 @@
     inset 0 -2px 0 rgba(30, 30, 20, 0.06);
 }
 
-.char {
-  font-size: 0.8rem;
-  margin-top: 2px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 4px;
-  padding: 1px 3px;
-}
 /* Character token: portrait inside an element-coloured ring, with a health
-   bar, owner chip (P1/P2), and Avatar-State glow. */
+   bar, owner chip (P1/P2), and Avatar-State glow. Sits above the tile surface. */
 .puck-wrap {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -260,27 +248,28 @@
   padding: 0 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
-.char.p1 {
-  background: color-mix(in srgb, var(--p1-color) 12%, transparent);
-}
-.char.p2 {
-  background: color-mix(in srgb, var(--p2-color) 12%, transparent);
-}
-.char.selected {
-  outline: 2px solid var(--accent-select);
-}
-.char.target-hl {
-  outline: 2px solid var(--accent-danger);
-}
-.char.ko {
-  opacity: 0.45;
-  text-decoration: line-through;
-}
-/* NOTE: .char rules above are legacy (pucks replaced them); kept one release, then delete. */
 .statuses,
 .resonance {
   font-size: 0.6rem;
   color: var(--text);
+}
+
+/* Board-level overlay for combat FX + floating numbers. It sits above the
+   tiles and is not clipped, so effects can spill across cell borders. It
+   mirrors the tile grid (same rows/cols/gap) to stay anchored to each cell. */
+.fx-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: inherit;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* One overlay cell per target tile; anchors its effect to that grid area
+   without clipping it (the overlay itself never clips). */
+.fx-cell {
+  position: relative;
 }
 
 /* Attack animations: one short effect per card play, drawn on every affected

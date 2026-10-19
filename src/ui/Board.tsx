@@ -80,7 +80,6 @@ export default function Board({
 }: BoardProps) {
   const rows = Array.from({ length: GRID_ROWS }, (_, y) => y);
   const cols = Array.from({ length: GRID_COLS }, (_, x) => x);
-  const floatByChar = new Map((floats ?? []).map((f) => [f.charId, f]));
   // Feed the timing config to CSS (Board.css reads these custom properties).
   const timingVars = {
     "--fx-fire-ms": `${ANIMATION_TIMING.attackFx.fire}ms`,
@@ -148,12 +147,8 @@ export default function Board({
               onClick={() => onTileClick(x, y)}
             >
               {roadDir && <span className={`road road-${roadDir}`} aria-hidden />}
-              {fx && fx.tiles.includes(k) && (
-                <span key={fx.seq} className={`attack-fx fx-${fx.kind}`} aria-hidden />
-              )}
               {chars.map((c) => {
                 const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
-                const float = floatByChar.get(c.id);
                 return (
                 <div
                   key={c.id}
@@ -198,16 +193,6 @@ export default function Board({
                       {c.ownerId.toUpperCase()}
                     </span>
                   </div>
-                  {float && (
-                    <span
-                      key={float.seq}
-                      className={`combat-float ${float.kind}`}
-                      aria-hidden
-                    >
-                      {float.kind === "heal" ? "+" : "−"}
-                      {float.amount}
-                    </span>
-                  )}
                   {(c.statuses.length > 0 ||
                     (c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0)) && (
                     <div className="puck-badges">
@@ -228,6 +213,48 @@ export default function Board({
           );
         }),
       )}
+      {/* Combat FX + floating numbers live in a board-level overlay so they can
+          spill across tile borders (a tile clips its own contents). The overlay
+          mirrors the tile grid so each effect stays anchored to its cell. */}
+      <div
+        className="fx-overlay"
+        style={{
+          gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+          gridTemplateRows: `repeat(${GRID_ROWS}, 1fr)`,
+        }}
+      >
+        {fx &&
+          fx.tiles.map((k) => {
+            const [tx, ty] = k.split(",").map(Number);
+            return (
+              <span
+                key={`${fx.seq}-${k}`}
+                className="fx-cell"
+                style={{ gridColumn: tx + 1, gridRow: ty + 1 }}
+                aria-hidden
+              >
+                <span className={`attack-fx fx-${fx.kind}`} />
+              </span>
+            );
+          })}
+        {(floats ?? []).map((f) => {
+          const c = state.characters.find((ch) => ch.id === f.charId);
+          if (!c) return null;
+          return (
+            <span
+              key={`${f.seq}-${f.charId}`}
+              className="fx-cell"
+              style={{ gridColumn: c.position.x + 1, gridRow: c.position.y + 1 }}
+              aria-hidden
+            >
+              <span className={`combat-float ${f.kind}`}>
+                {f.kind === "heal" ? "+" : "−"}
+                {f.amount}
+              </span>
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
