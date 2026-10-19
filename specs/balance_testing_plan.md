@@ -150,7 +150,7 @@ A version may **not** be called balanced if any of these hold:
 
 ## 10. Baseline run — results and next steps (v0.3: 10 rounds + heal-over-time + spike heals)
 
-First harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Medic: `src/game/ai/balanceSweep.test.ts`. Turn-order caveat (§4.1) applies.
+First harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. **Raw report committed at `specs/balance_sweep_baseline.txt`** (regenerate with the command in that file). Turn-order caveat (§4.1) applies.
 
 ### 10.1 Measured
 

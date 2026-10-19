@@ -1,0 +1,64 @@
+# Balance sweep — baseline report (v0.3 engine: 10 rounds + heal-over-time + spike heals)
+
+Raw output of the self-play harness `src/game/ai/balanceSweep.test.ts`.
+Regenerate with:
+
+    SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
+
+Track A utility policy, seeds 1..100 per cell. Turn-order caveat: the harness
+alternates p1/p2 itself, so it is not decision-grade until ORDER enforcement
+moves into the engine (see specs/balance_testing_plan.md 4.1).
+Interpretation + prioritized next steps: specs/balance_testing_plan.md 10.
+
+---
+
+
+===== shipped: heroes(p1, north) vs villains(p2) (n=100) =====
+p1 0 (0.0%) | p2 100 (100.0%) | draws 0 (0.0%)
+north/first-mover 0.0%  95% CI [0.0%, 3.7%]
+decision: KO 0 (0.0%) | tiebreak 100 (100.0%) | limit-draw 0 | ko-draw 0 | unresolved 0
+cap-reach 100.0% | avg rounds 10.00 | avg KOs 1.00 | round-1 KO 0 (0.0%)
+first KO round: min 7 | avg 7.0
+damage/match 28.15 | HP-share margin avg 0.191 median 0.155
+plays/match 12.06 | spike-heal plays 0.83 | instant heal 5.42 | regen 2.10
+
+===== mirror heroes (seat alternated) (n=100) =====
+p1 36 (36.0%) | p2 46 (46.0%) | draws 18 (18.0%)
+north/first-mover 38.0%  95% CI [29.1%, 47.8%]
+decision: KO 0 (0.0%) | tiebreak 82 (82.0%) | limit-draw 18 | ko-draw 0 | unresolved 0
+cap-reach 100.0% | avg rounds 10.00 | avg KOs 0.00 | round-1 KO 0 (0.0%)
+damage/match 25.33 | HP-share margin avg 0.028 median 0.021
+plays/match 15.62 | spike-heal plays 0.07 | instant heal 2.78 | regen 2.57
+
+===== mirror villains (seat alternated) (n=100) =====
+p1 54 (54.0%) | p2 45 (45.0%) | draws 1 (1.0%)
+north/first-mover 52.0%  95% CI [42.3%, 61.5%]
+decision: KO 0 (0.0%) | tiebreak 99 (99.0%) | limit-draw 1 | ko-draw 0 | unresolved 0
+cap-reach 100.0% | avg rounds 10.00 | avg KOs 1.79 | round-1 KO 0 (0.0%)
+first KO round: min 7 | avg 7.2
+damage/match 55.26 | HP-share margin avg 0.093 median 0.091
+plays/match 16.69 | spike-heal plays 0.10 | instant heal 3.52 | regen 3.18
+
+===== tuning grid: shipped heroes vs villains (n=100 per cell) =====
+      hp x0.6, rounds=10         cap 100%  KO 0%  draws 0%  margin 0.350
+      hp x0.6, rounds=12         cap 100%  KO 0%  draws 0%  margin 0.413
+      hp x0.6, rounds=14         cap 99%  KO 1%  draws 0%  margin 0.687
+      hp x0.7, rounds=10         cap 100%  KO 0%  draws 0%  margin 0.363
+      hp x0.7, rounds=12         cap 100%  KO 0%  draws 0%  margin 0.444
+      hp x0.7, rounds=14         cap 100%  KO 0%  draws 0%  margin 0.681
+      hp x0.8, rounds=10         cap 100%  KO 0%  draws 0%  margin 0.356
+      hp x0.8, rounds=12         cap 100%  KO 0%  draws 0%  margin 0.412
+      hp x0.8, rounds=14         cap 100%  KO 0%  draws 0%  margin 0.615
+
+===== tuning grid: mirror heroes (n=100 per cell) =====
+      hp x0.6, rounds=10         cap 100%  KO 0%  draws 0%  margin 0.109
+      hp x0.6, rounds=12         cap 100%  KO 0%  draws 0%  margin 0.143
+      hp x0.6, rounds=14         cap 100%  KO 0%  draws 4%  margin 0.198
+      hp x0.7, rounds=10         cap 100%  KO 0%  draws 9%  margin 0.065
+      hp x0.7, rounds=12         cap 100%  KO 0%  draws 12%  margin 0.071
+      hp x0.7, rounds=14         cap 100%  KO 0%  draws 20%  margin 0.106
+      hp x0.8, rounds=10         cap 100%  KO 0%  draws 16%  margin 0.032
+      hp x0.8, rounds=12         cap 100%  KO 0%  draws 4%  margin 0.049
+      hp x0.8, rounds=14         cap 100%  KO 0%  draws 21%  margin 0.056
+
+PASS = cap-reach <=70% AND KO-finish >=40% AND draws <10% (balance_testing_plan §2.1).
