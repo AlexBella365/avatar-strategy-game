@@ -1,4 +1,4 @@
-.PHONY: help install dev build test test-watch typecheck check sweep sweep-baseline preview clean
+.PHONY: help install dev build test test-watch test-one typecheck check ci sweep sweep-baseline preview clean
 
 # Balance sweep size (seeds per cell) and output path.
 SWEEP_N ?= 100
@@ -22,10 +22,19 @@ test: ## Run tests once
 test-watch: ## Run tests in watch mode
 	npm run test:watch
 
+test-one: ## Run a single test file: make test-one F=src/game/rules/healing.test.ts
+	@test -n "$(F)" || { echo "usage: make test-one F=<path/to/file.test.ts>"; exit 1; }
+	npx vitest run $(F)
+
 typecheck: ## Typecheck only
 	npm run typecheck
 
 check: ## Typecheck + full test suite (local CI gate)
+	npm run typecheck
+	npm test
+
+ci: ## Clean install from lockfile + typecheck + tests (CI entrypoint)
+	npm ci
 	npm run typecheck
 	npm test
 
