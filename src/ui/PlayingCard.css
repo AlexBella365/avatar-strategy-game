@@ -1,30 +1,33 @@
 .hand-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 6px;
   margin-top: 8px;
 }
-/* Classic playing-card look for technique cards. Cards flex to share the hand's
-   width so the whole draw fits in one row (no sideways scrolling); the
-   rules/fit/bank detail lives in the card's hover tooltip. */
+/* Classic playing-card look for technique cards. Every card holds the same 5:7
+   ratio as the card_back.png artwork (300x420), so faces and backs match. Cards
+   flex to share the row and wrap onto new rows inside the (narrower) sheet
+   column; the full rules text is printed verbatim on the face, with fit/bank
+   detail in the card's hover tooltip. */
 .playing-card {
   position: relative;
-  flex: 1 1 0;
-  min-width: 0;
+  box-sizing: border-box;
+  flex: 1 1 110px;
+  min-width: 108px;
   max-width: 150px;
-  min-height: 168px;
+  aspect-ratio: 5 / 7;
   border-radius: 10px;
   background: var(--card-face-grad);
   border: 2px solid var(--border-strong);
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
-  padding: 20px 6px 8px;
+  padding: 20px 6px 6px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 4px;
   font-size: 0.72rem;
 }
 .playing-card:hover {
@@ -73,14 +76,24 @@
   overflow-wrap: anywhere;
 }
 .pc-art {
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   line-height: 1;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--border-muted);
   border-radius: 8px;
   width: 100%;
   text-align: center;
-  padding: 4px 0;
+  padding: 3px 0;
+}
+/* Full, verbatim ability text — never truncated. Sits under the art and takes
+   the remaining height so the kind label stays pinned to the bottom. */
+.pc-rules {
+  flex: 1 1 auto;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
 }
 .pc-kind {
   text-transform: uppercase;
@@ -88,4 +101,53 @@
   letter-spacing: 0.5px;
   color: var(--text);
   text-align: center;
+  margin-top: auto;
+}
+
+/* Compact card token shown in the sheet-side slots (assigned ability / gear).
+   Same shape language and 5:7 ratio as a playing card, sized to fit beside a
+   sheet. */
+.mini-card {
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 6px;
+  border: 2px solid var(--border-strong);
+  background: var(--card-face-grad);
+  padding: 3px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+.mini-card.kind-gear {
+  border-color: var(--gear-border);
+  background: var(--gear-face-grad);
+}
+.mini-card.kind-attack {
+  border-color: var(--accent-danger);
+}
+.mini-card.kind-defense {
+  border-color: var(--accent-select);
+}
+.mini-art {
+  font-size: 1rem;
+  line-height: 1;
+}
+.mini-name {
+  font-size: 0.5rem;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+/* Face-down card: shared card-back art (public/card_back.png → /card_back.png).
+   The dark gradient is a fallback if the image fails to load. */
+.mini-card.mini-back {
+  background-color: var(--ink-2);
+  background-image: url("/card_back.png");
+  background-size: cover;
+  background-position: center;
 }

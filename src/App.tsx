@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
 import { TERRAIN_LEGEND } from "./ui/terrainTiles";
+import { attackFxKind, type AttackFx } from "./ui/attackFx";
+import { healthDeltas, type CombatText } from "./ui/combatText";
+import { ATTACK_FX_DISMISS_MS, COMBAT_FLOAT_DISMISS_MS } from "./ui/animationTiming";
 import { chooseAutoAction, evadeEscapes } from "./game/auto";
-import PlayingCard from "./ui/PlayingCard";
+import PlayingCard, { MiniCard, MiniCardBack } from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
 import { bendingColor, bendingLabel } from "./ui/elements";
 import type {
@@ -21,7 +24,7 @@ import {
   movementAllowance,
 } from "./game/rules/movement";
 import { blockingTiles, difficultTiles } from "./game/rules/terrain";
-import { getLegalTargets } from "./game/rules/targeting";
+import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
@@ -81,70 +84,123 @@ interface EvadeState {
   dests: Position[];
 }
 
-/** One character-sheet card (portrait, stats, card, resonance). */
+/** Build the transient attack overlay for a card play, or null if the card is
+ *  not offensive. Pure: resolves affected tiles from the pre-action state. */
+function buildAttackFx(
+  state: GameState,
+  card: CardDefinition,
+  sourceId: string,
+  selection: TargetOption["selection"],
+  seq: number,
+): AttackFx | null {
+  const kind = attackFxKind(card);
+  if (!kind) return null;
+  const tiles = resolveTiles(state, sourceId, card, selection).map(key);
+  if (tiles.length === 0) return null;
+  return { kind, tiles, seq };
+}
+
+/** Build floating "-x"/"+y" callouts for the HP changes of one action. */
+function buildFloats(before: GameState, after: GameState, startSeq: number): CombatText[] {
+  return healthDeltas(before, after).map((d, i) => ({ ...d, seq: startSeq + i }));
+}
+
+/** How a character's assigned-ability slot reads for the current viewer (the
+ *  acting side in hot-seat):
+ *  - `front`: the viewer owns this character — show the assigned card's face.
+ *  - `back`:  the opponent holds a face-down card here — show only the card back.
+ *  - `none`:  nothing assigned to show. */
+type AssignmentView = { kind: "front"; def: CardDefinition } | { kind: "back" } | { kind: "none" };
+
+/** One character sheet: a narrower sheet flanked by a gear slot (left) and the
+ *  assigned-ability slot (right). Cards replace the old "Card: …" text row. */
 function SheetCard(props: {
   c: CharacterState;
   selected: boolean;
-  assignedName: string | null;
+  assignment: AssignmentView;
+  gear: CardDefinition[];
   onSelect: (id: string) => void;
 }) {
-  const { c, selected, assignedName, onSelect } = props;
+  const { c, selected, assignment, gear, onSelect } = props;
   const charDef = CHARACTERS.find((d) => d.id === c.definitionId);
-  const gearNames = c.equippedGear
-    .map((g) => getCardDefinition(g.definitionId)?.name ?? g.definitionId)
-    .join(", ");
   const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
   const portrait = PORTRAITS[c.definitionId];
   const bending = bendingColor(c.definitionId);
   return (
-    <div
-      className={`sheet ${selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
-      style={{ borderTopColor: bending }}
-      onClick={() => onSelect(c.id)}
-    >
-      {portrait ? (
-        <img className="sheet-portrait" src={portrait} alt={c.definitionId} />
-      ) : (
-        <span className="sheet-face" aria-hidden>
-          {FACES[c.definitionId] ?? "❓"}
-        </span>
-      )}
-      <div className="sheet-body">
-        <div className="sheet-title">
-          <strong>{charDef?.name ?? c.definitionId}</strong>
-          <span className="dim small">
-            <span
-              className="element-dot"
-              style={{ backgroundColor: bending }}
-              title={bendingLabel(c.definitionId)}
-            />{" "}
-            {charDef?.class}
-            {c.activatedThisRound ? " · done" : ""}
+    <div className="sheet-with-slots">
+      <div
+        className={`sheet-slot ${gear.length > 0 ? "filled" : ""}`}
+        title="Gear (equipped)"
+      >
+        {gear.length > 0 ? (
+          gear.map((d, i) => <MiniCard key={`${d.id}-${i}`} def={d} />)
+        ) : (
+          <span className="slot-label">Gear</span>
+        )}
+      </div>
+      <div
+        className={`sheet ${selected ? "selected" : ""} ${c.health <= 0 ? "ko" : ""}`}
+        style={{ borderTopColor: bending }}
+        onClick={() => onSelect(c.id)}
+      >
+        {portrait ? (
+          <img className="sheet-portrait" src={portrait} alt={c.definitionId} />
+        ) : (
+          <span className="sheet-face" aria-hidden>
+            {FACES[c.definitionId] ?? "❓"}
           </span>
-        </div>
-        <div className="sheet-hp" title={`Health ${c.health}/${c.maxHealth}`}>
-          <span className="sheet-hp-fill" style={{ width: `${hpPct}%` }} />
-          <span className="sheet-hp-text">❤ {c.health}/{c.maxHealth}</span>
-        </div>
-        <div className="sheet-row">
-          <span title="Focus">◉ {c.focus}</span>
-          <span title="Movement spent">👟 {c.movementSpent}</span>
-          {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
-        </div>
-        {c.statuses.length > 0 && (
-          <div className="sheet-row statuses">
-            {c.statuses.map((s) => s.statusId).join(" · ")}
-          </div>
         )}
-        {gearNames !== "" && <div className="sheet-row dim small">⚙ {gearNames}</div>}
-        <div className="sheet-row dim small">Card: {assignedName ?? "facedown/none"}</div>
-        {c.avatarState && !c.avatarState.active && (
-          <div className="sheet-row dim small">
-            Res {c.avatarState.resonance}/{charDef?.avatarState?.threshold ?? 6}
+        <div className="sheet-body">
+          <div className="sheet-title">
+            <strong>{charDef?.name ?? c.definitionId}</strong>
+            <span className="dim small">
+              <span
+                className="element-dot"
+                style={{ backgroundColor: bending }}
+                title={bendingLabel(c.definitionId)}
+              />{" "}
+              {charDef?.class}
+              {c.activatedThisRound ? " · done" : ""}
+            </span>
           </div>
-        )}
-        {c.avatarState?.active && (
-          <div className="sheet-row avatar-warn">🌀 ACTIVE — lose if KO'd!</div>
+          <div className="sheet-hp" title={`Health ${c.health}/${c.maxHealth}`}>
+            <span className="sheet-hp-fill" style={{ width: `${hpPct}%` }} />
+            <span className="sheet-hp-text">❤ {c.health}/{c.maxHealth}</span>
+          </div>
+          <div className="sheet-row">
+            <span title="Focus">◉ {c.focus}</span>
+            <span title="Movement spent">👟 {c.movementSpent}</span>
+            {c.momentum > 0 && <span title="Momentum">🔥 Mo</span>}
+          </div>
+          {c.statuses.length > 0 && (
+            <div className="sheet-row statuses">
+              {c.statuses.map((s) => s.statusId).join(" · ")}
+            </div>
+          )}
+          {c.avatarState && !c.avatarState.active && (
+            <div className="sheet-row dim small">
+              Res {c.avatarState.resonance}/{charDef?.avatarState?.threshold ?? 6}
+            </div>
+          )}
+          {c.avatarState?.active && (
+            <div className="sheet-row avatar-warn">🌀 ACTIVE — lose if KO'd!</div>
+          )}
+        </div>
+      </div>
+      <div
+        className={`sheet-slot ${assignment.kind !== "none" ? "filled" : ""}`}
+        title={
+          assignment.kind === "back"
+            ? "Face-down assigned ability"
+            : "Assigned ability (this activation)"
+        }
+      >
+        {assignment.kind === "front" ? (
+          <MiniCard def={assignment.def} />
+        ) : assignment.kind === "back" ? (
+          <MiniCardBack />
+        ) : (
+          <span className="slot-label">Ability</span>
         )}
       </div>
     </div>
@@ -164,6 +220,24 @@ export default function App() {
   const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
+  const [attackFx, setAttackFx] = useState<AttackFx | null>(null);
+  const [floats, setFloats] = useState<CombatText[]>([]);
+  const fxSeq = useRef(0);
+  const floatSeq = useRef(0);
+
+  // Auto-dismiss the attack animation (see ui/animationTiming.ts).
+  useEffect(() => {
+    if (!attackFx) return;
+    const t = setTimeout(() => setAttackFx(null), ATTACK_FX_DISMISS_MS);
+    return () => clearTimeout(t);
+  }, [attackFx]);
+
+  // Auto-dismiss floating "-x"/"+y" callouts (see ui/animationTiming.ts).
+  useEffect(() => {
+    if (floats.length === 0) return;
+    const t = setTimeout(() => setFloats([]), COMBAT_FLOAT_DISMISS_MS);
+    return () => clearTimeout(t);
+  }, [floats]);
   const [draft, setDraft] = useState<{ p1: string[]; p2: string[] }>({
     p1: ["aang", "katara", "toph"],
     p2: ["zuko", "sokka", "azula"],
@@ -218,6 +292,19 @@ export default function App() {
         return;
       }
       setMessage(null);
+      if (action.type === "PLAY_CARD") {
+        const fx = buildAttackFx(
+          state,
+          action.card,
+          action.characterId,
+          action.selection,
+          fxSeq.current++,
+        );
+        if (fx) setAttackFx(fx);
+      }
+      const nextFloats = buildFloats(state, result.state, floatSeq.current);
+      floatSeq.current += nextFloats.length;
+      if (nextFloats.length > 0) setFloats(nextFloats);
       setState(result.state);
     }, 500);
     return () => clearTimeout(t);
@@ -386,6 +473,9 @@ export default function App() {
       return false;
     }
     setMessage(null);
+    const nextFloats = buildFloats(state, result.state, floatSeq.current);
+    floatSeq.current += nextFloats.length;
+    if (nextFloats.length > 0) setFloats(nextFloats);
     setState(result.state);
     return true;
   };
@@ -397,6 +487,8 @@ export default function App() {
     setAssigning(null);
     setMenu(null);
     setPlan(null);
+    setAttackFx(null);
+    setFloats([]);
   };
 
   const switchSide = (side: string) => {
@@ -459,6 +551,8 @@ export default function App() {
       reactions,
     });
     if (ok) {
+      const fx = buildAttackFx(state, card, selectedChar.id, selection, fxSeq.current++);
+      if (fx) setAttackFx(fx);
       setTargeting(null);
       setEvade(null);
       setPlan(null);
@@ -631,20 +725,40 @@ export default function App() {
     }
     const next = cloneState(state);
     endRound(next);
-    setState(next);
     setSelected(null);
     clearTransient();
+    const nextFloats = buildFloats(state, next, floatSeq.current);
+    floatSeq.current += nextFloats.length;
+    if (nextFloats.length > 0) setFloats(nextFloats);
+    setState(next);
     setActingSide(next.initiativePlayerId);
     setMessage(null);
   };
 
-  const assignedDef = (charId: string): CardDefinition | null => {
+  /** Resolve a character's assignment into what the current viewer (the acting
+   *  side) is allowed to see: the face for the owner, a card back for the
+   *  opponent while the assignment is still face down. */
+  const assignmentView = (charId: string): AssignmentView => {
     const owner = state.characters.find((c) => c.id === charId)?.ownerId;
     const inst = state.players.find((p) => p.id === owner)?.assignments[charId];
-    if (!inst) return null;
-    if (owner !== actingSide) return null; // opponent assignments stay secret
-    return getCardDefinition(inst.definitionId) ?? null;
+    if (!inst) return { kind: "none" };
+    if (owner !== actingSide) return { kind: "back" }; // opponent cards stay face down
+    const def = getCardDefinition(inst.definitionId);
+    return def ? { kind: "front", def } : { kind: "back" };
   };
+
+  /** The owner's own assigned card, or null when hidden/absent (used for the
+   *  owner-only actions in the puck menu and activation panel). */
+  const assignedDef = (charId: string): CardDefinition | null => {
+    const view = assignmentView(charId);
+    return view.kind === "front" ? view.def : null;
+  };
+
+  /** Equipped gear as card definitions (for the sheet's gear slot). */
+  const gearDefs = (c: CharacterState): CardDefinition[] =>
+    c.equippedGear
+      .map((g) => getCardDefinition(g.definitionId))
+      .filter((d): d is CardDefinition => d !== undefined);
 
   const avatarThreshold = (definitionId: string): number =>
     CHARACTERS.find((d) => d.id === definitionId)?.avatarState?.threshold ?? 6;
@@ -681,6 +795,35 @@ export default function App() {
       .map((c) => c.definitionId);
     return names.length > 0 ? `${requirement} (yours: ${names.join(", ")})` : `${requirement} (none of yours — bank it)`;
   };
+
+  /** The acting side's hand, shown under that player's own sheets (not the map). */
+  const handPanel = (
+    <section className="hand">
+      <h2>
+        {actingSide} hand ({me.teamHand.length})
+        {assigning ? " — click a card, then one of your characters" : ""}
+      </h2>
+      {me.teamHand.length === 0 && <p className="dim">Hand empty — banked or assigned.</p>}
+      <div className="hand-row">
+        {me.teamHand.map((c) => {
+          const def = getCardDefinition(c.definitionId);
+          if (!def) return null;
+          return (
+            <PlayingCard
+              key={c.id}
+              def={def}
+              assigning={assigning === c.id}
+              fits={fitsWhom(def)}
+              onAssign={() => setAssigning(assigning === c.id ? null : c.id)}
+            />
+          );
+        })}
+      </div>
+      <p className="dim small">
+        Foe hand: {foe.teamHand.length} cards (hidden). Foe chi: {foe.chi} (secret in competitive play).
+      </p>
+    </section>
+  );
 
   return (
     <div className="app">
@@ -727,11 +870,13 @@ export default function App() {
                   key={c.id}
                   c={c}
                   selected={c.id === selected}
-                  assignedName={assignedDef(c.id)?.name ?? null}
+                  assignment={assignmentView(c.id)}
+                  gear={gearDefs(c)}
                   onSelect={onCharClick}
                 />
               ))}
           </section>
+          {actingSide === "p1" && handPanel}
         </aside>
         <section className="board-col">
           <div className="board-wrap">
@@ -741,6 +886,8 @@ export default function App() {
               moveTiles={moveTiles}
               legalTargetTiles={legalTargetTiles}
               legalTargetChars={legalTargetChars}
+              fx={attackFx}
+              floats={floats}
               onTileClick={onTileClick}
               onCharClick={onCharClick}
             />
@@ -785,31 +932,6 @@ export default function App() {
             })()}
           </div>
           {message && <p className="message">{message}</p>}
-          <section className="hand">
-            <h2>
-              {actingSide} hand ({me.teamHand.length})
-              {assigning ? " — click a card, then one of your characters" : ""}
-            </h2>
-            {me.teamHand.length === 0 && <p className="dim">Hand empty — banked or assigned.</p>}
-            <div className="hand-row">
-              {me.teamHand.map((c) => {
-                const def = getCardDefinition(c.definitionId);
-                if (!def) return null;
-                return (
-                  <PlayingCard
-                    key={c.id}
-                    def={def}
-                    assigning={assigning === c.id}
-                    fits={fitsWhom(def)}
-                    onAssign={() => setAssigning(assigning === c.id ? null : c.id)}
-                  />
-                );
-              })}
-            </div>
-            <p className="dim small">
-              Foe hand: {foe.teamHand.length} cards (hidden). Foe chi: {foe.chi} (secret in competitive play).
-            </p>
-          </section>
           {targeting?.card.targeting.kind === "direction" && (
             <div className="directions">
               {(["north", "east", "south", "west"] as Direction[]).map((d) => (
@@ -860,11 +982,14 @@ export default function App() {
                   key={c.id}
                   c={c}
                   selected={c.id === selected}
-                  assignedName={assignedDef(c.id)?.name ?? null}
+                  assignment={assignmentView(c.id)}
+                  gear={gearDefs(c)}
                   onSelect={onCharClick}
                 />
               ))}
           </section>
+
+          {actingSide === "p2" && handPanel}
 
           <section className="turn-feed">
             <h2>This round's plays</h2>

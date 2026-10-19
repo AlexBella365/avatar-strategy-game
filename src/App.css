@@ -171,7 +171,13 @@
 }
 .layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 400px;
+  /* P1 and P2 sheet columns are equal and absorb all free space either side of
+     the centred battle map. The 280px floor keeps a sheet readable on smaller
+     screens (the board, not the sheets, gives up width first). */
+  grid-template-columns:
+    minmax(280px, 1fr)
+    minmax(0, 572px)
+    minmax(280px, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -226,6 +232,7 @@
 .info-sidebar .legend li {
   margin-bottom: 2px;
 }
+.sheets-col,
 .side-col {
   display: flex;
   flex-direction: column;
@@ -342,13 +349,47 @@ header p {
   border-radius: 8px;
   padding: 8px 10px;
 }
-.sheet {
+/* A sheet sits between two dotted card slots (gear left, ability right). */
+.sheet-with-slots {
   display: flex;
-  gap: 10px;
+  align-items: stretch;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.sheet-slot {
+  box-sizing: border-box;
+  flex: 0 0 58px;
+  border: 2px dashed var(--border-mid);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.02);
+}
+.sheet-slot.filled {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  justify-content: flex-start;
+}
+.slot-label {
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+}
+.sheet {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
   border: 2px solid var(--border-faint);
   border-radius: 10px;
   padding: 0;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   cursor: pointer;
   overflow: hidden;
   background: var(--surface-3);
@@ -366,7 +407,7 @@ header p {
   opacity: 0.55;
 }
 .sheet-portrait {
-  width: 80px;
+  width: 58px;
   align-self: stretch;
   object-fit: cover;
   object-position: top center;
@@ -374,8 +415,8 @@ header p {
   background: var(--portrait-bg);
 }
 .sheet-face {
-  font-size: 1.8rem;
-  width: 80px;
+  font-size: 1.4rem;
+  width: 58px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,6 +436,11 @@ header p {
   justify-content: space-between;
   align-items: baseline;
   gap: 6px;
+  flex-wrap: wrap;
+}
+.sheet-title strong {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 .element-dot {
   display: inline-block;
