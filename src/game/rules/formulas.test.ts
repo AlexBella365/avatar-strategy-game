@@ -1,8 +1,9 @@
+// Core formula tests: health derivation, aggression, raw damage, evasion.
 import { describe, expect, it } from "vitest";
-import { aggressionModifier, attackVsEvasion, rawDamage } from "./game/rules/damage";
-import { maxHealthFor } from "./game/state";
+import { aggressionModifier, attackVsEvasion, rawDamage } from "./damage";
+import { maxHealthFor } from "../state";
 
-describe("scaffold smoke tests (health/damage/evasion)", () => {
+describe("core formulas (health/damage/evasion)", () => {
   it("health formula: 16 + 2*(RES-3), min 10", () => {
     expect(maxHealthFor(3)).toBe(16);
     expect(maxHealthFor(5)).toBe(20);

@@ -6,10 +6,9 @@ import { dealDamage } from "./damage";
 import { canActivate, endRound, pendingActivations } from "./turns";
 
 describe("endRound", () => {
-  it("refreshes energy/flags, clears momentum and intentions, flips initiative", () => {
+  it("refreshes energy/flags, clears momentum, flips initiative", () => {
     const state = setup();
     state.players[0].energy = 0;
-    state.players[0].intentions["p1-c0"] = "Attack";
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.activatedThisRound = true;
     aang.reactionUsedThisRound = true;
@@ -20,7 +19,6 @@ describe("endRound", () => {
     const events = endRound(state);
     expect(state.round).toBe(2);
     expect(state.players[0].energy).toBe(4);
-    expect(state.players[0].intentions).toEqual({});
     expect(aang.activatedThisRound).toBe(false);
     expect(aang.reactionUsedThisRound).toBe(false);
     expect(aang.movementSpent).toBe(0);

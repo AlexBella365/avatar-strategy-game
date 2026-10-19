@@ -73,7 +73,11 @@ describe("voluntary movement", () => {
     // straight through a pond in the middle of the path
     const state2 = setup();
     createTerrain(state2, { x: 2, y: 1 }, "water-source", "permanent", "fail");
-    state2.players[0].intentions[AANG] = "Reposition"; // 2-tile allowance
+    // Aang's Glider gives +1 movement so the path can extend past a pond.
+    state2.characters.find((c) => c.id === AANG)!.equippedGear.push({
+      id: "glider-test",
+      definitionId: "aang-glider",
+    });
     expect(
       validateMove(state2, AANG, [
         { x: 2, y: 1 },
@@ -86,7 +90,11 @@ describe("voluntary movement", () => {
     const state = setup();
     createTerrain(state, { x: 2, y: 1 }, "rock-wall", "permanent", "fail");
     expect(validateMove(state, AANG, [{ x: 2, y: 1 }]).errors[0].code).toBe("TILE_BLOCKED");
-    state.players[0].intentions[AANG] = "Reposition"; // 2-tile allowance
+    // Aang's Glider gives +1 movement for the 2-tile path.
+    state.characters.find((c) => c.id === AANG)!.equippedGear.push({
+      id: "glider-test",
+      definitionId: "aang-glider",
+    });
     expect(
       validateMove(state, AANG, [
         { x: 2, y: 1 },
@@ -102,13 +110,14 @@ describe("voluntary movement", () => {
     expect(validateMove(state, AANG, [{ x: 1, y: 2 }]).errors[0].code).toBe("CHARACTER_BOUND");
   });
 
-  it("Reposition intention grants +1 tile on the first movement", () => {
+  it("equipped Gear grants +1 tile of movement", () => {
     const state = setup();
     expect(movementAllowance(state, AANG)).toBe(1);
-    state.players[0].intentions[AANG] = "Reposition";
+    state.characters.find((c) => c.id === AANG)!.equippedGear.push({
+      id: "glider-test",
+      definitionId: "aang-glider",
+    });
     expect(movementAllowance(state, AANG)).toBe(2);
-    applyMove(state, AANG, [{ x: 1, y: 2 }]);
-    expect(movementAllowance(state, AANG)).toBe(1); // bonus consumed
   });
 
   it("can move into a tile freed by knockout", () => {

@@ -452,20 +452,12 @@ describe("support effects and actions", () => {
     ).toBe(true);
   });
 
-  it("MOVE finds the cheapest path; SET_INTENTION hides values; PASS marks activation", () => {
+  it("MOVE finds the cheapest path; PASS marks activation", () => {
     const state = setup();
     const moved = applyGameAction(state, { type: "MOVE", playerId: "p1", characterId: "p1-c0", to: { x: 2, y: 1 } });
     expect(moved.errors).toEqual([]);
     expect(moved.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 1 });
-    const intent = applyGameAction(moved.state, {
-      type: "SET_INTENTION",
-      playerId: "p1",
-      characterId: "p1-c0",
-      intention: "Attack",
-    });
-    expect(intent.state.players[0].intentions["p1-c0"]).toBe("Attack");
-    expect(intent.events[0]).not.toContain("Attack");
-    const pass = applyGameAction(intent.state, { type: "PASS_ACTIVATION", playerId: "p1", characterId: "p1-c0" });
+    const pass = applyGameAction(moved.state, { type: "PASS_ACTIVATION", playerId: "p1", characterId: "p1-c0" });
     expect(pass.state.characters.find((c) => c.id === "p1-c0")!.activatedThisRound).toBe(true);
   });
 });

@@ -196,12 +196,11 @@ export function endRound(state: GameState): string[] {
     state.log.push(...events);
     return events;
   }
-  // Next round: refresh, reset, alternate initiative, clear intentions.
+  // Next round: refresh, reset, alternate initiative.
   state.round += 1;
   state.roundEventLog = []; // per-round synergy/resonance tracking resets
   for (const player of state.players) {
     player.energy = ENERGY_PER_ROUND;
-    player.intentions = {};
     events.push(...drawCards(state, player.id, ECONOMY_TUNING.drawPerRound));
   }
   for (const c of state.characters) {

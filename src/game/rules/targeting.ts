@@ -22,8 +22,8 @@ import {
   shapeTiles,
 } from "./grid";
 import { occupantAt } from "../state";
+import { err } from "./errors";
 import type {
-  ActionError,
   AllegianceFilter,
   CardDefinition,
   CharacterState,
@@ -35,10 +35,6 @@ import type {
   TargetSelection,
   ValidationResult,
 } from "../types";
-
-function err(code: string, message: string): ActionError {
-  return { code, message };
-}
 
 function findSource(state: GameState, sourceId: string): CharacterState | undefined {
   return state.characters.find((c) => c.id === sourceId);

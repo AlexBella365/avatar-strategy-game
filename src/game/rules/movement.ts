@@ -1,5 +1,5 @@
 // Voluntary + forced grid movement. Spec §4.4, §4.7, §4A.
-//Movement allowance: 2 tiles/activation (+1 Reposition intention, first move).
+// Movement allowance: 1 tile/activation (+ equipped Gear bonuses).
 import { CARD_DEFINITIONS } from "../content/cards";
 import {
   BASE_MOVEMENT,
@@ -12,25 +12,18 @@ import { blockingTiles, difficultTiles, resolveTileEntry } from "./terrain";
 import { getCharacterOrThrow, hasStatus, removeStatus } from "./statuses";
 import { occupantAt } from "../state";
 import type { ActionError, Direction, GameState, Position } from "../types";
-
-function err(code: string, message: string): ActionError {
-  return { code, message };
-}
+import { err } from "./errors";
 
 function tileCost(difficult: Set<string>, pos: Position): number {
   return difficult.has(key(pos)) ? 2 : 1;
 }
 
-/** Movement allowance: base 2 + equipped Gear bonuses (+ legacy Reposition). */
+/** Movement allowance: base 1 + equipped Gear bonuses. */
 export function movementAllowance(state: GameState, characterId: string): number {
   const c = getCharacterOrThrow(state, characterId);
   let allowance = BASE_MOVEMENT;
   for (const gear of c.equippedGear) {
     allowance += CARD_DEFINITIONS[gear.definitionId]?.gearBonus?.movement ?? 0;
-  }
-  const player = state.players.find((p) => p.id === c.ownerId);
-  if (player?.intentions[characterId] === "Reposition" && c.movementSpent === 0) {
-    allowance += 1;
   }
   return allowance;
 }

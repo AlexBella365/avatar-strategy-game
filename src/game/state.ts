@@ -13,7 +13,6 @@ import type {
   TerrainState,
 } from "./types";
 
-export const MAX_FOCUS = 4;
 export const STARTING_FOCUS = 1;
 export const ENERGY_PER_ROUND = 4;
 export const MAX_ROUNDS = 8;
@@ -152,7 +151,6 @@ export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): Gam
       discard: [],
       teamHand: [],
       characterHands: {},
-      intentions: {},
       assignments: {},
     })),
     terrain: [],
@@ -190,12 +188,4 @@ export function buildStarterDeck(playerId: string, seed: number): CardInstance[]
 /** Deep-clone serializable state (engine must never mutate inputs). */
 export function cloneState(state: GameState): GameState {
   return structuredClone(state);
-}
-
-export function getCharacter(state: GameState, id: string): CharacterState | undefined {
-  return state.characters.find((c) => c.id === id);
-}
-
-export function isAlive(c: CharacterState): boolean {
-  return c.health > 0;
 }

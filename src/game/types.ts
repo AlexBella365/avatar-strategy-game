@@ -261,8 +261,6 @@ export interface TerrainDefinition {
   onEntryStatus?: { statusId: StatusId; duration: number };
 }
 
-export type Intention = "Attack" | "Defend" | "Reposition" | "Prepare";
-
 export interface PlayerState {
   id: string; // "p1" | "p2"
   energy: number;
@@ -271,8 +269,8 @@ export interface PlayerState {
   deck: CardInstance[];
   discard: CardInstance[];
   teamHand: CardInstance[];
-  characterHands: Record<string, CardInstance[]>; // legacy direct deals (tests)
-  intentions: Record<string, Intention>; // legacy (v0.2 intentions removed in v0.3)
+  /** Direct per-character deals (used by tests); the UI plays from teamHand. */
+  characterHands: Record<string, CardInstance[]>;
   /** Face-down assignments: characterId -> assigned instance (revealed on activation). */
   assignments: Record<string, CardInstance | null>;
 }
@@ -293,7 +291,6 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: "SET_INTENTION"; playerId: string; characterId: string; intention: Intention }
   | { type: "MOVE"; playerId: string; characterId: string; to: Position; path?: Position[] }
   | {
       type: "PLAY_CARD";

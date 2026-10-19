@@ -37,6 +37,7 @@ import {
   dealDamage,
   requiresAttributesMet,
 } from "./damage";
+import { err } from "./errors";
 import {
   applyEvade,
   applyMove,
@@ -68,10 +69,6 @@ import type {
   Position,
   TargetSelection,
 } from "../types";
-
-function err(code: string, message: string): ActionError {
-  return { code, message };
-}
 
 function defOf(actor: CharacterState): CharacterDefinition | undefined {
   return CHARACTERS.find((d) => d.id === actor.definitionId);
@@ -123,21 +120,6 @@ export function applyGameAction(state: GameState, action: GameAction): ActionRes
       const result = applyMove(next, actor.id, path);
       if (!result.ok) errors.push(...result.errors);
       events.push(...result.events);
-      break;
-    }
-    case "SET_INTENTION": {
-      const actor = next.characters.find((c) => c.id === action.characterId);
-      if (!actor || actor.ownerId !== action.playerId) {
-        errors.push(err("NOT_YOUR_CHARACTER", "That character is not yours."));
-        break;
-      }
-      if (actor.health <= 0) {
-        errors.push(err("CHARACTER_KNOCKED_OUT", "Knocked-out characters take no intentions."));
-        break;
-      }
-      const player = next.players.find((p) => p.id === action.playerId)!;
-      player.intentions[action.characterId] = action.intention;
-      events.push(`${actor.definitionId} sets an intention (hidden).`);
       break;
     }
     case "PASS_ACTIVATION": {
