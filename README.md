@@ -1,5 +1,9 @@
 # Avatar Tactical Card Game — Prototype (MVP v0.3)
 
+<p align="center">
+  <img src="public/splash_screen.png" alt="Splash screen" width="640" />
+</p>
+
 > **Unofficial fan project.** This is a non-commercial prototype made by fans, for
 > learning and playtesting only. It is not affiliated with, endorsed by, or connected
 > to Nickelodeon, Avatar Studios, or any rights holders. All code, rules text, and
