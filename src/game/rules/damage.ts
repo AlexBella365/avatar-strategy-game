@@ -75,8 +75,6 @@ export function calculateDamage(input: DamageInput): number {
   );
 }
 
-// TODO(step 3): applyDamage with shields, Cover, Avatar bonus ordering,
-// knockout + Avatar instant-loss check.
 export interface DamageOutcome {
   events: string[];
   knockedOut: boolean;

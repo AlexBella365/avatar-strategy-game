@@ -4,11 +4,8 @@ import { inBounds, orthogonalNeighbors } from "./grid";
 import { applyStatus } from "./statuses";
 import { dealDamage } from "./damage";
 import { nextId } from "../state";
-import { TERRAIN_DEFINITIONS, getTerrainDefinition } from "../content/terrain";
-import type { GameState, Position, TerrainDefinition, TerrainState } from "../types";
-
-export { TERRAIN_DEFINITIONS };
-export type { TerrainDefinition };
+import { getTerrainDefinition } from "../content/terrain";
+import type { GameState, Position, TerrainState } from "../types";
 
 /** Terrain instance on a tile, if any (at most one primary per tile). */
 export function terrainAt(state: GameState, pos: Position): TerrainState | undefined {

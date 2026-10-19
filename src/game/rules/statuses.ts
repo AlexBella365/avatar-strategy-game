@@ -3,8 +3,6 @@
 import { nextId } from "../state";
 import type { CharacterState, GameState, StatusId } from "../types";
 
-export const STATUS_IDS: StatusId[] = ["OffBalance", "Exposed", "Bound", "Exhausted"];
-
 export function getCharacterOrThrow(state: GameState, id: string): CharacterState {
   const c = state.characters.find((ch) => ch.id === id);
   if (!c) throw new Error(`Unknown character: ${id}`);

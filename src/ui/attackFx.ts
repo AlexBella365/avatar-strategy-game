@@ -15,15 +15,6 @@ export interface AttackFx {
   seq: number;
 }
 
-/** Human-readable label (legend/debug). */
-export const ATTACK_FX_LABEL: Record<AttackFxKind, string> = {
-  fire: "Fire",
-  water: "Water",
-  air: "Air",
-  earth: "Earth/Rock",
-  slash: "Slash",
-};
-
 /**
  * Which attack animation a card should trigger, or null for non-offensive
  * plays (support/defense/gear and anything without damage).

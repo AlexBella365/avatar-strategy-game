@@ -33,16 +33,6 @@ export function gainResonance(
   return `${c.definitionId} gains Resonance (${status.resonance}/${def.threshold}): ${reason}.`;
 }
 
-/** Elemental-practice credit: distinct elements resolved this round. */
-export function creditElementalPractice(
-  state: GameState,
-  characterId: string,
-  element: string,
-): string | null {
-  if (!noteElementResolved(state, characterId, element)) return null;
-  return gainResonance(state, characterId, `elemental practice (${element})`);
-}
-
 /**
  * Record that a technique of `element` resolved (fresh-use detection).
  * Usage is a fact about the resolution even when the single-gain rule
