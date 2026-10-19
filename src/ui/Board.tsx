@@ -3,6 +3,9 @@ import type { GameState } from "../game/types";
 import { GRID_COLS, GRID_ROWS, key } from "../game/rules/grid";
 import { bendingColor } from "./elements";
 import { terrainVisual } from "./terrainTiles";
+import type { AttackFx } from "./attackFx";
+import type { CombatText } from "./combatText";
+import { ANIMATION_TIMING } from "./animationTiming";
 import "./Board.css";
 
 interface BoardProps {
@@ -11,6 +14,10 @@ interface BoardProps {
   moveTiles: Set<string>;
   legalTargetTiles: Set<string>;
   legalTargetChars: Set<string>;
+  /** Transient attack animation; null when nothing is playing. */
+  fx?: AttackFx | null;
+  /** Transient "-x"/"+y" callouts keyed by receiving character. */
+  floats?: CombatText[];
   onTileClick: (x: number, y: number) => void;
   onCharClick: (id: string) => void;
 }
@@ -66,18 +73,33 @@ export default function Board({
   moveTiles,
   legalTargetTiles,
   legalTargetChars,
+  fx,
+  floats,
   onTileClick,
   onCharClick,
 }: BoardProps) {
   const rows = Array.from({ length: GRID_ROWS }, (_, y) => y);
   const cols = Array.from({ length: GRID_COLS }, (_, x) => x);
+  const floatByChar = new Map((floats ?? []).map((f) => [f.charId, f]));
+  // Feed the timing config to CSS (Board.css reads these custom properties).
+  const timingVars = {
+    "--fx-fire-ms": `${ANIMATION_TIMING.attackFx.fire}ms`,
+    "--fx-water-ms": `${ANIMATION_TIMING.attackFx.water}ms`,
+    "--fx-air-ms": `${ANIMATION_TIMING.attackFx.air}ms`,
+    "--fx-earth-ms": `${ANIMATION_TIMING.attackFx.earth}ms`,
+    "--fx-slash-ms": `${ANIMATION_TIMING.attackFx.slash}ms`,
+    "--combat-float-ms": `${ANIMATION_TIMING.combatFloat}ms`,
+  } as CSSProperties;
   // Roads render as a rotated path tile; orientation comes from neighbouring
   // road tiles so segments connect into a continuous road.
   const roadKeys = new Set(
     state.terrain.filter((t) => t.terrainId === "road").map((t) => key({ x: t.x, y: t.y })),
   );
   return (
-    <div className="grid-board" style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}>
+    <div
+      className="grid-board"
+      style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`, ...timingVars }}
+    >
       {rows.map((y) =>
         cols.map((x) => {
           const k = key({ x, y });
@@ -126,8 +148,12 @@ export default function Board({
               onClick={() => onTileClick(x, y)}
             >
               {roadDir && <span className={`road road-${roadDir}`} aria-hidden />}
+              {fx && fx.tiles.includes(k) && (
+                <span key={fx.seq} className={`attack-fx fx-${fx.kind}`} aria-hidden />
+              )}
               {chars.map((c) => {
                 const hpPct = Math.max(0, Math.min(100, (c.health / c.maxHealth) * 100));
+                const float = floatByChar.get(c.id);
                 return (
                 <div
                   key={c.id}
@@ -172,6 +198,16 @@ export default function Board({
                       {c.ownerId.toUpperCase()}
                     </span>
                   </div>
+                  {float && (
+                    <span
+                      key={float.seq}
+                      className={`combat-float ${float.kind}`}
+                      aria-hidden
+                    >
+                      {float.kind === "heal" ? "+" : "−"}
+                      {float.amount}
+                    </span>
+                  )}
                   {(c.statuses.length > 0 ||
                     (c.avatarState && !c.avatarState.active && c.avatarState.resonance > 0)) && (
                     <div className="puck-badges">
