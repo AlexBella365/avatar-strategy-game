@@ -151,6 +151,43 @@ Supersedes the open choice above: **P1 in a specific single-row form, with rando
 
 ---
 
+## §4 One action per activation (decision, 2026-10-19) — one card, basic-action floor
+
+Rule clarification, adopted and implemented (commit `db956bf`; spec v2 §8
+Phase 3, docs/rules.md "On your activation"):
+
+1. **One card per activation.** A character plays exactly the one card
+   assigned to it — reassigning after a play cannot unlock a second play
+   (rejected with `TECHNIQUE_SPENT`). Unplayed cards are discarded/banked
+   for chi as before (pass scraps the assigned card; end-of-round
+   auto-scrap/auto-bank). The play is spent even on a fizzle (card paid and
+   discarded).
+2. **Basic actions (cardless floor).** A character with no assigned card is
+   never a wasted activation: it may use one very weak free basic action —
+   **basic attack** (orthogonally adjacent enemy, 1 damage, no evade
+   reaction) or **basic defense** (self shield 1 until next round). One per
+   activation, sharing the action slot.
+
+**Implementation:** the shared slot is `techniqueBlockedThisActivation` —
+set on card commit, on Avatar State activation, and on either basic action
+(`rules/basics.ts`, actions `BASIC_ATTACK`/`BASIC_DEFENSE`). UI shows
+"Basic attack / Basic shield" for cardless, unspent characters.
+
+**Consequences accepted / intended:**
+
+- **Anti-dead-turn valve.** The free adjacent strike puts a ~1-damage floor
+  under every activation, so boards stall less; real cards must stay
+  strictly stronger per cost or they are outclassed by a free action.
+- **Brace economy watch.** Shield 1 per activation is deliberately minimal,
+  but per-round brace stacking could grind matches longer — watch round
+  reached and damage-per-activation metrics (plan §2.1); if brace meta
+  emerges, gate the basic defense or decay shields (plan §3.5).
+- **AI follow-up (flagged, not implemented):** bots currently pass when the
+  slot is spent and never evaluate basic actions — worth a E-harness probe
+  later; not a correctness issue (pass is always legal).
+
+---
+
 ## Open questions (deliberately deferred)
 
 1. Does placement-draft order link to initiative (P2 place-second ⇒ act-first), or does each area carry its own mitigation?
