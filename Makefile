@@ -1,8 +1,10 @@
-.PHONY: help install dev build test test-watch test-one typecheck check ci sweep sweep-baseline preview clean
+.PHONY: help install dev build test test-watch test-one typecheck check ci sweep sweep-baseline llm-live preview clean
 
 # Balance sweep size (seeds per cell) and output path.
 SWEEP_N ?= 100
 SWEEP_OUT ?= /tmp/balance_sweep.txt
+# Track B live probe: local models to try (missing ones are skipped).
+LLM_MODELS ?= qwen3.5:0.8b,bonsai-2:latest
 
 help: ## Show this help
 	@grep -E '^[a-z-]+: .*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ": .*## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -43,6 +45,9 @@ sweep: ## Balance self-play sweep (SWEEP_N=100 -> /tmp/balance_sweep.txt; overri
 
 sweep-baseline: ## Regenerate the committed sweep report (specs/balance_sweep_baseline.txt)
 	SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
+
+llm-live: ## Probe local LLM models for the Track B advisor (skips models that aren't pulled)
+	LLM_LIVE=1 LLM_MODELS="$(LLM_MODELS)" npx vitest run src/game/ai/llm/live.test.ts
 
 preview: ## Preview production build
 	npm run preview

@@ -52,6 +52,19 @@ make build
 Or directly with npm (`npm install`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run build`).
 Run `make help` for all targets.
 
+### Optional: LLM NPC advisor (Track B)
+
+Off by default — the NPC uses the pure utility AI. To let a local model pick a
+per-round stance (it can only nudge Track A weights, never act directly):
+
+```sh
+VITE_AI_LLM=1 npm run dev            # defaults to Ollama at http://localhost:11434
+VITE_AI_LLM=1 VITE_LLM_MODEL=qwen3.5:0.8b npm run dev
+```
+
+Server-side smoke test (skips models that aren't pulled): `make llm-live`.
+See `specs/npc_ai_plan.md` §3 for the design and the verified local models.
+
 ## Editing the board
 
 The demo board is hand-editable text at `src/game/maps/demo.grid.txt`: seven rows
@@ -114,4 +127,5 @@ stay in sync.
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
 12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
 13. ⬜ End-to-end polish (passives, roster waves)
-14. ⬜ Balance pass — lethality first (no KO finishes; every match hits the round cap). See `specs/balance_testing_plan.md` §10 for the baseline and the prioritized next steps; re-run `SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts` after each change.
+14. ⬜ Balance pass — lethality first (no KO finishes; every match hits the round cap). See `specs/balance_testing_plan.md` §10 for the baseline and the prioritized next steps; re-run `make sweep-baseline` after each change.
+15. 🧪 Optional LLM advisor (Track B, Mode 1) — **off by default** (`VITE_AI_LLM=1` to enable). Zero-dep `fetch` client in `src/game/ai/llm/`, local Ollama by default; advisory only and never blocks the loop. See `specs/npc_ai_plan.md` §3.

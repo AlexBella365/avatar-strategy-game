@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
 import { TERRAIN_LEGEND } from "./ui/terrainTiles";
 import { attackFxKind, type AttackFx } from "./ui/attackFx";
 import { healthDeltas, type CombatText } from "./ui/combatText";
 import { ATTACK_FX_DISMISS_MS, COMBAT_FLOAT_DISMISS_MS } from "./ui/animationTiming";
 import { chooseAutoAction, evadeEscapes } from "./game/auto";
+import { createStrategyController, type EnvLike } from "./game/ai/llm/ui";
 import PlayingCard, { MiniCard, MiniCardBack } from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
 import { bendingColor, bendingLabel } from "./ui/elements";
@@ -232,6 +233,17 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
+  // Track B (optional LLM advisor). Off unless VITE_AI_LLM is set; it never
+  // blocks the loop — advice upgrades on a later tick, or not at all.
+  const [llmTick, setLlmTick] = useState(0);
+  const llm = useMemo(
+    () =>
+      createStrategyController({
+        env: import.meta.env as EnvLike,
+        onChange: () => setLlmTick((n) => n + 1),
+      }),
+    [],
+  );
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
   const [basicTargeting, setBasicTargeting] = useState(false); // picking an adjacent enemy for the cardless basic attack
@@ -286,7 +298,7 @@ export default function App() {
       return () => clearTimeout(t);
     }
     const side = ownerOf(autoPending[0])!;
-    const action = chooseAutoAction(state, side);
+    const action = chooseAutoAction(state, side, Math.random, llm?.adviceFor(state, side));
     if (!action) return;
     const t = setTimeout(() => {
       const result = applyGameAction(state, action);
@@ -324,7 +336,7 @@ export default function App() {
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, autoSides]);
+  }, [state, autoSides, llm, llmTick]);
 
   if (!state) {
     const toggleDraft = (side: "p1" | "p2", id: string) => {
@@ -897,6 +909,12 @@ export default function App() {
           <button onClick={() => toggleAuto("p2")}>
             Auto P2: {autoSides.has("p2") ? "on" : "off"}
           </button>
+          {llm && (
+            <>
+              {" · "}
+              <span className="llm-status">LLM: {llm.status() ?? "thinking…"}</span>
+            </>
+          )}
         </p>
       </header>
 

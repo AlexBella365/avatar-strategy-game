@@ -6,5 +6,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Opt-in live Track B probe can be slow on a cold model load.
+    testTimeout: 30_000,
+    hookTimeout: 20_000,
   },
 });

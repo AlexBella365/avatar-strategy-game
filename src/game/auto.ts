@@ -5,7 +5,7 @@
 import { validateTarget } from "./rules/targeting";
 import { cloneState } from "./state";
 import { chooseAiAction } from "./ai/policy";
-import type { AiDecision } from "./ai/types";
+import type { AiDecision, Weights } from "./ai/types";
 import type { CardDefinition, GameAction, GameState, Position } from "./types";
 
 /**
@@ -34,13 +34,18 @@ export function evadeEscapes(
  * left to do (caller should pass/end the round). Never invents illegal moves:
  * the policy re-validates every proposed action through the engine and falls
  * back to a pass on rejection.
+ *
+ * `weights` is the Track B seam: pre-resolved weight deltas (e.g. from a
+ * round-level LLM stance) merged over the character's archetype. Omitting it
+ * keeps decisions exactly Track-A-seeded.
  */
 export function chooseAutoAction(
   state: GameState,
   playerId: string,
   random: () => number = Math.random,
+  weights?: Partial<Weights>,
 ): GameAction | null {
-  return chooseAiAction(state, playerId, { random }).action;
+  return chooseAiAction(state, playerId, { random, personality: weights }).action;
 }
 
 /** As chooseAutoAction, but also returns the decision trace (debug overlay). */
@@ -48,6 +53,7 @@ export function chooseAutoActionTraced(
   state: GameState,
   playerId: string,
   random: () => number = Math.random,
+  weights?: Partial<Weights>,
 ): AiDecision {
-  return chooseAiAction(state, playerId, { random });
+  return chooseAiAction(state, playerId, { random, personality: weights });
 }

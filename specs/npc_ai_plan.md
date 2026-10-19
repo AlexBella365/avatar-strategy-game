@@ -1,7 +1,7 @@
-# NPC AI Plan — Track A: Utility AI (active) + Track B: LLM Layer (roadmap)
+# NPC AI Plan — Track A: Utility AI (active) + Track B: LLM Layer (M4 built, flagged off)
 
 **Status:** working plan, non-normative. Branch: `feature/npc-ai`. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP) adapted to *this* codebase.
-**Scope:** **Track A (§2) is the active work** — a self-contained, zero-dependency utility policy. **Track B (§3) is a roadmap stub**: designed enough to keep the seams honest, not scheduled, and deletable without touching the engine.
+**Scope:** **Track A (§2)** is the default and remains the authority — a self-contained, zero-dependency utility policy. **Track B (§3) M4 is implemented behind a flag** (`VITE_AI_LLM`, default off): an advisory-only, zero-dependency `fetch` client. It never blocks the loop, never emits a `GameAction`, and deleting `src/game/ai/llm/` leaves Track A untouched. M5 (Mode 2 wired into the loop + quality gate) is still deferred.
 
 ---
 
@@ -132,9 +132,9 @@ Explicitly **out of scope**: RL, MCTS, GOAP, behavior-tree libraries (research d
 
 ---
 
-## 3. Roadmap (deferred) — Track B, lightweight LLM layer
+## 3. Track B — lightweight LLM layer (M4 built, Mode 2 deferred)
 
-**Status:** not scheduled. Capture-only: these notes exist so Track A's interfaces (digest, candidate list, trace, deterministic `random` seam) stay compatible if/when Track B is picked up. Nothing here is built now, and the design deliberately keeps it removable: deleting `src/game/ai/llm/` and the feature flag must leave Track A fully functional.
+**Status:** M4 implemented behind `VITE_AI_LLM` (default **off**). Built: client (`client.ts`), validators (`json.ts`), digest (`digest.ts`), budget/cache/journal, Mode 1 (`strategy.ts` + `advisor.ts`), the App seam (`ui.ts`), and an offline test suite (mock transport only) plus an opt-in live probe. Mode 2 (`chooser.ts`) exists and is unit-tested but is **not wired into the policy loop** yet (M5). Removable by design: deleting `src/game/ai/llm/` and the two `App.tsx` references leaves Track A fully functional.
 
 ### B.0 Principle
 
@@ -164,19 +164,33 @@ Letting the LLM emit a `GameAction` directly needs generation → validation →
 
 ### B.4 The TypeScript client (`src/game/ai/llm/`)
 
-Zero-dependency, ~150 lines, OpenAI-compatible wire format so one client covers hosted *and* local:
+Zero-dependency, plain-`fetch`; one client covers hosted *and* local. As-built layout (M4):
 
 | File | Responsibility |
 |---|---|
-| `client.ts` | `postChatJSON({ messages, schema, timeoutMs })` via `fetch`; `baseUrl`/`model`/`apiKey` from `import.meta.env` (`VITE_LLM_BASE_URL`, `VITE_LLM_MODEL`, `VITE_LLM_KEY`) — works against OpenAI, Azure OpenAI, OpenRouter, or a **local Ollama/LM Studio server** (free, fully offline option) |
-| `schema.ts` | tiny hand-rolled validators (no zod): `object({ stance: enum([...], ...) })` etc.; fail ⇒ fallback path |
-| `strategy.ts` | Mode 1: digest builder, prompt, response → clamped weight deltas |
-| `chooser.ts` | Mode 2: top-k serialization, response → candidate index, fallback wiring |
+| `client.ts` | `postChatJSON(config, messages, { http })` via `fetch` (two wires, see below); `baseUrl`/`model`/`apiKey`/`wire` from `import.meta.env` |
+| `json.ts` | tiny hand-rolled validators (no zod): `vObject`/`vEnum`/`vFinite`/`vOptional` + fence-tolerant `parseJsonObject`; failure is a value ⇒ fallback path |
+| `hash.ts` | `stableStringify` + FNV-1a `stateHash` for cache/journal/staleness keys |
+| `digest.ts` | visible-only state digest (never includes the enemy's hand/assignments/deck) |
+| `strategy.ts` | Mode 1: prompt, response → clamped (±0.3) weight deltas |
+| `chooser.ts` | Mode 2: top-k serialization, confidence-gap gate, response → validated candidate index |
 | `budget.ts` | hard caps: max calls/match, max calls/round, token ceiling, kill switch |
-| `cache.ts` | `Map<stateHash + mode, response>` — repeated/identical situations cost 0 calls |
-| `*.test.ts` | mock-transport tests; **no test hits the network** |
+| `cache.ts` | LRU `Map<mode + stateHash, response>` — identical situations cost 0 calls |
+| `journal.ts` | recorded responses keyed by `mode + stateHash` ⇒ deterministic replay with the network off |
+| `advisor.ts` | orchestration: cache → journal → budget → client → parse; **never throws**; exposes metrics |
+| `ui.ts` | the only App-facing surface (`createStrategyController`) so the layer stays removable |
+| `*.test.ts` | mock-transport tests; **no test hits the network**. `live.test.ts` is opt-in (`LLM_LIVE=1`) |
 
-Transport rules: `AbortSignal.timeout(...)`, one retry on network error (never on parse error), `response_format: json_object` where supported, `temperature` low, `max_tokens` small (~150).
+Transport rules: `AbortSignal` + `clearTimeout`, one retry on network error (never on parse error), `temperature` low, `max_tokens` small (~150–200).
+
+**Two wires, not one (verified 2026-10-19 against Ollama 0.40.6).** The plan originally assumed a single OpenAI-compatible client. In practice Ollama's `/v1/chat/completions` shim routes *thinking* model output into `message.reasoning` and returns an empty `message.content` — so `qwen3.5:0.8b` and `bonsai-2` produced no usable JSON through it. The native `/api/chat` with `think:false` + `format:"json"` returns clean, fast JSON. The client therefore supports:
+
+| Wire | Endpoint | Use |
+|---|---|---|
+| `openai` | `{base}/chat/completions` | hosted (OpenAI/Azure/OpenRouter), LM Studio, vLLM; `response_format: json_object` |
+| `ollama` | `{base}/api/chat` | local Ollama; `think:false`, `format:"json"`, `options.num_predict` |
+
+`parseChatResponse` additionally falls back to `reasoning`/`thinking` when `content` is empty, so a thinking model through the `openai` wire still has a chance to parse. Wire selection is `VITE_LLM_WIRE` (auto: a localhost/`:11434` base URL ⇒ `ollama`).
 
 ### B.5 Async integration (the one real hazard)
 
@@ -186,6 +200,8 @@ App.tsx's auto loop is a synchronous `useEffect` tick; an LLM call is not. Requi
 2. On response: apply **only if** `stateHash` still matches; otherwise discard silently (state moved on — stale advice is worse than no advice).
 3. Hard deadline (e.g. 1.5 s): on timeout the tick proceeds with the Track A argmax; the UI never stalls on a model.
 4. Determinism: with the LLM disabled (default), decisions are exactly Track-A-seeded. With it enabled, the response is recorded in a decision journal so a match can be replayed without the network (replay reads the journal instead of re-calling).
+
+**As implemented (M4).** `ui.ts` fires the request fire-and-forget and the loop proceeds immediately with Track A; when the response lands it is applied on a later tick. Because Mode 1 advice is *round*-scoped, the staleness guard is "the requesting round is still the current round" (a strict `stateHash` match would invalidate the advice after every action within the round). The hard deadline is the client `timeoutMs` (default 2.5 s) — no separate UI timer is needed since the loop never awaits. `advisor.isStale` is available for Mode 2, where per-decision staleness is the right granularity.
 
 ### B.6 Cost & latency budget (verify current pricing before shipping)
 
@@ -197,19 +213,32 @@ App.tsx's auto loop is a synchronous `useEffect` tick; an LLM call is not. Requi
 
 Guardrails: per-match call cap (default ~12), per-round cap, total-token ceiling, and a single `LLM_ENABLED` flag — all kill-switchable at runtime.
 
-### B.7 Testing (Track B)
+### B.7 Testing (Track B) — implemented offline
 
-- Mock transport returns valid/invalid/stale/timeout fixtures → assert fallback to argmax in every failure case.
-- Budget tests: cap enforced, cache hit avoids a call.
-- Staleness: response arriving after state change is discarded.
-- Journal replay: a match recorded with LLM calls replays to identical states with the network off.
-- All Track A tests run with the LLM disabled — the default CI configuration.
+- Mock transport returns valid/invalid/stale/timeout fixtures → assert fallback to argmax in every failure case. (`client.test.ts`, `advisor.test.ts`)
+- Budget tests: cap enforced, cache hit avoids a call. (`budget.test.ts`, `advisor.test.ts`)
+- Staleness: a response arriving after the state/round moved on is discarded. (`advisor.test.ts::isStale`, `ui.test.ts`)
+- Journal replay: a recorded response replays with the network off. (`advisor.test.ts`)
+- All Track A tests run with the LLM disabled — the default CI configuration. Confirmed: `VITE_AI_LLM` is unset in `npm test`; the only networked test is `src/game/ai/llm/live.test.ts`, skipped unless `LLM_LIVE=1` (run it with `make llm-live`).
 
 ### B.8 Model selection & quality gate
 
 - Start with the cheapest available small model on the chosen endpoint; if local, any ~7–8B instruct model.
 - **Gate:** B2's choices must beat argmax on a held-out scenario suite ≥ 55% of the time, else B2 stays disabled (B1 stance flavor may ship purely cosmetically).
 - Never let a model choice change engine state directly — only weights/candidate selection downstream of Track A.
+
+**Local models verified (2026-10-19, Ollama 0.40.6, native `/api/chat`, `think:false`, one real Mode-1 call each):**
+
+| Model | Result | Latency | Verdict |
+|---|---|---|---|
+| `qwen3.5:0.8b` | valid stance JSON | ~0.5 s | **default** — fast and reliable |
+| `qwen3.5:4b` | valid stance JSON | ~1.1 s | good fallback |
+| `bonsai-2:latest` (9B Q2) | valid stance JSON | ~1.2 s | good fallback |
+| `qwen3.5:9b` | valid stance JSON | ~8.2 s | exceeds the 2.5 s deadline |
+| `tev1:0.8b` | HTTP 400 | — | no chat support (capability `decision`) — skipped |
+| `lfm2.5-thinking`, `tinyllama` | — | — | not pulled on this machine — skipped |
+
+Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow model degrades to a Track A fallback rather than stalling. Mode 2's quality gate (§B.8) is still unevaluated — it needs a held-out scenario suite (M5).
 
 ---
 
@@ -223,14 +252,14 @@ Guardrails: per-match call cap (default ~12), per-round cap, total-token ceiling
 | **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 |
 | **M3** | Track A3: one-ply lookahead; balance scenario suite runs policy-vs-policy | M2 |
 
-### Roadmap (deferred) — Track B
+### Deferred — Track B
 
 | Milestone | Content | Depends on |
 |---|---|---|
-| **M4** | Track B client + Mode 1 (strategy advisor), feature-flagged off | M2 (stable digest format) |
-| **M5** | Track B Mode 2 (top-k chooser) + journal replay + quality gate §B.8 | M4, M3 |
+| ✅ **M4** | Track B client + Mode 1 (strategy advisor), feature-flagged off | M2 (stable digest format) — **done** |
+| ⬜ **M5** | Track B Mode 2 (top-k chooser) wired into the loop + journal replay + quality gate §B.8 | M4, M3 — client/chooser exist; loop wiring + gate remain |
 
-- **Flags (Track A):** currently no env flag — the utility policy *is* `chooseAutoAction` (the old random player is gone). A `VITE_AI_POLICY=random` A/B baseline is still a TODO. Track B's `VITE_AI_LLM=off` default is recorded in §3 but not implemented while Track B is deferred.
+- **Flags (Track A):** currently no env flag — the utility policy *is* `chooseAutoAction` (the old random player is gone). A `VITE_AI_POLICY=random` A/B baseline is still a TODO. **Track B:** `VITE_AI_LLM` (default off) is implemented; when on, App.tsx resolves one Mode-1 stance per side per round and feeds the deltas through `chooseAutoAction`'s optional `weights` argument.
 - **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (overlay is the last M2 item), personalities measurably distinct, no new runtime deps, `auto.test.ts` untouched and passing.
 - **Roadmap exit criteria (Track B, deferred):** every failure path falls back cleanly, budget enforced, journal replay deterministic, quality gate recorded in §B.8.
 - **Non-goals:** GOAP/planners, behavior-tree libraries, RL, per-action free-form LLM generation, any engine change required by the AI.
@@ -240,7 +269,7 @@ Guardrails: per-match call cap (default ~12), per-round cap, total-token ceiling
 1. Does the AI get its own UI "side" (3rd seat) or only drive p1/p2 (today's `autoSides`)? *(Start: p1/p2 only — no UI work needed.)*
 2. Should personality live on `CharacterDefinition` (data) or on a separate AI-profile table keyed by definition id? *(Leaning: separate table — keeps `types.ts` engine-facing.)* — **Resolved: separate table** (`ai/personalities.ts::PERSONALITY_BY_CHARACTER`, element fallback). Engine types untouched.
 3. Reactions/Evade decisions (defender-side) are currently `reactions: []` in auto play — in scope for A2 (Evade is a scored move too) or deferred? *(Leaning: A2, since `evadeEscapes` already exists as the outcome check.)* — **Deferred to A3**: defender reactions need the opponent's reply simulation, which is exactly A3's lookahead.
-4. For Track B: hosted vs. local endpoint for development? *(Leaning: local Ollama for dev, hosted for the shipped default-off flag.)*
+4. For Track B: hosted vs. local endpoint for development? — **Resolved: local Ollama for dev** (verified against `qwen3.5:0.8b`, `bonsai-2`, `qwen3.5:4b`); the client is wire-agnostic, so a hosted OpenAI-compatible endpoint is a config change only.
 
 ## 6. Observations from the first implementation pass (M1/M2)
 
