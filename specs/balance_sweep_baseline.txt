@@ -1,17 +1,16 @@
-# Balance sweep — baseline report (v0.3 engine: 10 rounds + heal-over-time + spike heals)
+# Balance sweep — baseline report (v0.3 engine)
 
 Raw output of the self-play harness `src/game/ai/balanceSweep.test.ts`.
-Regenerate with:
-
-    SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
-
-Track A utility policy, seeds 1..100 per cell. Turn-order caveat: the harness
-alternates p1/p2 itself, so it is not decision-grade until ORDER enforcement
-moves into the engine (see specs/balance_testing_plan.md 4.1).
+Generated with SWEEP_N=100: Track A utility policy, seeds 1..100 per cell.
+Turn-order caveat: the harness alternates p1/p2 itself, so it is not
+decision-grade until order enforcement moves into the engine
+(specs/balance_testing_plan.md 4.1).
 Interpretation + prioritized next steps: specs/balance_testing_plan.md 10.
 
----
+Regenerate with:  make sweep-baseline
+  (or) SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
 
+---
 
 ===== shipped: heroes(p1, north) vs villains(p2) (n=100) =====
 p1 0 (0.0%) | p2 100 (100.0%) | draws 0 (0.0%)

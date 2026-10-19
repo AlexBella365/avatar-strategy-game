@@ -71,8 +71,10 @@ The engine is already harness-friendly: deterministic `state.rng`, a full rules 
 **Implemented.** `src/game/ai/balanceSweep.test.ts` drives the Track A policy headless over seeded matches. It is **skipped unless `SWEEP_N` is set**, so `npm test` stays fast; run it explicitly:
 
 ```bash
-SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts            # report -> /tmp/balance_sweep.txt
-SWEEP_N=100 SWEEP_OUT=/tmp/balance.txt npx vitest run src/game/ai/balanceSweep.test.ts
+make sweep                 # SWEEP_N=100 -> /tmp/balance_sweep.txt (SWEEP_N=/SWEEP_OUT= to override)
+make sweep-baseline        # regenerate the committed specs/balance_sweep_baseline.txt
+# or directly:
+SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts
 ```
 
 It reports §2.1 core metrics (Wilson CIs, KO/cap/draw rates, HP-share margin, healing) for the shipped roster, hero-mirror, and villain-mirror matchups, plus a lethality tuning grid (`hpScale` × `rounds`). It is T1-equivalent (greedy utility, full `GameState` — see §4.3). Results: **§10**.

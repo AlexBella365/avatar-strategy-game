@@ -188,7 +188,21 @@ function wilson(wins: number, n: number): [number, number] {
   return [(centre - margin) / d, (centre + margin) / d];
 }
 
-const OUT: string[] = [];
+const OUT: string[] = [
+  "# Balance sweep — baseline report (v0.3 engine)",
+  "",
+  "Raw output of the self-play harness `src/game/ai/balanceSweep.test.ts`.",
+  `Generated with SWEEP_N=${N}: Track A utility policy, seeds 1..${N} per cell.`,
+  "Turn-order caveat: the harness alternates p1/p2 itself, so it is not",
+  "decision-grade until order enforcement moves into the engine",
+  "(specs/balance_testing_plan.md 4.1).",
+  "Interpretation + prioritized next steps: specs/balance_testing_plan.md 10.",
+  "",
+  "Regenerate with:  make sweep-baseline",
+  `  (or) SWEEP_N=${N} SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts`,
+  "",
+  "---",
+];
 const emit = (line: string) => OUT.push(line);
 
 function summarise(label: string, records: MatchRecord[]) {
