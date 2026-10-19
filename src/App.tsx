@@ -25,7 +25,7 @@ import {
 } from "./game/rules/movement";
 import { blockingTiles, difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
-import { cloneState, createInitialState, createTestMapTerrain } from "./game/state";
+import { cloneState, createInitialState, createTestMapTerrain, rollNorthPlayerId } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { getCardDefinition } from "./game/content/cards";
@@ -35,15 +35,18 @@ import type { Restriction } from "./game/types";
 import { key, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
-const P1_SLOTS: Position[] = [
-  { x: 1, y: 1 },
-  { x: 3, y: 1 },
-  { x: 5, y: 1 },
+/** Edge-row default slots (spec §4.2): north deploys row 0, south row 6.
+ *  Lateral position is free per player; the interactive secret-pick UI is
+ *  future work — defaults keep the demo playable on the assigned side. */
+const NORTH_SLOTS: Position[] = [
+  { x: 1, y: 0 },
+  { x: 3, y: 0 },
+  { x: 5, y: 0 },
 ];
-const P2_SLOTS: Position[] = [
-  { x: 1, y: 5 },
-  { x: 3, y: 5 },
-  { x: 5, y: 5 },
+const SOUTH_SLOTS: Position[] = [
+  { x: 1, y: 6 },
+  { x: 3, y: 6 },
+  { x: 5, y: 6 },
 ];
 
 /** Draftable fighters (companions like Appa/Momo enter through team rules). */
@@ -56,12 +59,23 @@ function demoState(picks?: { p1: string[]; p2: string[] }, mapId = "demo"): Game
   const p2 = picks && picks.p2.length === 3 ? pickDefs(picks.p2) : [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]];
   // Fresh random seed every match: both sides shuffle + draw independently.
   const seed = Math.floor(Math.random() * 1_000_000_000);
+  // Seeded north/south roll — done before placement so each side picks on its row.
+  const northPlayerId = rollNorthPlayerId(["p1", "p2"], seed);
   const state = createInitialState(
     [
-      { playerId: "p1", characterDefs: p1, positions: P1_SLOTS },
-      { playerId: "p2", characterDefs: p2, positions: P2_SLOTS },
+      {
+        playerId: "p1",
+        characterDefs: p1,
+        positions: northPlayerId === "p1" ? NORTH_SLOTS : SOUTH_SLOTS,
+      },
+      {
+        playerId: "p2",
+        characterDefs: p2,
+        positions: northPlayerId === "p2" ? NORTH_SLOTS : SOUTH_SLOTS,
+      },
     ],
     seed,
+    { northPlayerId },
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
@@ -830,7 +844,8 @@ export default function App() {
       <header>
         <h1>Avatar Tactical Card Game — Prototype</h1>
         <p>
-          Round {state.round}/{state.maxRounds} · Initiative: {state.initiativePlayerId} · Acting:{" "}
+          Round {state.round}/{state.maxRounds} · Sides: {state.northPlayerId}→north · Initiative:{" "}
+          {state.initiativePlayerId} · Acting:{" "}
           <button className={actingSide === "p1" ? "active-side" : ""} onClick={() => switchSide("p1")}>P1</button>{" "}
           <button className={actingSide === "p2" ? "active-side" : ""} onClick={() => switchSide("p2")}>P2</button>
           {" · "}

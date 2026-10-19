@@ -15,15 +15,16 @@ function demoMatch(): GameState {
       {
         playerId: "p1",
         characterDefs: [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]],
-        positions: [{ x: 1, y: 1 }, { x: 3, y: 1 }, { x: 5, y: 1 }],
+        positions: [{ x: 1, y: 0 }, { x: 3, y: 0 }, { x: 5, y: 0 }],
       },
       {
         playerId: "p2",
         characterDefs: [CHARACTERS[3], CHARACTERS[4], CHARACTERS[5]],
-        positions: [{ x: 1, y: 5 }, { x: 3, y: 5 }, { x: 5, y: 5 }],
+        positions: [{ x: 1, y: 6 }, { x: 3, y: 6 }, { x: 5, y: 6 }],
       },
     ],
     7,
+    { northPlayerId: "p1" },
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
@@ -84,15 +85,15 @@ function scriptedTwoRounds(): { state: GameState; snapshots: string[] } {
   const state = demoMatch();
   const snapshots: string[] = [];
   // --- Round 1: both sides step across the neutral zone ---
-  move(state, "p1", "p1-c0", { x: 1, y: 2 }); // aang
-  move(state, "p1", "p1-c1", { x: 3, y: 2 }); // katara
-  move(state, "p1", "p1-c2", { x: 5, y: 2 }); // toph
+  move(state, "p1", "p1-c0", { x: 1, y: 1 }); // aang
+  move(state, "p1", "p1-c1", { x: 3, y: 1 }); // katara
+  move(state, "p1", "p1-c2", { x: 5, y: 1 }); // toph
   pass(state, "p1", "p1-c0");
   pass(state, "p1", "p1-c1");
   pass(state, "p1", "p1-c2");
-  move(state, "p2", "p2-c0", { x: 1, y: 4 }); // zuko
-  move(state, "p2", "p2-c1", { x: 3, y: 4 }); // sokka
-  move(state, "p2", "p2-c2", { x: 5, y: 4 }); // azula
+  move(state, "p2", "p2-c0", { x: 1, y: 5 }); // zuko
+  move(state, "p2", "p2-c1", { x: 3, y: 5 }); // sokka
+  move(state, "p2", "p2-c2", { x: 5, y: 5 }); // azula
   pass(state, "p2", "p2-c0");
   pass(state, "p2", "p2-c1");
   pass(state, "p2", "p2-c2");
@@ -102,8 +103,10 @@ function scriptedTwoRounds(): { state: GameState; snapshots: string[] } {
   expect(state.round).toBe(2);
   assignKnown(state, "p1", "p1-c0", "air-blast"); // aang
   assignKnown(state, "p1", "p1-c1", "water-whip"); // katara
-  assignKnown(state, "p1", "p1-c2", "earth-sweep"); // toph
-  move(state, "p1", "p1-c2", { x: 5, y: 3 });
+  assignKnown(state, "p1", "p1-c2", "seismic-read"); // toph (earth-legal ranged reach across the wider board)
+  move(state, "p1", "p1-c0", { x: 1, y: 2 }); // aang steps in
+  move(state, "p1", "p1-c1", { x: 3, y: 2 }); // katara steps in
+  move(state, "p1", "p1-c2", { x: 5, y: 2 }); // toph steps in
   const r1 = playAssigned(state, "p1", "p1-c0", { kind: "character", characterId: "p2-c0" });
   snapshots.push(JSON.stringify(r1.events));
   const r2 = playAssigned(state, "p1", "p1-c1", { kind: "character", characterId: "p2-c1" });
@@ -130,11 +133,13 @@ describe("playable demo", () => {
     // zuko took air-blast (2) and was pushed south
     const zuko = state.characters.find((c) => c.id === "p2-c0")!;
     expect(zuko.health).toBe(16 - 2);
-    expect(zuko.position).toEqual({ x: 1, y: 5 });
-    // azula took earth sweep (2)
-    expect(state.characters.find((c) => c.id === "p2-c2")!.health).toBe(14 - 2);
-    // mid-round snapshot: sokka pulled to (3,3), azula OffBalanced
-    expect(snapshots[3]).toBe('sokka:{"x":3,"y":3},azula-offbalance:true');
+    expect(zuko.position).toEqual({ x: 1, y: 6 });
+    // azula took seismic-read: no damage, but Exposed
+    const azula = state.characters.find((c) => c.id === "p2-c2")!;
+    expect(azula.health).toBe(14);
+    expect(azula.statuses.some((s) => s.statusId === "Exposed")).toBe(true);
+    // mid-round snapshot: sokka pulled to (3,4); azula exposed (not off-balanced)
+    expect(snapshots[3]).toBe('sokka:{"x":3,"y":4},azula-offbalance:false');
     // aang practiced air => resonance 1
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     expect(aang.avatarState!.resonance).toBe(1);

@@ -78,12 +78,12 @@ describe("auto-player", () => {
       cardInstanceId: "es",
     });
     Object.assign(state, assign.state);
-    // aang (1,1), enemies on row 5: any legal move must head south
+    // aang (1,0), enemies on row 6: any legal move must head south
     const action = chooseAutoAction(state, "p1", () => 0);
     expect(action?.type).toBe("MOVE");
     if (action?.type === "MOVE") {
-      const before = manhattan({ x: 1, y: 1 }, { x: 1, y: 5 });
-      const after = manhattan(action.to, { x: 1, y: 5 });
+      const before = manhattan({ x: 1, y: 0 }, { x: 1, y: 6 });
+      const after = manhattan(action.to, { x: 1, y: 6 });
       expect(after).toBeLessThan(before);
     }
   });

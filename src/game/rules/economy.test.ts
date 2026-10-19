@@ -124,14 +124,15 @@ describe("draw, assign, scrap, bank", () => {
     // ...while zuko fits but starts with an empty bank
     const s2 = setup();
     s2.players[0].teamHand.push({ id: "rf", definitionId: "rising-flame" });
+    s2.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 4 }; // in range after the move
     const assigned = assign(s2, "p1", "p1-c2", "rf");
     expect(assigned.errors).toEqual([]);
-    // close in: zuko (5,1) -> (5,2), azula (5,5) now in range 3
+    // close in: zuko (5,0) -> (5,1), azula (5,4) now in range 3
     const moved = applyGameAction(assigned.state, {
       type: "MOVE",
       playerId: "p1",
       characterId: "p1-c2",
-      to: { x: 5, y: 2 },
+      to: { x: 5, y: 1 },
     });
     expect(moved.errors).toEqual([]);
     const noChi = applyGameAction(moved.state, {

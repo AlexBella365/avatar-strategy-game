@@ -94,9 +94,9 @@ Each player selects a team of three characters and a legal loadout.
 -   Starting Focus: **1 per character**
 -   Focus cap: **4 per character**
 -   Character attributes: integers from **1 to 5**
--   Battlefield: **7 columns × 5 rows**
+-   Battlefield: **7 columns × 7 rows**
 -   Coordinates: columns `0..6`, rows `0..6`; row 0 is the top edge
--   Each team starts on its own two-row deployment zone at opposite ends
+-   Each team deploys on a single edge row at opposite ends — north row 0, south row 6; which team takes which edge is rolled from the match seed
 -   Each player draws from:
     -   A team tactical deck.
     -   A separate technique deck/hand for each character.
@@ -133,7 +133,9 @@ The battlefield is a fixed **7-column × 7-row** rectangular grid. Each tile is 
 
 ### 4.2 Deployment
 
-For a standard match, Team A deploys in rows 0–1 and Team B in rows 5–6. Each team selects three distinct legal starting tiles in its deployment zone. Rows 2–4 begin neutral. The UI should offer sensible default starting positions, but the rules engine must validate any selected positions. Teams may not deploy on blocking terrain or on the same tile.
+Deployment uses a single edge row per team. The north player deploys on row 0 and the south player on row 6; which player takes which edge is rolled from the match seed before placement, so both teams know their row when choosing positions. Placement is secret and simultaneous: each team selects three distinct legal starting tiles anywhere in its edge row (lateral position is free), then positions are revealed before the first round's assignments are locked. Rows 1–5 begin neutral.
+
+The rules engine must validate any selected positions against the deployer's assigned side (row 0 for the north player, row 6 for the south player). Teams may not deploy on blocking terrain or on the same tile. Every map must offer at least three free (non-blocking) tiles in each edge row so both deployment rows are always legally placeable.
 
 ### 4.3 Distance and adjacency
 
@@ -1044,7 +1046,7 @@ The interface must expose tactical information clearly without relying on color 
 ### Battlefield view
 
 - Render a 7×7 grid with coordinate-consistent tiles.
-- Show deployment zones before match start.
+- Show deployment rows (north row 0 / south row 6) before match start, with a clear indicator of which player holds which side, and support the simultaneous secret-placement lock and reveal step.
 - Show each character's portrait, health, Focus, statuses, activation state, and Evade availability.
 - Distinguish blocking terrain, difficult terrain, cover, elemental sources, and hazards with icons plus labels/tooltips.
 - Show remaining Team Energy and active Avatar State duration/risk.

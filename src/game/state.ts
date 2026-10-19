@@ -10,6 +10,7 @@ import type {
   CharacterState,
   GameState,
   Position,
+  Side,
   TerrainState,
 } from "./types";
 
@@ -17,11 +18,22 @@ export const STARTING_FOCUS = 1;
 export const ENERGY_PER_ROUND = 4;
 export const MAX_ROUNDS = 8;
 
-/** Deployment rows: first team rows 0–1, second team rows 5–6 (spec §4.2). */
-export const DEPLOYMENT_ROWS: [number[], number[]] = [
-  [0, 1],
-  [5, 6],
-];
+/** Deployment zones (spec §4.2): north team on row 0, south team on row 6. */
+export const DEPLOYMENT_ZONE_ROWS: Record<Side, number> = { north: 0, south: 6 };
+
+/**
+ * Seeded roll: which of the two players deploys north (row 0). Pure — uses its
+ * own rng stream so it never disturbs the match PRNG. Same seed → same sides.
+ */
+export function rollNorthPlayerId(playerIds: [string, string], seed: number): string {
+  const rngState = { rng: (seed + 15485863) | 0 };
+  return nextRandom(rngState) < 0.5 ? playerIds[0] : playerIds[1];
+}
+
+/** Which side a player deploys on in this match. */
+export function sideOf(state: GameState, playerId: string): Side {
+  return state.northPlayerId === playerId ? "north" : "south";
+}
 
 export function maxHealthFor(resilience: number, override?: number): number {
   if (override !== undefined) return override;
@@ -94,10 +106,15 @@ export function occupantAt(state: GameState, pos: Position): CharacterState | un
 }
 
 /** Setup-time deployment validation (spec §4.2). Empty = legal. */
-export function deploymentErrors(teams: [TeamSetup, TeamSetup]): string[] {
+export function deploymentErrors(
+  teams: [TeamSetup, TeamSetup],
+  northPlayerId: string,
+): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
-  teams.forEach((team, ti) => {
+  teams.forEach((team) => {
+    const side: Side = team.playerId === northPlayerId ? "north" : "south";
+    const zoneRow = DEPLOYMENT_ZONE_ROWS[side];
     team.characterDefs.forEach((_def, i) => {
       const pos = team.positions[i];
       const label = `${team.playerId}-c${i}`;
@@ -109,9 +126,9 @@ export function deploymentErrors(teams: [TeamSetup, TeamSetup]): string[] {
         errors.push(`${label}: tile (${pos.x},${pos.y}) is outside the ${GRID_COLS}×${GRID_ROWS} board.`);
         return;
       }
-      if (!DEPLOYMENT_ROWS[ti].includes(pos.y)) {
+      if (pos.y !== zoneRow) {
         errors.push(
-          `${label}: tile (${pos.x},${pos.y}) is outside the deployment zone (rows ${DEPLOYMENT_ROWS[ti].join(", ")}).`,
+          `${label}: tile (${pos.x},${pos.y}) is outside the ${side} deployment zone (row ${zoneRow}).`,
         );
       }
       const k = key(pos);
@@ -123,10 +140,21 @@ export function deploymentErrors(teams: [TeamSetup, TeamSetup]): string[] {
 }
 
 /** Create a fresh match with empty hands (hands dealt in round setup later). */
-export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): GameState {
+export function createInitialState(
+  teams: [TeamSetup, TeamSetup],
+  seed = 1,
+  opts?: { northPlayerId?: string },
+): GameState {
   // Instance-id counter resets per match so replays are fully deterministic.
   idCounter = 0;
-  const errors = deploymentErrors(teams);
+  // Sides: caller may pass the pre-rolled north player (UI rolls before the
+  // players pick columns); otherwise derive it from the seed — same roll.
+  const northPlayerId =
+    opts?.northPlayerId ?? rollNorthPlayerId([teams[0].playerId, teams[1].playerId], seed);
+  if (!teams.some((t) => t.playerId === northPlayerId)) {
+    throw new Error(`Illegal deployment:\nUnknown north player "${northPlayerId}".`);
+  }
+  const errors = deploymentErrors(teams, northPlayerId);
   if (errors.length > 0) throw new Error(`Illegal deployment:\n${errors.join("\n")}`);
   const characters: CharacterState[] = [];
   for (const team of teams) {
@@ -136,10 +164,12 @@ export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): Gam
       );
     });
   }
+  const southPlayerId = teams.find((t) => t.playerId !== northPlayerId)?.playerId ?? "?";
   return {
     round: 1,
     maxRounds: MAX_ROUNDS,
     initiativePlayerId: "p1",
+    northPlayerId,
     characters,
     players: teams.map((t, ti) => ({
       id: t.playerId,
@@ -154,7 +184,10 @@ export function createInitialState(teams: [TeamSetup, TeamSetup], seed = 1): Gam
       assignments: {},
     })),
     terrain: [],
-    log: ["Match created."],
+    log: [
+      "Match created.",
+      `${northPlayerId} deploys north (row 0); ${southPlayerId} deploys south (row 6).`,
+    ],
     winnerId: null,
     isDraw: false,
     roundEventLog: [],

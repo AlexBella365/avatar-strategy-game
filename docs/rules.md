@@ -18,7 +18,7 @@ If both teams survive after round 8, you compare:
 ## Setup
 
 1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
-2. You place your 3 characters on 3 different tiles in your zone: Team A rows 0–1, Team B rows 5–6. Rows 2–4 start empty.
+2. A random roll assigns your edge rows: one of you deploys on north row 0, the other on south row 6. Place your 3 characters on 3 different tiles of your row, in secret; both sides reveal after locking. Rows 1–5 start empty.
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
 4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
@@ -141,7 +141,7 @@ The test map is fixed — learn it like a chessboard. It is deliberately **not**
 - **Wall:** blocks movement and sight. Earth abilities **raise** new walls or **level** existing ones back to Plains.
 - **Road:** an open path across the field — no bonus and normal cost. Non-bending civilians are planned to travel here (later).
 
-Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is the top, you deploy on y0–1 / y5–6). No empty tiles — everything without a feature is neutral grass. The board is a hand-editable file (`src/game/maps/demo.grid.txt`): 7 rows, one letter per cell, cells split by `|`:
+Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is the top, you deploy on edge rows y0 / y6 — side rolled per match). No empty tiles — everything without a feature is neutral grass. The board is a hand-editable file (`src/game/maps/demo.grid.txt`): 7 rows, one letter per cell, cells split by `|`:
 
 ```
 G|G|G|G|G|G|K

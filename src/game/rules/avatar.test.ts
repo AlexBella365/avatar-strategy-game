@@ -62,7 +62,7 @@ const resonanceOf = (state: GameState, id = "p1-c0") =>
   state.characters.find((c) => c.id === id)!.avatarState!.resonance;
 
 const damaging = (element: NonNullable<CardDefinition["element"]>, amount = 1) =>
-  mkCard({ kind: "character", allegiance: "enemies", range: 5 }, [{ type: "damage", amount }], {
+  mkCard({ kind: "character", allegiance: "enemies", range: 6 }, [{ type: "damage", amount }], {
     id: `hit-${element}`,
     element,
   });
@@ -131,7 +131,7 @@ describe("resonance buildup", () => {
 
   it("spiritual pressure credits 3+ HP lost from one enemy action", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 3 };
+    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 2 };
     state.players[1].energy = 9;
     const heavy = mkCard(
       { kind: "character", allegiance: "enemies", range: 6 },
@@ -206,7 +206,7 @@ describe("activation", () => {
       type: "MOVE",
       playerId: "p1",
       characterId: "p1-c0",
-      to: { x: 1, y: 2 } as Position,
+      to: { x: 1, y: 1 } as Position,
     });
     expect(moved.errors).toEqual([]); // movement still allowed
   });
@@ -220,7 +220,7 @@ describe("activation", () => {
 
   it("a shield that prevents the knockout prevents the instant loss", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 3 };
+    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 2 };
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.avatarState!.active = true;
     aang.shields.push({ id: "big", amount: 999, duration: "untilConsumed" });

@@ -2,7 +2,7 @@
 // Spec v2 §4.1, §4.2, §4.3, §4.5, §10 + test list §17 (battlefield/targeting).
 import { describe, expect, it } from "vitest";
 import { CHARACTERS } from "../content/characters";
-import { createInitialState, occupantAt, type TeamSetup } from "../state";
+import { createInitialState, occupantAt, rollNorthPlayerId, type TeamSetup } from "../state";
 import type { Position } from "../types";
 import {
   GRID_COLS,
@@ -32,19 +32,19 @@ function setup(positions: [Position[], Position[]]) {
       positions: positions[1],
     },
   ];
-  return createInitialState(teams);
+  return createInitialState(teams, 1, { northPlayerId: "p1" });
 }
 
 const OPEN: [Position[], Position[]] = [
   [
-    { x: 1, y: 1 },
-    { x: 3, y: 1 },
-    { x: 5, y: 1 },
+    { x: 1, y: 0 },
+    { x: 3, y: 0 },
+    { x: 5, y: 0 },
   ],
   [
-    { x: 1, y: 5 },
-    { x: 3, y: 5 },
-    { x: 5, y: 5 },
+    { x: 1, y: 6 },
+    { x: 3, y: 6 },
+    { x: 5, y: 6 },
   ],
 ];
 
@@ -86,28 +86,85 @@ describe("board bounds and deployment", () => {
       setup([
         [
           { x: 1, y: 2 },
-          { x: 3, y: 1 },
-          { x: 5, y: 1 },
+          { x: 3, y: 0 },
+          { x: 5, y: 0 },
         ],
         OPEN[1],
       ]),
     ).toThrow(/deployment zone/);
     expect(() =>
-      setup([OPEN[0], [{ x: 9, y: 9 }, { x: 3, y: 5 }, { x: 5, y: 5 }]]),
+      setup([OPEN[0], [{ x: 9, y: 9 }, { x: 3, y: 6 }, { x: 5, y: 6 }]]),
     ).toThrow(/outside the 7×7 board/);
   });
 
-  it("rejects second-team deployment outside rows 5-6", () => {
+  it("rejects the south team deploying off its edge row (row 6)", () => {
     expect(() =>
-      setup([OPEN[0], [{ x: 1, y: 3 }, { x: 3, y: 5 }, { x: 5, y: 5 }]]),
-    ).toThrow(/deployment zone/);
+      setup([OPEN[0], [{ x: 1, y: 5 }, { x: 3, y: 6 }, { x: 5, y: 6 }]]),
+    ).toThrow(/south deployment zone \(row 6\)/);
+  });
+
+  it("validates zones against the assigned side, not team order", () => {
+    const teams: [TeamSetup, TeamSetup] = [
+      { playerId: "p1", characterDefs: [CHARACTERS[0], CHARACTERS[1], CHARACTERS[3]], positions: OPEN[1] },
+      { playerId: "p2", characterDefs: [CHARACTERS[2], CHARACTERS[4], CHARACTERS[5]], positions: OPEN[0] },
+    ];
+    // Flipped sides: p1 deploys south (row 6), p2 north (row 0) — legal.
+    const flipped = createInitialState(teams, 1, { northPlayerId: "p2" });
+    expect(flipped.northPlayerId).toBe("p2");
+    expect(flipped.characters.find((c) => c.id === "p1-c0")!.position.y).toBe(6);
+    // Same positions, sides not flipped: p1 stands on row 0 but is south — rejected.
+    expect(() => createInitialState(
+      [
+        { ...teams[0], positions: OPEN[0] },
+        { ...teams[1], positions: OPEN[1] },
+      ],
+      1,
+      { northPlayerId: "p2" },
+    )).toThrow(/south deployment zone \(row 6\)/);
+  });
+
+  it("rollNorthPlayerId is seeded, returns a participant, and covers both outcomes", () => {
+    const ids: [string, string] = ["p1", "p2"];
+    expect(rollNorthPlayerId(ids, 42)).toBe(rollNorthPlayerId(ids, 42));
+    const seen = new Set<string>();
+    for (let seed = 0; seed < 64; seed++) {
+      const north = rollNorthPlayerId(ids, seed);
+      expect(ids).toContain(north);
+      seen.add(north);
+    }
+    expect(seen.size).toBe(2);
+  });
+
+  it("createInitialState derives sides from the seed when not passed", () => {
+    for (const seed of [3, 7, 11]) {
+      const teams: [TeamSetup, TeamSetup] = [
+        { playerId: "p1", characterDefs: [CHARACTERS[0]], positions: [{ x: 0, y: 0 }] },
+        { playerId: "p2", characterDefs: [CHARACTERS[2]], positions: [{ x: 0, y: 6 }] },
+      ];
+      // p1 on row 0 is only legal when the roll puts p1 north.
+      const expected = rollNorthPlayerId(["p1", "p2"], seed);
+      if (expected === "p1") {
+        const state = createInitialState(teams, seed);
+        expect(state.northPlayerId).toBe("p1");
+      } else {
+        expect(() => createInitialState(teams, seed)).toThrow(/deployment zone/);
+        const swapped = createInitialState(
+          [
+            { ...teams[0], positions: [{ x: 0, y: 6 }] },
+            { ...teams[1], positions: [{ x: 0, y: 0 }] },
+          ],
+          seed,
+        );
+        expect(swapped.northPlayerId).toBe("p2");
+      }
+    }
   });
 
   it("knockout removes a character from occupancy immediately", () => {
     const state = setup(OPEN);
-    expect(occupantAt(state, { x: 1, y: 1 })?.id).toBe("p1-c0");
+    expect(occupantAt(state, { x: 1, y: 0 })?.id).toBe("p1-c0");
     state.characters.find((c) => c.id === "p1-c0")!.health = 0;
-    expect(occupantAt(state, { x: 1, y: 1 })).toBeUndefined();
+    expect(occupantAt(state, { x: 1, y: 0 })).toBeUndefined();
   });
 });
 

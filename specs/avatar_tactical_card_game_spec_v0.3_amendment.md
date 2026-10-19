@@ -57,7 +57,7 @@ Transformation chains (durations/X in card data; all deterministic, logged):
   - **Douse (water → Blaze):** out immediately → Plains (denies the Ash; only natural burnout yields Ash). Water must answer inside the 1-round window.
   - **Stir (air → Ash):** → Smoke until end of next round → Plains. Smoke blocks sight, not movement (concealment evasion, one-way chain).
 
-Test map is fixed and asymmetric (tune after playtests). The board is 7×7 (supersedes v0.2 §4.1's 7×5); coordinates below use x 0–6, y 0–6 with y0 top, A deploys y0–1, B y5–6 (supersedes v0.2 §4.2's rows 3–4) — no blocking tiles inside either zone:
+Test map is fixed and asymmetric (tune after playtests). The board is 7×7 (supersedes v0.2 §4.1's 7×5); coordinates below use x 0–6, y 0–6 with y0 top; deployment is one edge row per team — north row y0, south row y6, side rolled per match (mechanics §2.4 adopted; supersedes this amendment's rows y0–1 / y5–6 and v0.2 §4.2's rows 3–4) — no blocking tiles in either edge row:
 - Pond: (2,2), (4,4). Rocks: (3,0), (3,5), (0,6), (6,6). Walls: (2,3), (4,3) — center row.
 - Forest: (4,1), (1,2), (5,4), (6,5), (5,6). Grass (neutral): every other tile — no empty tiles.
 

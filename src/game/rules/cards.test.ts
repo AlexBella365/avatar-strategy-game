@@ -32,8 +32,9 @@ function mkCard(
   };
 }
 
+// Range 6: edge-row deployment (north y0 / south y6) puts cross-board enemies at distance 6.
 const strike = (effects: CardDefinition["effects"], overrides: Partial<CardDefinition> = {}) =>
-  mkCard({ kind: "character", allegiance: "enemies", range: 5 }, effects, overrides);
+  mkCard({ kind: "character", allegiance: "enemies", range: 6 }, effects, overrides);
 
 function play(
   state: GameState,
@@ -90,7 +91,7 @@ describe("validation and costs", () => {
 
     const outOfRange = play(setup(), {
       card: strike([{ type: "damage", amount: 2 }], {}),
-      selection: sel("p2-c2"), // (5,5) is distance 8 from (1,1)
+      selection: sel("p2-c2"), // (5,6) is distance 10 from (1,0)
     });
     expect(outOfRange.errors[0].code).toBe("OUT_OF_RANGE");
   });
@@ -147,9 +148,9 @@ describe("validation and costs", () => {
   });
 
   it("Discipline 4+ discounts a 2+ cost card once per round", () => {
-    const state = setup(); // katara (3,1) has discipline 4
+    const state = setup(); // katara (3,0) has discipline 4
     const card = mkCard(
-      { kind: "character", allegiance: "enemies", range: 5 },
+      { kind: "character", allegiance: "enemies", range: 6 },
       [{ type: "damage", amount: 1 }],
       { id: "d2", name: "D2", energyCost: 2 },
     );
@@ -173,7 +174,7 @@ describe("damage order and evasion", () => {
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     aang.avatarState!.active = true; // +1 damage
     applyStatus(state, "p2-c0", "Exposed", 1); // +1 focused
-    createTerrain(state, { x: 1, y: 5 }, "cover", "permanent", "fail"); // -1 ranged
+    createTerrain(state, { x: 1, y: 6 }, "cover", "permanent", "fail"); // -1 ranged (toph's tile)
     state.characters.find((c) => c.id === "p2-c0")!.shields.push({ id: "s1", amount: 1 });
     // base 2, aang agg 2 (-1) => 1; +1 avatar +1 exposed = 3; -1 cover = 2; -1 shield => 1 HP
     const result = play(state, {
@@ -211,7 +212,7 @@ describe("damage order and evasion", () => {
 
   it("full evasion skips damage and on-hit effects", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 3 };
+    state.characters.find((c) => c.id === "p2-c2")!.position = { x: 5, y: 2 };
     // azula per 4 vs aang agi 5 => evaded (distance 6)
     const result = play(state, {
       char: "p2-c2",
@@ -231,7 +232,7 @@ describe("damage order and evasion", () => {
 describe("Evade reactions", () => {
   it("evading out of range causes a miss (costs still paid)", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p2-c1")!.position = { x: 3, y: 3 };
+    state.characters.find((c) => c.id === "p2-c1")!.position = { x: 3, y: 2 };
     const card = mkCard(
       { kind: "character", allegiance: "enemies", range: 2 },
       [{ type: "damage", amount: 2 }],
@@ -241,7 +242,7 @@ describe("Evade reactions", () => {
       char: "p1-c1",
       card,
       selection: sel("p2-c1"),
-      reactions: [{ characterId: "p2-c1", dest: { x: 4, y: 3 } }], // distance 3 > 2
+      reactions: [{ characterId: "p2-c1", dest: { x: 4, y: 2 } }], // distance 3 > 2
     });
     expect(result.errors).toEqual([]);
     const sokka = result.state.characters.find((c) => c.id === "p2-c1")!;
@@ -254,7 +255,7 @@ describe("Evade reactions", () => {
 
   it("evading within range still gets hit", () => {
     const state = setup();
-    state.characters.find((c) => c.id === "p2-c1")!.position = { x: 3, y: 3 };
+    state.characters.find((c) => c.id === "p2-c1")!.position = { x: 3, y: 2 };
     const card = mkCard(
       { kind: "character", allegiance: "enemies", range: 2 },
       [{ type: "damage", amount: 2 }],
@@ -264,7 +265,7 @@ describe("Evade reactions", () => {
       char: "p1-c1",
       card,
       selection: sel("p2-c1"),
-      reactions: [{ characterId: "p2-c1", dest: { x: 3, y: 2 } }], // distance 1, LOS clear
+      reactions: [{ characterId: "p2-c1", dest: { x: 3, y: 1 } }], // distance 1, LOS clear
     });
     expect(result.state.characters.find((c) => c.id === "p2-c1")!.health).toBe(14 - 2);
   });
@@ -335,7 +336,7 @@ describe("AoE, synergy, and match-end stops", () => {
     const r1 = play(state, { char: "p1-c1", card: whip, selection: sel("p2-c1") });
     expect(r1.state.characters.find((c) => c.id === "p2-c1")!.position).toEqual({ x: 3, y: 4 });
     const flame = mkCard(
-      { kind: "character", allegiance: "enemies", range: 5 },
+      { kind: "character", allegiance: "enemies", range: 6 },
       [{ type: "damage", amount: 3, scalesWithAggression: true, bonusIfTargetDisplaced: 1 }],
       { id: "flame" },
     );
@@ -346,7 +347,7 @@ describe("AoE, synergy, and match-end stops", () => {
 
   it("water-empowered attacks gain the card's bonus once", () => {
     const state = setup();
-    createTerrain(state, { x: 3, y: 2 }, "water-source", "permanent", "fail");
+    createTerrain(state, { x: 3, y: 1 }, "water-source", "permanent", "fail"); // adjacent to katara (3,0)
     const card = strike([{ type: "damage", amount: 2, waterEmpoweredBonus: 1 }], { id: "ww" });
     const result = play(state, { char: "p1-c1", card, selection: sel("p2-c1") });
     // katara agg 3 => +0; 2 + 1 empowered = 3
@@ -366,11 +367,11 @@ describe("card movement and terrain effects", () => {
         movement: { timing: "beforeTechnique", maxSteps: 2, path: "orthogonal", destinationRule: "fizzle" },
       },
     );
-    // aang (1,1) -> (1,2); toph (1,3) now adjacent
+    // aang (1,0) -> (1,2) in 2 steps; toph (1,3) now adjacent
     const result = play(state, {
       card,
       selection: sel("p2-c0"),
-      movePath: [{ x: 1, y: 2 }],
+      movePath: [{ x: 1, y: 1 }, { x: 1, y: 2 }],
     });
     expect(result.errors).toEqual([]);
     expect(result.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 1, y: 2 });
@@ -388,7 +389,11 @@ describe("card movement and terrain effects", () => {
         movement: { timing: "beforeTechnique", maxSteps: 2, path: "orthogonal", destinationRule: "mustBeLegal" },
       },
     );
-    const result = play(state, { card, selection: sel("p2-c0"), movePath: [{ x: 1, y: 2 }] });
+    const result = play(state, {
+      card,
+      selection: sel("p2-c0"),
+      movePath: [{ x: 1, y: 1 }, { x: 1, y: 2 }],
+    });
     expect(result.errors[0].code).toBe("TILE_BLOCKED");
     expect(result.state.players[0].energy).toBe(4);
     expect(result.state.players[0].assignments["p1-c0"]).not.toBeNull();
@@ -403,10 +408,10 @@ describe("card movement and terrain effects", () => {
     const result = play(state, {
       card,
       selection: { kind: "automatic" },
-      movePath: [{ x: 2, y: 1 }],
+      movePath: [{ x: 2, y: 0 }],
     });
     expect(result.errors).toEqual([]);
-    expect(result.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 1 });
+    expect(result.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 0 });
     expect(result.state.players[0].energy).toBe(3); // technique still paid
   });
 
@@ -443,7 +448,7 @@ describe("support effects and actions", () => {
     expect(katara.health).toBe(13);
     expect(katara.focus).toBe(4); // capped
     expect(katara.momentum).toBe(1); // capped
-    const disrupt = mkCard({ kind: "character", allegiance: "enemies", range: 5 }, [
+    const disrupt = mkCard({ kind: "character", allegiance: "enemies", range: 6 }, [
       { type: "disrupt", amount: 1 },
     ], { id: "dis" });
     const r2 = play(r1.state, { char: "p1-c1", card: disrupt, selection: sel("p2-c1") });
@@ -454,9 +459,9 @@ describe("support effects and actions", () => {
 
   it("MOVE finds the cheapest path; PASS marks activation", () => {
     const state = setup();
-    const moved = applyGameAction(state, { type: "MOVE", playerId: "p1", characterId: "p1-c0", to: { x: 2, y: 1 } });
+    const moved = applyGameAction(state, { type: "MOVE", playerId: "p1", characterId: "p1-c0", to: { x: 2, y: 0 } });
     expect(moved.errors).toEqual([]);
-    expect(moved.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 1 });
+    expect(moved.state.characters.find((c) => c.id === "p1-c0")!.position).toEqual({ x: 2, y: 0 });
     const pass = applyGameAction(moved.state, { type: "PASS_ACTIVATION", playerId: "p1", characterId: "p1-c0" });
     expect(pass.state.characters.find((c) => c.id === "p1-c0")!.activatedThisRound).toBe(true);
   });

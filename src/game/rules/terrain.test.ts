@@ -34,14 +34,14 @@ describe("terrain creation", () => {
 
   it("rejects blocking terrain under a living character", () => {
     const state = setup();
-    const result = createTerrain(state, { x: 1, y: 1 }, "rock-wall", 2, "fail");
+    const result = createTerrain(state, { x: 1, y: 0 }, "rock-wall", 2, "fail");
     expect(result.ok).toBe(false);
     expect(result.errors[0].code).toBe("TERRAIN_BLOCKED_TILE");
   });
 
   it("rejects water under a living character (no characters on water)", () => {
     const state = setup();
-    const result = createTerrain(state, { x: 1, y: 1 }, "water-source", "permanent", "fail");
+    const result = createTerrain(state, { x: 1, y: 0 }, "water-source", "permanent", "fail");
     expect(result.ok).toBe(false);
     expect(result.errors[0].code).toBe("TERRAIN_BLOCKED_TILE");
   });
@@ -72,10 +72,10 @@ describe("terrain creation", () => {
 describe("terrain entry triggers", () => {
   it("bonfire deals 1 on entry; ice applies OffBalance and costs 2", () => {
     const state = setup();
-    createTerrain(state, { x: 1, y: 2 }, "bonfire", "permanent", "fail");
+    createTerrain(state, { x: 1, y: 1 }, "bonfire", "permanent", "fail");
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     const hp = aang.health;
-    const result = applyMove(state, "p1-c0", [{ x: 1, y: 2 }]);
+    const result = applyMove(state, "p1-c0", [{ x: 1, y: 1 }]);
     expect(result.ok).toBe(true);
     expect(aang.health).toBe(hp - 1);
   });
@@ -118,11 +118,11 @@ describe("terrain expiry", () => {
 
   it("end-of-round hazards damage occupants", () => {
     const state = setup();
-    createTerrain(state, { x: 1, y: 1 }, "ember-field", 2, "fail");
+    createTerrain(state, { x: 1, y: 0 }, "ember-field", 2, "fail");
     const aang = state.characters.find((c) => c.id === "p1-c0")!;
     const hp = aang.health;
     tickTerrainEndOfRound(state);
     expect(aang.health).toBe(hp - 1);
-    expect(terrainAt(state, { x: 1, y: 1 })?.remainingRounds).toBe(1);
+    expect(terrainAt(state, { x: 1, y: 0 })?.remainingRounds).toBe(1);
   });
 });

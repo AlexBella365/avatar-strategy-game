@@ -275,10 +275,15 @@ export interface PlayerState {
   assignments: Record<string, CardInstance | null>;
 }
 
+/** Deployment side: north = row 0, south = row 6 (spec §4.2). */
+export type Side = "north" | "south";
+
 export interface GameState {
   round: number; // 1..8
   maxRounds: number;
   initiativePlayerId: string;
+  /** Which player deploys north (row 0); the other deploys south. Seeded roll at setup. */
+  northPlayerId: string;
   characters: CharacterState[];
   players: PlayerState[];
   terrain: TerrainState[];

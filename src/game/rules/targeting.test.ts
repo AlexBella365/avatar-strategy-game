@@ -29,22 +29,22 @@ function mkCard(targeting: Targeting, overrides: Partial<CardDefinition> = {}): 
 const focused = (range: number | "melee" | "any" = 3) =>
   mkCard({ kind: "character", allegiance: "enemies", range });
 
-const AANG = "p1-c0"; // (1,1)
-const TOPH = "p2-c0"; // (1,5)
-const SOKKA = "p2-c1"; // (3,5)
-const ZUKO = "p1-c2"; // (5,1)
+const AANG = "p1-c0"; // (1,0)
+const TOPH = "p2-c0"; // (1,6)
+const SOKKA = "p2-c1"; // (3,6)
+const ZUKO = "p1-c2"; // (5,0)
 
 describe("focused character targeting", () => {
   it("affects exactly one legal target", () => {
     const state = setup();
     expect(
-      getAffectedCharacters(state, AANG, focused(5), { kind: "character", characterId: TOPH }),
+      getAffectedCharacters(state, AANG, focused(6), { kind: "character", characterId: TOPH }),
     ).toEqual([TOPH]);
   });
 
   it("melee needs Manhattan distance 1", () => {
     const state = setup();
-    state.characters.find((c) => c.id === AANG)!.position = { x: 3, y: 4 };
+    state.characters.find((c) => c.id === AANG)!.position = { x: 3, y: 5 };
     const card = focused("melee");
     const sokka = getLegalTargets(state, AANG, card).find((o) => o.primaryCharacterId === SOKKA)!;
     expect(sokka.isLegal).toBe(true);
@@ -56,18 +56,18 @@ describe("focused character targeting", () => {
   it("ranged attacks need line of sight by default, unless opted out", () => {
     const state = setup();
     createTerrain(state, { x: 1, y: 2 }, "rock-wall", "permanent", "fail");
-    const blocked = getLegalTargets(state, AANG, focused(6)).find(
+    const blocked = getLegalTargets(state, AANG, focused(9)).find(
       (o) => o.primaryCharacterId === TOPH,
     )!;
     expect(blocked.isLegal).toBe(false);
     expect(blocked.illegalReason?.code).toBe("NO_LINE_OF_SIGHT");
     // ...but the diagonal to sokka stays open
-    const open = getLegalTargets(state, AANG, focused(6)).find(
+    const open = getLegalTargets(state, AANG, focused(9)).find(
       (o) => o.primaryCharacterId === SOKKA,
     )!;
     expect(open.isLegal).toBe(true);
     const ignores = mkCard(
-      { kind: "character", allegiance: "enemies", range: 5, requiresLineOfSight: false },
+      { kind: "character", allegiance: "enemies", range: 9, requiresLineOfSight: false },
     );
     expect(
       getLegalTargets(state, AANG, ignores).find((o) => o.primaryCharacterId === TOPH)!.isLegal,
@@ -76,7 +76,7 @@ describe("focused character targeting", () => {
 
   it("water does not block line of sight (unlike a wall)", () => {
     const state = setup();
-    // Aang (1,1) -> Toph (1,5): the pond at (1,2) sits on the line but is
+    // Aang (1,0) -> Toph (1,6): the pond at (1,2) sits on the line but is
     // see-through, so the ranged attack stays legal.
     createTerrain(state, { x: 1, y: 2 }, "water-source", "permanent", "fail");
     const toph = getLegalTargets(state, AANG, focused(6)).find(
@@ -98,12 +98,12 @@ describe("focused character targeting", () => {
 
 describe("tile targeting", () => {
   const tileCard = (allowsOccupiedTile: boolean) =>
-    mkCard({ kind: "tile", range: 5, allowsOccupiedTile });
+    mkCard({ kind: "tile", range: 6, allowsOccupiedTile });
 
   it("resolves at the tile and hits occupants", () => {
     const state = setup();
     expect(
-      getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 1, y: 5 } }),
+      getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 1, y: 6 } }),
     ).toEqual([TOPH]);
     expect(
       getAffectedCharacters(state, AANG, tileCard(true), { kind: "tile", pos: { x: 2, y: 2 } }),
@@ -115,7 +115,7 @@ describe("tile targeting", () => {
     createTerrain(state, { x: 2, y: 2 }, "rock-wall", "permanent", "fail");
     const occupied = validateTarget(state, AANG, tileCard(false), {
       kind: "tile",
-      pos: { x: 1, y: 5 },
+      pos: { x: 1, y: 6 },
     });
     expect(occupied.errors[0].code).toBe("TILE_OCCUPIED");
     const blocked = validateTarget(state, AANG, tileCard(true), {
@@ -134,14 +134,16 @@ describe("tile targeting", () => {
 describe("direction and area targeting", () => {
   it("direction attacks run a line from the source", () => {
     const state = setup();
-    const card = mkCard({ kind: "direction", maxLength: 4, directions: ["north", "south"] });
+    const card = mkCard({ kind: "direction", maxLength: 6, directions: ["north", "south"] });
     const tiles = resolveTiles(state, ZUKO, card, { kind: "direction", direction: "south" });
     // stable y,x order
     expect(tiles).toEqual([
+      { x: 5, y: 1 },
       { x: 5, y: 2 },
       { x: 5, y: 3 },
       { x: 5, y: 4 },
       { x: 5, y: 5 },
+      { x: 5, y: 6 },
     ]);
     expect(getAffectedCharacters(state, ZUKO, card, { kind: "direction", direction: "south" })).toEqual([
       "p2-c2",
