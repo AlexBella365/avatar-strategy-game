@@ -46,7 +46,7 @@ Framework: named-animal one-shots that resolve then discard. Slot families for f
 
 ## Terrain delta (extends v0.2 §5)
 
-Starter palette: Plains (—), Grass (cover −1 vs. ranged), Pond (water source + difficult), Rocks (earth source, same +1 rule as water), Forest (dense, inert alone), Wall (blocking + LOS). Derived tiles arise only through transformation, never at setup.
+Starter palette: Plains (—), Grass (cover −1 vs. ranged), Pond (water source; impassable — blocks movement, not sight), Rocks (earth source, same +1 rule as water), Forest (dense, inert alone), Wall (blocking + LOS). Derived tiles arise only through transformation, never at setup.
 
 Transformation chains (durations/X in card data; all deterministic, logged):
 - **Freeze (water):** Pond → Ice for X turns → reverts to Pond. Ice is difficult + counts as a water source.
@@ -58,7 +58,7 @@ Transformation chains (durations/X in card data; all deterministic, logged):
   - **Stir (air → Ash):** → Smoke until end of next round → Plains. Smoke blocks sight, not movement (concealment evasion, one-way chain).
 
 Test map is fixed and asymmetric (tune after playtests). The board is 7×7 (supersedes v0.2 §4.1's 7×5); coordinates below use x 0–6, y 0–6 with y0 top, A deploys y0–1, B y5–6 (supersedes v0.2 §4.2's rows 3–4) — no blocking tiles inside either zone:
-- Pond: (2,1), (4,5). Rocks: (3,0), (3,5), (0,6), (6,6). Walls: (2,3), (4,3) — center row.
+- Pond: (2,2), (4,4). Rocks: (3,0), (3,5), (0,6), (6,6). Walls: (2,3), (4,3) — center row.
 - Forest: (4,1), (1,2), (5,4), (6,5), (5,6). Grass (neutral): every other tile — no empty tiles.
 
 ## Card data delta (extends v0.2 §9)

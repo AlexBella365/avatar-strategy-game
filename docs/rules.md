@@ -135,7 +135,7 @@ Statuses last until triggered or end of next round. They do not stack.
 The test map is fixed — learn it like a chessboard. It is deliberately **not** symmetric.
 
 - **Plains:** nothing — the map starts without any; it only appears mid-game (doused blazes, leveled walls). **Grass:** cover −1 vs. ranged. This is the default ground.
-- **Pond:** water source (empowers water techs) + difficult (2 to enter). Water abilities **freeze** it into **Ice** (still a water source, still difficult) for X turns — then it thaws back, unless water **melts** it sooner (back to Pond immediately).
+- **Pond:** water source (empowers water techs). **You cannot walk on water** — a Pond blocks movement (but not sight), so you can't enter, cross, or be pushed onto it. The only exception: a waterbender with the **Water Shoes** gear equipped treats water as open ground. Water abilities **freeze** it into **Ice** (walkable by anyone — difficult, still a water source) for X turns — then it thaws back, unless water **melts** it sooner (back to Pond, impassable again).
 - **Rocks:** earth source (earth techs +1, same rule as water).
 - **Forest:** dense, no effect by itself. Fire abilities **ignite** it into **Blaze** (hazard: 1 damage on entry); after 1 full round it burns out into **Ash** (fire source, permanent) — unless water **douses** it first (out immediately, leaving bare **Plains**: no source for fire). Air abilities can stir Ash into **Smoke** (blocks sight, not movement; disperses to Plains at end of next round).
 - **Wall:** blocks movement and sight. Earth abilities **raise** new walls or **level** existing ones back to Plains.
