@@ -36,7 +36,7 @@ export const CHARACTERS: CharacterDefinition[] = [
   },
   {
     id: "toph",
-    name: "Toph Beifong",
+    name: "Toph",
     element: "earth",
     attributes: { aggression: 3, perception: 5, agility: 2, discipline: 3, resilience: 4 },
     passiveDescription: "Counterattacker / terrain expert.",

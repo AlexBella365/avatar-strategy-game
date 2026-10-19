@@ -42,7 +42,7 @@
 
 | Icon | Character | Series | Suggested gameplay identity | Signature mechanic hook |
 |---|---|---|---|---|
-| 🪨 | **Toph Beifong** | ATLA | Counterattacker / terrain expert | Reads nearby movement and punishes enemies that reposition or attack recklessly; can create obstacles. |
+| 🪨 | **Toph** | ATLA | Counterattacker / terrain expert | Reads nearby movement and punishes enemies that reposition or attack recklessly; can create obstacles. |
 | 🏔️ | **King Bumi** | ATLA | Unpredictable bruiser | Gains tactical bonuses from unusual movement or changing the battlefield; powerful but difficult to sequence. |
 | ⚙️ | **Lin Beifong** | LOK | Durable controller | Metal cables pull, bind, or interrupt enemies; strong at controlling lanes. |
 | 🛡️ | **Kuvira** | LOK | Precision controller | Metal strips mark and restrain targets; excels at isolating one opponent and setting up follow-ups. |
