@@ -86,9 +86,12 @@ space either side of the board, and the acting player's hand sits under their ow
 sheets.
 
 Combat feedback is CSS-only: each attack type (fire/water/air/earth/slash) plays a
-short overlay animation, and affected characters show a floating red `-x` (or green
-`+y` heal). All durations live in `src/ui/animationTiming.ts` and are injected as CSS
-custom properties, so the keyframes and the JS dismissal timers stay in sync.
+short burst on every affected tile, and affected characters show a floating red
+`-x` (or green `+y` heal). Both are drawn in a board-level overlay (`.fx-overlay`)
+that mirrors the tile grid, so effects can spill across cell borders instead of
+being clipped by a tile. All durations live in `src/ui/animationTiming.ts` and are
+injected as CSS custom properties, so the keyframes and the JS dismissal timers
+stay in sync.
 
 ## Roadmap (grid model + v0.3 economy)
 
@@ -101,6 +104,6 @@ custom properties, so the keyframes and the JS dismissal timers stay in sync.
 7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
 8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
 9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
-10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers)
+10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers, drawn in a board overlay so they aren't clipped by tiles)
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
 12. ⬜ End-to-end polish (passives, real AI opponent, roster waves)

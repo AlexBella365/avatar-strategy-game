@@ -255,4 +255,4 @@ The prototype now implements the T1 direction for the hand and sheets:
 - **Verbatim rules.** `.pc-rules` renders the complete `rulesText` on the face (box grows; never truncated/ellipsized), with costs and fit/bank detail in the hover tooltip.
 - **Sheets carry card slots.** Each character sheet is flanked by a **gear** slot and an **ability** slot (compact `MiniCard` tokens). A face-down assignment reads as the card **face** to its owner and as the **card back** (`MiniCardBack`, `public/card_back.png`) to the opponent — the acting side is the viewer in hot-seat play.
 - **Terminology.** The earthbender is **Toph** (dropped the surname for brevity); the LOK metalbender remains **Lin Beifong**.
-- **Combat feedback.** Per-element attack overlays (fire/water/air/earth/slash) and floating damage/heal numbers; all timings live in `src/ui/animationTiming.ts`.
+- **Combat feedback.** Per-element attack overlays (fire/water/air/earth/slash) and floating damage/heal numbers, drawn in a board-level `.fx-overlay` that mirrors the tile grid so effects spill across cell borders instead of being clipped by a tile; all timings live in `src/ui/animationTiming.ts`.
