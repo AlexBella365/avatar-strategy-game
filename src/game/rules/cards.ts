@@ -38,6 +38,7 @@ import {
   requiresAttributesMet,
 } from "./damage";
 import { err } from "./errors";
+import { applyBasic } from "./basics";
 import {
   applyEvade,
   applyMove,
@@ -165,6 +166,13 @@ export function applyGameAction(state: GameState, action: GameAction): ActionRes
     }
     case "PLAY_CARD": {
       const outcome = resolvePlayCard(next, action);
+      errors.push(...outcome.errors);
+      events.push(...outcome.events);
+      break;
+    }
+    case "BASIC_ATTACK":
+    case "BASIC_DEFENSE": {
+      const outcome = applyBasic(next, action);
       errors.push(...outcome.errors);
       events.push(...outcome.events);
       break;
@@ -421,6 +429,9 @@ function resolvePlayCard(
   events.push(
     `${actor.definitionId} plays ${card.name} (-${energyCost} Energy${card.focusCost > 0 ? `, -${card.focusCost} Focus` : ""}${chiCost > 0 ? `, -${chiCost} chi` : ""}).`,
   );
+  // One card per activation: committing the play spends this activation's
+  // one action slot (holds even if the technique later fizzles).
+  actor.techniqueBlockedThisActivation = true;
   // Gear replacement drops the old bonus immediately.
   if (isGear && action.replaceGearInstanceId) {
     const idx = actor.equippedGear.findIndex((g) => g.id === action.replaceGearInstanceId);

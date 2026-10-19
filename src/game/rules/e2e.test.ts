@@ -154,6 +154,7 @@ describe("playable demo", () => {
 
   it("resolves a knockout through a real card and frees the tile", () => {
     const { state } = scriptedTwoRounds();
+    endRound(state); // fresh round: the previous activation's card play is spent
     state.characters.find((c) => c.id === "p2-c1")!.health = 2; // battle-worn
     assignKnown(state, "p1", "p1-c1", "water-whip");
     const result = playAssigned(state, "p1", "p1-c1", { kind: "character", characterId: "p2-c1" });

@@ -234,6 +234,7 @@ export default function App() {
   const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
+  const [basicTargeting, setBasicTargeting] = useState(false); // picking an adjacent enemy for the cardless basic attack
   const [attackFx, setAttackFx] = useState<AttackFx | null>(null);
   const [floats, setFloats] = useState<CombatText[]>([]);
   const fxSeq = useRef(0);
@@ -494,6 +495,30 @@ export default function App() {
     return true;
   };
 
+  // Cardless fallback actions (spec v2 §8 Phase 3): one weak strike or a
+  // small shield when the character has no assigned card to play.
+  const canBasic = !!selectedChar && selectedChar.health > 0 && !selectedChar.techniqueBlockedThisActivation && !me.assignments[selectedChar.id];
+  const doBasicAttack = (targetId: string): boolean => {
+    if (!selectedChar) return false;
+    const ok = dispatch({
+      type: "BASIC_ATTACK",
+      playerId: actingSide,
+      characterId: selectedChar.id,
+      targetCharacterId: targetId,
+    });
+    if (ok) {
+      setBasicTargeting(false);
+      setMoveMode(false);
+    }
+    return ok;
+  };
+  const doBasicDefense = (): boolean => {
+    if (!selectedChar) return false;
+    const ok = dispatch({ type: "BASIC_DEFENSE", playerId: actingSide, characterId: selectedChar.id });
+    if (ok) setMoveMode(false);
+    return ok;
+  };
+
   const clearTransient = () => {
     setTargeting(null);
     setEvade(null);
@@ -501,6 +526,7 @@ export default function App() {
     setAssigning(null);
     setMenu(null);
     setPlan(null);
+    setBasicTargeting(false);
     setAttackFx(null);
     setFloats([]);
   };
@@ -624,6 +650,14 @@ export default function App() {
       chooseTarget(option);
       return;
     }
+    if (basicTargeting && selectedChar) {
+      const clicked = state.characters.find(
+        (c) => c.position.x === x && c.position.y === y && c.health > 0,
+      );
+      if (!clicked) return;
+      if (doBasicAttack(clicked.id)) return;
+      return;
+    }
     if (moveMode && selectedChar && moveTiles.has(key({ x, y }))) {
       if (dispatch({ type: "MOVE", playerId: actingSide, characterId: selectedChar.id, to: { x, y } })) {
         if (plan === "move-first") {
@@ -656,6 +690,10 @@ export default function App() {
         return;
       }
       chooseTarget(option);
+      return;
+    }
+    if (basicTargeting && selectedChar) {
+      doBasicAttack(id);
       return;
     }
     const c = state.characters.find((ch) => ch.id === id)!;
@@ -1055,6 +1093,20 @@ export default function App() {
                     Scrap
                   </button>
                   <button onClick={() => setMoveMode(!moveMode)}>{moveMode ? "Stop moving" : "Move"}</button>
+                  {canBasic && (
+                    <>
+                      <button
+                        className={basicTargeting ? "active" : undefined}
+                        onClick={() => {
+                          setBasicTargeting(!basicTargeting);
+                          setMoveMode(false);
+                        }}
+                      >
+                        {basicTargeting ? "Pick adjacent enemy…" : "Basic attack (1)"}
+                      </button>
+                      <button onClick={doBasicDefense}>Basic shield (1)</button>
+                    </>
+                  )}
                   {selectedChar.avatarState &&
                     !selectedChar.avatarState.active &&
                     selectedChar.avatarState.resonance >= avatarThreshold(selectedChar.definitionId) && (

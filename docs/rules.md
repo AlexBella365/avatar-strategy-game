@@ -3,14 +3,14 @@
 You lead 3 benders in a turn-based duel on a 7×7 grid. Outmaneuver your opponent, play the right technique at the right time, and knock out their whole team.
 
 - **Players:** 2 (hot-seat / pass-and-play)
-- **Time:** up to 8 rounds
+- **Time:** up to 10 rounds
 - **You need:** 3 characters each, technique cards, this board
 
 ## Goal
 
 You win immediately when you knock out all 3 enemy characters.
 
-If both teams survive after round 8, you compare:
+If both teams survive after round 10, you compare:
 1. Total remaining health (% of max)
 2. Most survivors left
 3. Otherwise: draw
@@ -34,7 +34,7 @@ Each card has one type, one chi value (1–3), and a restriction tag:
 
 Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
 
-Universal cards fit everyone: **Travel Rations** (share a meal, heal 2), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
+Universal cards fit everyone: **Travel Rations** (share a meal, heal 1 now + 1 at end of round), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
 
 You can only assign a card to a character it fits (see Restrictions).
 
@@ -51,8 +51,12 @@ Play rounds in this order:
 
 When you activate a character, you reveal its assigned card and facing token, then do these two in either order:
 
-- **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing).
+- **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing). That is the character's **one card for this activation** — you cannot play a second card even if you reassign; leftovers never carry over (they're discarded or banked for chi at end of round).
 - **Move (one block):** Move 1 tile orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may skip moving.
+
+**No card assigned?** The activation is never wasted — use a **basic action** instead (both free, very weak, one per activation):
+- **Basic attack:** strike an orthogonally adjacent enemy for **1** damage. Cannot be evaded.
+- **Basic defense:** brace for **shield 1** until next round.
 
 You may also pass (counts as activated; assigned card auto-scraps, move lost).
 
@@ -99,7 +103,7 @@ Playtest v1 — all numbers tunable.
 Companion cards are one-shot animal allies. They resolve, then you discard them. Neither can be Evaded.
 
 - **Appa — Sky Bison Lift (Team Avatar only — Aang, Katara, Sokka, Toph):** You fly yourself to any empty, non-blocking tile, ignoring everything in between — walls, hazards, even your own Bound (he carries you). Pick an illegal tile and the flight fizzles (you still paid).
-- **Momo — Snatch (anyone):** You target an adjacent enemy who hasn't activated yet, peek at their assigned face-down card, then bank it for its chi. They activate with no card — move only. Momo answers to no master, so anyone can play him. (Future: Naga, Pabu.)
+- **Momo — Snatch (anyone):** You target an adjacent enemy who hasn't activated yet, peek at their assigned face-down card, then bank it for its chi. They activate with no card — move and use a basic action (weak strike or brace; see On your activation). Momo answers to no master, so anyone can play him. (Future: Naga, Pabu.)
 
 ## Cards and targeting
 
@@ -109,7 +113,7 @@ You read the range on your card, then check line of sight (blocked by walls/rock
 - **Tile:** You pick a tile. Whoever is there when it resolves is hit — moving away dodges it.
 - **Line / direction:** Uses your secretly chosen facing (north/east/south/west). It hits tiles in a line up to the stated length. The first wall usually stops it.
 - **Area (AoE):** You pick a center. It hits every valid character in the shape (`plus`, `line`, `radius`, etc.). Damage is full to each — it is not split.
-- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so.
+- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so. **Healing is slow:** a heal card gives a small amount now and the rest as **regeneration** that ticks at the end of the round, so it cannot undo burst damage in the same activation it lands. Healing is deliberately weaker than attacking.
 
 No dice. No misses — unless a reaction or move makes your target illegal.
 

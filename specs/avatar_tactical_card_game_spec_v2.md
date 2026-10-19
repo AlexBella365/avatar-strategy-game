@@ -109,7 +109,7 @@ Each player selects a team of three characters and a legal loadout.
 A player wins immediately when all three opposing characters are knocked
 out.
 
-If both teams have survivors after round 8, compare: 1. Total remaining
+If both teams have survivors after round 10, compare: 1. Total remaining
 health as a percentage of total maximum health. 2. Number of surviving
 characters. 3. If still tied, declare a draw.
 
@@ -486,8 +486,16 @@ Players alternate activating one unused living character.
 
 -   The player with initiative chooses the first character.
 -   Initiative alternates between players each round.
--   An activated character may perform one movement action and play up
-    to one technique card.
+-   Each activation has **one action slot**. A character with an assigned
+    card reveals it and plays exactly that one card (or scraps it for
+    chi); unplayed cards never carry over — they are discarded or banked
+    for chi at the end of the round instead.
+-   A character **with no card** still activates: it may use a basic
+    attack or basic defense instead of playing a technique. Both are
+    deliberately very weak: a basic attack is an orthogonally adjacent,
+    1-damage strike; a basic defense braces for shield 1 until next
+    round. Basic actions are free (no Energy, Focus, or chi), cannot be
+    evaded, and consume the activation's action slot.
 -   The player may perform movement before or after playing a card
     unless the card specifies timing.
 -   A character may pass its activation, but still counts as activated.
@@ -524,7 +532,7 @@ fizzles after costs are paid, unless its definition says otherwise.
 4.  Remove Momentum.
 5.  Check victory.
 6.  If no winner and round \< 8, begin next round.
-7.  If round 8 has ended, resolve tiebreakers.
+7.  If round 10 has ended, resolve tiebreakers.
 
 ------------------------------------------------------------------------
 
@@ -1213,7 +1221,7 @@ Automated tests are required for all core rules. Prefer table-driven unit tests 
 ### End-to-end tests
 
 - Start a match, play at least two rounds, and resolve a knockout.
-- A match can end by full knockout or round-8 tiebreaker.
+- A match can end by full knockout or round-10 tiebreaker.
 - A complete sample combo with movement, terrain, displacement, and an AoE resolves as specified.
 - Replaying the same action sequence produces the same state and event sequence.
 

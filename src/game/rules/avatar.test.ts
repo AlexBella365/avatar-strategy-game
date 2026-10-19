@@ -38,11 +38,16 @@ function play(
     card: CardDefinition;
     selection: TargetSelection;
     instanceId?: string;
+    /** Simulates a fresh activation (one card per activation is covered in basics.test.ts). */
+    freshActivation?: boolean;
   },
 ): ActionResult {
   const player = opts.player ?? "p1";
   const char = opts.char ?? "p1-c0";
   const instanceId = opts.instanceId ?? `inst-${Math.random()}`;
+  if (opts.freshActivation) {
+    state.characters.find((c) => c.id === char)!.techniqueBlockedThisActivation = false;
+  }
   state.players.find((p) => p.id === player)!.assignments[char] = {
     id: instanceId,
     definitionId: opts.card.id,
@@ -86,11 +91,11 @@ describe("resonance buildup", () => {
     state.players[0].energy = 9;
     let s = play(state, { card: damaging("air"), selection: sel("p2-c0") }).state;
     expect(resonanceOf(s)).toBe(1);
-    s = play(s, { card: damaging("water"), selection: sel("p2-c0"), instanceId: "w" }).state;
+    s = play(s, { card: damaging("water"), selection: sel("p2-c0"), instanceId: "w", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(2);
-    s = play(s, { card: damaging("air"), selection: sel("p2-c0"), instanceId: "a2" }).state;
+    s = play(s, { card: damaging("air"), selection: sel("p2-c0"), instanceId: "a2", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(2); // repeated element: no gain
-    s = play(s, { card: damaging("earth"), selection: sel("p2-c0"), instanceId: "e" }).state;
+    s = play(s, { card: damaging("earth"), selection: sel("p2-c0"), instanceId: "e", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(2); // round cap: no gain
   });
 
@@ -101,10 +106,10 @@ describe("resonance buildup", () => {
     aang.avatarState!.resonance = 5;
     const s = play(state, { card: damaging("air"), selection: sel("p2-c0") }).state;
     expect(resonanceOf(s)).toBe(6);
-    const s2 = play(s, { card: damaging("water"), selection: sel("p2-c0"), instanceId: "w" }).state;
+    const s2 = play(s, { card: damaging("water"), selection: sel("p2-c0"), instanceId: "w", freshActivation: true }).state;
     expect(resonanceOf(s2)).toBe(6);
     s2.characters.find((c) => c.id === "p1-c0")!.avatarState!.active = true;
-    const s3 = play(s2, { card: damaging("fire"), selection: sel("p2-c0"), instanceId: "f" }).state;
+    const s3 = play(s2, { card: damaging("fire"), selection: sel("p2-c0"), instanceId: "f", freshActivation: true }).state;
     expect(resonanceOf(s3)).toBe(6); // suppressed while active
   });
 
@@ -122,10 +127,10 @@ describe("resonance buildup", () => {
       instanceId: "g1",
     }).state;
     expect(resonanceOf(s)).toBe(1);
-    s = play(s, { card: defense, selection: sel("p1-c1"), instanceId: "g2" }).state;
+    s = play(s, { card: defense, selection: sel("p1-c1"), instanceId: "g2", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(1); // once per round
     // shielding self does not count
-    s = play(s, { card: defense, selection: sel("p1-c0"), instanceId: "g3" }).state;
+    s = play(s, { card: defense, selection: sel("p1-c0"), instanceId: "g3", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(1);
   });
 
@@ -140,7 +145,7 @@ describe("resonance buildup", () => {
     );
     let s = play(state, { player: "p2", char: "p2-c2", card: heavy, selection: sel("p1-c0") }).state;
     expect(resonanceOf(s)).toBe(1);
-    s = play(s, { player: "p2", char: "p2-c2", card: heavy, selection: sel("p1-c0"), instanceId: "h2" }).state;
+    s = play(s, { player: "p2", char: "p2-c2", card: heavy, selection: sel("p1-c0"), instanceId: "h2", freshActivation: true }).state;
     expect(resonanceOf(s)).toBe(1); // once per round
   });
 });

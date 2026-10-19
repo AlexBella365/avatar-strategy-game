@@ -77,7 +77,7 @@ export interface CharacterState {
   reactionUsedThisRound: boolean;
   activatedThisRound: boolean;
   movementSpent: number; // movement points spent this activation; reset by round loop
-  techniqueBlockedThisActivation: boolean; // Avatar State activation consumes the technique play
+  techniqueBlockedThisActivation: boolean; // this activation's one card play is spent (played a card, entered Avatar State, or used a basic action)
   equippedGear: CardInstance[]; // persistent gear (max 2); bonuses apply while equipped
   momentum: number; // 0..1 in MVP
   avatarState?: AvatarStateStatus;
@@ -315,6 +315,8 @@ export type GameAction =
   | { type: "ASSIGN_CARD"; playerId: string; characterId: string; cardInstanceId: string }
   | { type: "SCRAP_ASSIGNED"; playerId: string; characterId: string }
   | { type: "PASS_ACTIVATION"; playerId: string; characterId: string }
+  | { type: "BASIC_ATTACK"; playerId: string; characterId: string; targetCharacterId: string }
+  | { type: "BASIC_DEFENSE"; playerId: string; characterId: string }
   | { type: "ACTIVATE_AVATAR_STATE"; playerId: string; characterId: string }
   | { type: "END_ROUND"; playerId: string };
 

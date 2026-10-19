@@ -46,11 +46,16 @@ function play(
     instanceId?: string;
     movePath?: Position[];
     reactions?: { characterId: string; dest: Position }[];
+    /** Simulates a fresh activation (one card per activation is covered in basics.test.ts). */
+    freshActivation?: boolean;
   },
 ): ActionResult {
   const player = opts.player ?? "p1";
   const char = opts.char ?? "p1-c0";
   const instanceId = opts.instanceId ?? "inst-1";
+  if (opts.freshActivation) {
+    state.characters.find((c) => c.id === char)!.techniqueBlockedThisActivation = false;
+  }
   state.players.find((p) => p.id === player)!.assignments[char] = {
     id: instanceId,
     definitionId: opts.card.id,
@@ -162,6 +167,7 @@ describe("validation and costs", () => {
       card: { ...card, id: "d2b" },
       selection: sel("p2-c1"),
       instanceId: "inst-2",
+      freshActivation: true,
     });
     expect(r2.errors).toEqual([]);
     expect(r2.state.players[0].energy).toBe(1); // 3 - 2, no second discount
@@ -451,7 +457,7 @@ describe("support effects and actions", () => {
     const disrupt = mkCard({ kind: "character", allegiance: "enemies", range: 6 }, [
       { type: "disrupt", amount: 1 },
     ], { id: "dis" });
-    const r2 = play(r1.state, { char: "p1-c1", card: disrupt, selection: sel("p2-c1") });
+    const r2 = play(r1.state, { char: "p1-c1", card: disrupt, selection: sel("p2-c1"), freshActivation: true, instanceId: "inst-2" });
     expect(
       r2.state.characters.find((c) => c.id === "p2-c1")!.statuses.some((s) => s.statusId === "Exhausted"),
     ).toBe(true);
