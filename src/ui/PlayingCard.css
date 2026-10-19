@@ -1,20 +1,19 @@
+/* Uniform card grid. `auto-fill` gives every column the same width, so a card
+   is exactly the same size whether it sits on the first row or a wrapped one;
+   `auto-fit` would instead stretch the final, partly-filled row. Every card
+   holds the same 5:7 ratio as the card_back.png artwork (300x420), so faces and
+   backs match. */
 .hand-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: 6px;
   margin-top: 8px;
+  align-items: start;
 }
-/* Classic playing-card look for technique cards. Every card holds the same 5:7
-   ratio as the card_back.png artwork (300x420), so faces and backs match. Cards
-   flex to share the row and wrap onto new rows inside the (narrower) sheet
-   column; the full rules text is printed verbatim on the face, with fit/bank
-   detail in the card's hover tooltip. */
 .playing-card {
   position: relative;
   box-sizing: border-box;
-  flex: 1 1 110px;
-  min-width: 108px;
+  width: 100%;
   max-width: 150px;
   aspect-ratio: 5 / 7;
   border-radius: 10px;
