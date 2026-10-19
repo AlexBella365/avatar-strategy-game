@@ -11,7 +11,7 @@
 // - Blocking tiles are illegal tile targets.
 // - `area` origin range defaults to unlimited when `maxRange` is omitted.
 // - Area LOS is checked source→origin only; shape propagation is geometric.
-import { blockingTiles } from "./terrain";
+import { blockingTiles, sightBlockingTiles } from "./terrain";
 import {
   GRID_COLS,
   GRID_ROWS,
@@ -97,7 +97,7 @@ export function resolveTiles(
   if (!validateTarget(state, sourceId, card, selection).ok) return [];
   const source = findSource(state, sourceId)!;
   const t = card.targeting;
-  const blocked = blockingTiles(state);
+  const blocked = sightBlockingTiles(state);
   switch (t.kind) {
     case "self":
       return [{ ...source.position }];
@@ -218,7 +218,10 @@ export function validateTarget(
       ok: false,
       errors: [err("TARGET_MISMATCH", "This selection does not fit the card's target pattern.")],
     };
-  const blocked = blockingTiles(state);
+  // Line of sight ignores water (it is see-through); tile legality still treats
+  // water as unusable ground (you cannot stand on it).
+  const sightBlocked = sightBlockingTiles(state);
+  const movementBlocked = blockingTiles(state);
   // Lenient mode (dash-strike cards): allegiance/occupancy checked now,
   // range and line of sight re-checked from the post-movement tile.
   const checkRange = !opts.lenientRange;
@@ -236,7 +239,7 @@ export function validateTarget(
         errors: [err("OUT_OF_RANGE", `Target is beyond ${rangeLabel(t.range)}.`)],
       };
     if (checkRange && (t.requiresLineOfSight ?? true) && t.range !== "melee") {
-      if (!hasLineOfSight(source.position, target.position, blocked))
+      if (!hasLineOfSight(source.position, target.position, sightBlocked))
         return { ok: false, errors: [err("NO_LINE_OF_SIGHT", "A blocker breaks line of sight.")] };
     }
     return { ok: true, errors: [] };
@@ -248,11 +251,11 @@ export function validateTarget(
       return { ok: false, errors: [err("OUT_OF_BOUNDS", `Tile ${describeTile(pos)} is off the board.`)] };
     if (checkRange && !inRange(source.position, pos, t.range))
       return { ok: false, errors: [err("OUT_OF_RANGE", `Tile is beyond ${rangeLabel(t.range)}.`) ] };
-    if (blocked.has(key(pos)))
+    if (movementBlocked.has(key(pos)))
       return { ok: false, errors: [err("TILE_BLOCKED", `Tile ${describeTile(pos)} holds blocking terrain.`)] };
     if (!t.allowsOccupiedTile && occupantAt(state, pos))
       return { ok: false, errors: [err("TILE_OCCUPIED", `Tile ${describeTile(pos)} is occupied.`)] };
-    if (checkRange && !hasLineOfSight(source.position, pos, blocked))
+    if (checkRange && !hasLineOfSight(source.position, pos, sightBlocked))
       return { ok: false, errors: [err("NO_LINE_OF_SIGHT", "A blocker breaks line of sight.")] };
     return { ok: true, errors: [] };
   }
@@ -272,7 +275,7 @@ export function validateTarget(
       return { ok: false, errors: [err("OUT_OF_BOUNDS", `Tile ${describeTile(pos)} is off the board.`)] };
     if (checkRange && t.maxRange !== undefined && manhattan(source.position, pos) > t.maxRange)
       return { ok: false, errors: [err("OUT_OF_RANGE", `Origin is beyond range ${t.maxRange}.`)] };
-    if (checkRange && (t.requiresLineOfSight ?? true) && !hasLineOfSight(source.position, pos, blocked))
+    if (checkRange && (t.requiresLineOfSight ?? true) && !hasLineOfSight(source.position, pos, sightBlocked))
       return { ok: false, errors: [err("NO_LINE_OF_SIGHT", "A blocker breaks line of sight to the origin.")] };
     return { ok: true, errors: [] };
   }

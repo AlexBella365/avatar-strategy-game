@@ -245,7 +245,11 @@ export interface TerrainState {
 export interface TerrainDefinition {
   id: string;
   name: string;
-  blocking: boolean; // cannot be entered; blocks line of sight
+  /** Cannot be entered AND blocks line of sight (walls). */
+  blocking: boolean;
+  /** Cannot be entered but does NOT block line of sight (water). A distinct
+   *  flag from `blocking` so an impassable pond gates movement only. */
+  impassableToMove?: boolean;
   difficult: boolean; // costs 2 movement points to enter
   cover?: { reduction: number; vs: ("melee" | "ranged" | "aoe")[] };
   elementalSource?: "water" | "earth" | "fire" | "air";

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { GRID_COLS, GRID_ROWS } from "./rules/grid";
 import { parseTerrainGrid } from "./mapGrid";
 import { createTestMapTerrain } from "./state";
+import { blockingTiles, sightBlockingTiles } from "./rules/terrain";
+import type { GameState } from "./types";
 import { MAPS, getMap } from "./maps";
 
 const blankGrid = Array.from({ length: GRID_ROWS }, () =>
@@ -118,6 +120,24 @@ describe("demo map", () => {
 
   it("has a connected road crossing the field", () => {
     expect(roadSpansField(terrain)).toBe(true);
+  });
+
+  it("ponds block movement but not sight; walls block both", () => {
+    const state = { terrain } as GameState;
+    const blocked = blockingTiles(state);
+    const sight = sightBlockingTiles(state);
+    const ponds = terrain.filter((t) => t.terrainId === "water-source");
+    const walls = terrain.filter((t) => t.terrainId === "rock-wall");
+    expect(ponds.length).toBeGreaterThan(0);
+    expect(walls.length).toBeGreaterThan(0);
+    for (const p of ponds) {
+      expect(blocked.has(`${p.x},${p.y}`)).toBe(true); // cannot be walked on
+      expect(sight.has(`${p.x},${p.y}`)).toBe(false); // but see-through
+    }
+    for (const w of walls) {
+      expect(blocked.has(`${w.x},${w.y}`)).toBe(true);
+      expect(sight.has(`${w.x},${w.y}`)).toBe(true);
+    }
   });
 });
 

@@ -74,6 +74,17 @@ describe("focused character targeting", () => {
     ).toBe(true);
   });
 
+  it("water does not block line of sight (unlike a wall)", () => {
+    const state = setup();
+    // Aang (1,1) -> Toph (1,5): the pond at (1,2) sits on the line but is
+    // see-through, so the ranged attack stays legal.
+    createTerrain(state, { x: 1, y: 2 }, "water-source", "permanent", "fail");
+    const toph = getLegalTargets(state, AANG, focused(6)).find(
+      (o) => o.primaryCharacterId === TOPH,
+    )!;
+    expect(toph.isLegal).toBe(true);
+  });
+
   it("rejects wrong allegiance and knocked-out targets", () => {
     const state = setup();
     const ally = validateTarget(state, AANG, focused(), { kind: "character", characterId: "p1-c1" });
@@ -151,6 +162,19 @@ describe("direction and area targeting", () => {
     expect(resolveTiles(state, AANG, through, { kind: "direction", direction: "east" })).toEqual([
       { x: 1, y: 2 },
       { x: 2, y: 2 },
+    ]);
+  });
+
+  it("a line runs across water (water is not a sight blocker)", () => {
+    const state = setup();
+    state.characters.find((c) => c.id === AANG)!.position = { x: 0, y: 2 };
+    createTerrain(state, { x: 1, y: 2 }, "water-source", "permanent", "fail");
+    const card = mkCard({ kind: "direction", maxLength: 4, directions: ["east"] });
+    expect(resolveTiles(state, AANG, card, { kind: "direction", direction: "east" })).toEqual([
+      { x: 1, y: 2 },
+      { x: 2, y: 2 },
+      { x: 3, y: 2 },
+      { x: 4, y: 2 },
     ]);
   });
 

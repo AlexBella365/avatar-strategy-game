@@ -16,20 +16,33 @@ export function terrainAt(state: GameState, pos: Position): TerrainState | undef
 }
 
 function setsFor(state: GameState) {
-  const blocked = new Set<string>();
+  const movement = new Set<string>();
+  const sight = new Set<string>();
   const difficult = new Set<string>();
   for (const t of state.terrain) {
     const def = getTerrainDefinition(t.terrainId);
     if (!def) continue;
-    if (def.blocking) blocked.add(`${t.x},${t.y}`);
-    else if (def.difficult) difficult.add(`${t.x},${t.y}`);
+    const k = `${t.x},${t.y}`;
+    // Movement is gated by either flag; sight only by `blocking`.
+    if (def.blocking || def.impassableToMove) movement.add(k);
+    else if (def.difficult) difficult.add(k);
+    if (def.blocking) sight.add(k);
   }
-  return { blocked, difficult };
+  return { movement, sight, difficult };
 }
 
-/** Tiles with blocking terrain (impassable, break LOS). */
+/**
+ * Tiles that cannot be entered (walls via `blocking`, water via
+ * `impassableToMove`). Water blocks movement but still lets techniques and
+ * line effects see across it, so it is absent from `sightBlockingTiles`.
+ */
 export function blockingTiles(state: GameState): Set<string> {
-  return setsFor(state).blocked;
+  return setsFor(state).movement;
+}
+
+/** Tiles that block line of sight (walls only — water is see-through). */
+export function sightBlockingTiles(state: GameState): Set<string> {
+  return setsFor(state).sight;
 }
 
 /** Tiles with difficult terrain (2 movement points to enter). */
@@ -76,7 +89,7 @@ export function createTerrain(
   const occupant = state.characters.find(
     (c) => c.health > 0 && c.position.x === pos.x && c.position.y === pos.y,
   );
-  if (occupant && def.blocking) {
+  if (occupant && (def.blocking || def.impassableToMove)) {
     return {
       ok: false,
       errors: [{ code: "TERRAIN_BLOCKED_TILE", message: `Cannot create ${def.name} under ${occupant.definitionId}.` }],

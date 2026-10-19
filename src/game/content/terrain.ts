@@ -5,7 +5,7 @@ export const TERRAIN_DEFINITIONS: TerrainDefinition[] = [
   {
     id: "rock-wall",
     name: "Rock Wall",
-    blocking: true,
+    blocking: true, // blocks movement AND sight
     difficult: false,
   },
   {
@@ -15,9 +15,12 @@ export const TERRAIN_DEFINITIONS: TerrainDefinition[] = [
     difficult: true,
   },
   {
+    // Water cannot be walked on (impassable) but does not block sight — a Pond
+    // is a water source that water techs feed from across the surface.
     id: "water-source",
     name: "Water Source",
-    blocking: false,
+    blocking: false, // see-through; only `impassableToMove` gates movement
+    impassableToMove: true,
     difficult: false,
     elementalSource: "water",
   },

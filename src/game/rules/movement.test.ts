@@ -65,6 +65,36 @@ describe("voluntary movement", () => {
     );
   });
 
+  it("cannot walk onto or through water", () => {
+    const state = setup();
+    createTerrain(state, { x: 1, y: 2 }, "water-source", "permanent", "fail");
+    // onto the pond
+    expect(validateMove(state, AANG, [{ x: 1, y: 2 }]).errors[0].code).toBe("TILE_BLOCKED");
+    // straight through a pond in the middle of the path
+    const state2 = setup();
+    createTerrain(state2, { x: 2, y: 1 }, "water-source", "permanent", "fail");
+    state2.players[0].intentions[AANG] = "Reposition"; // 2-tile allowance
+    expect(
+      validateMove(state2, AANG, [
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+      ]).errors[0].code,
+    ).toBe("TILE_BLOCKED");
+  });
+
+  it("cannot walk onto or through rock walls", () => {
+    const state = setup();
+    createTerrain(state, { x: 2, y: 1 }, "rock-wall", "permanent", "fail");
+    expect(validateMove(state, AANG, [{ x: 2, y: 1 }]).errors[0].code).toBe("TILE_BLOCKED");
+    state.players[0].intentions[AANG] = "Reposition"; // 2-tile allowance
+    expect(
+      validateMove(state, AANG, [
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+      ]).errors[0].code,
+    ).toBe("TILE_BLOCKED");
+  });
+
   it("rejects non-orthogonal paths and Bound characters", () => {
     const state = setup();
     expect(validateMove(state, AANG, [{ x: 2, y: 2 }]).errors[0].code).toBe("INVALID_PATH");

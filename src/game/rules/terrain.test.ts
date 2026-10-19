@@ -6,6 +6,7 @@ import {
   blockingTiles,
   createTerrain,
   difficultTiles,
+  sightBlockingTiles,
   terrainAt,
   tickTerrainEndOfRound,
 } from "./terrain";
@@ -19,12 +20,28 @@ describe("terrain creation", () => {
     expect(result.ok).toBe(true);
     expect(terrainAt(state, { x: 3, y: 2 })?.terrainId).toBe("rock-wall");
     expect(blockingTiles(state).has("3,2")).toBe(true);
+    expect(sightBlockingTiles(state).has("3,2")).toBe(true); // walls also break sight
+    expect(difficultTiles(state).has("3,2")).toBe(false);
+  });
+
+  it("water blocks movement but not line of sight", () => {
+    const state = setup();
+    createTerrain(state, { x: 3, y: 2 }, "water-source", "permanent", "fail");
+    expect(blockingTiles(state).has("3,2")).toBe(true); // cannot be walked on
+    expect(sightBlockingTiles(state).has("3,2")).toBe(false); // see-through
     expect(difficultTiles(state).has("3,2")).toBe(false);
   });
 
   it("rejects blocking terrain under a living character", () => {
     const state = setup();
     const result = createTerrain(state, { x: 1, y: 1 }, "rock-wall", 2, "fail");
+    expect(result.ok).toBe(false);
+    expect(result.errors[0].code).toBe("TERRAIN_BLOCKED_TILE");
+  });
+
+  it("rejects water under a living character (no characters on water)", () => {
+    const state = setup();
+    const result = createTerrain(state, { x: 1, y: 1 }, "water-source", "permanent", "fail");
     expect(result.ok).toBe(false);
     expect(result.errors[0].code).toBe("TERRAIN_BLOCKED_TILE");
   });
@@ -80,6 +97,9 @@ describe("terrain entry triggers", () => {
 
   it("water source and cover definitions carry the specified properties", () => {
     expect(getTerrainDefinition("water-source")?.elementalSource).toBe("water");
+    expect(getTerrainDefinition("water-source")?.impassableToMove).toBe(true);
+    expect(getTerrainDefinition("water-source")?.blocking).toBe(false);
+    expect(getTerrainDefinition("rock-wall")?.blocking).toBe(true);
     expect(getTerrainDefinition("cover")?.cover).toEqual({ reduction: 1, vs: ["ranged"] });
   });
 });

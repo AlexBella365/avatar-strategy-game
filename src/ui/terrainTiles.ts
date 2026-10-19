@@ -25,7 +25,7 @@ const V = (
 
 const WALL = V("🧱", "wall", "wall", "Blocks movement and sight.", "/tiles/rock_wall.png", "var(--terrain-wall)");
 const ROCKS = V("🪨", "rocks", "rocks", "Earth source: earth techs +1.", "/tiles/rocky_terrain.png", "var(--terrain-rocks)");
-const POND = V("💧", "pond", "pond", "Water source + difficult (2 to enter).", "/tiles/water.png", "var(--terrain-pond)");
+const POND = V("💧", "pond", "pond", "Water source. Blocks movement (not sight).", "/tiles/water.png", "var(--terrain-pond)");
 const BLAZE = V("🔥", "blaze", "blaze", "Ignited woodland. Hazard: 1 damage on entry.", "/tiles/burning_forest.png", "var(--terrain-blaze)");
 const ASH = V("🌋", "ash", "ash", "Fire source (burnt-out blaze).", "/tiles/ashes.png", "var(--terrain-ash)");
 const ICE = V("🧊", "ice", "ice", "Difficult + counts as water source.", "/tiles/frozen_water.png", "var(--terrain-ice)");
