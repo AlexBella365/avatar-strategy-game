@@ -73,6 +73,7 @@ export interface CharacterState {
   position: Position;
   statuses: StatusInstance[];
   shields: ShieldInstance[]; // absorb damage FIFO; expiry handled by round loop
+  regeneration: RegenInstance[]; // heal-over-time pools; ticked by the round loop
   passiveUsesThisRound: Record<string, number>;
   reactionUsedThisRound: boolean;
   activatedThisRound: boolean;
@@ -88,6 +89,15 @@ export interface ShieldInstance {
   id: string; // stable instance id
   amount: number;
   duration?: "untilNextRound" | "untilConsumed";
+}
+
+/** One heal-over-time pool: restores `amount` HP at the end of each of the
+ *  next `remainingRounds` round-end steps (spec: healing is slower and weaker
+ *  than damage). Multiple pools stack; KO clears them. */
+export interface RegenInstance {
+  id: string; // stable instance id
+  amount: number; // HP restored per end-of-round tick
+  remainingRounds: number; // ticks left
 }
 
 export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
@@ -150,6 +160,13 @@ export type CardEffect =
       waterEmpoweredBonus?: number;
     }
   | { type: "heal"; amount: number }
+  | {
+      /** Delayed healing: restores `amount` HP at the end of each of the next
+       *  `rounds` round-end steps. Slower and weaker than an instant heal. */
+      type: "healOverTime";
+      amount: number;
+      rounds: number;
+    }
   | {
       type: "shield";
       amount: number;

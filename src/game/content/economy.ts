@@ -46,6 +46,9 @@ export const STARTER_DECK_IDS: string[] = [
   "travel-rations",
   "smoke-bomb",
   "dust-toss",
+  "miraculous-balm",
+  "healing-waters",
+  "second-wind",
 ];
 
 /** chi value / chi cost / energy / restrictions / slot per card. */
@@ -68,6 +71,11 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "travel-rations": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
   "smoke-bomb": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
   "dust-toss": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "attack" },
+  // Spike heals: instant (not delayed), so they cost more — chi gates them so
+  // they stay rare against the weak end-of-round regeneration baseline.
+  "miraculous-balm": { value: 2, chiCost: 2, energy: 2, restrictions: [], slotType: "defense" },
+  "healing-waters": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "defense" },
+  "second-wind": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
 };
 
 /** Restriction gate for assign AND play (banking is always legal). */

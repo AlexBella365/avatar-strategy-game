@@ -2,7 +2,7 @@
 
 **Status:** Design spec for future implementation. Non-normative for engine rules.
 **Sources:** `specs/avatar_tactical_card_game_spec_v2.md` (§§6,9,10,13,14), `specs/avatar_tactical_card_game_spec_v0.3_amendment.md` (economy, facing, talents, companions), `docs/rules.md`, `src/game/types.ts` (`CardDefinition`, `CharacterDefinition`), `src/game/content/cards.ts`, `src/game/content/economy.ts`, `src/ui/PlayingCard.tsx`.
-**Scope:** layouts and visual design only — *which* cards exist and their full data live in `specs/card_roster.md` (existing 18-card pool, Water Shoes, Rocket Flight, and the ~20-per-type expansion pools).
+**Scope:** layouts and visual design only — *which* cards exist and their full data live in `specs/card_roster.md` (existing 21-card pool, Water Shoes, Rocket Flight, and the ~20-per-type expansion pools).
 
 ## 0. Goals & constraints
 

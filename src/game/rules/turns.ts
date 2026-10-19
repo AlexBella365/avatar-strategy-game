@@ -4,13 +4,14 @@ import { ENERGY_PER_ROUND, MAX_ROUNDS, nextRandom } from "../state";
 import { CARD_ECONOMY } from "../content/economy";
 import { ECONOMY_TUNING } from "../content/economy";
 import { tickStatusesEndOfRound } from "./statuses";
+import { tickRegeneration } from "./healing";
 import { tickTerrainEndOfRound } from "./terrain";
 
 function teamOf(state: GameState, ownerId: string) {
   return state.characters.filter((c) => c.ownerId === ownerId);
 }
 
-/** Health share of a team (0..1) for the round-8 tiebreaker. */
+/** Health share of a team (0..1) for the round-limit tiebreaker. */
 export function teamHealthShare(state: GameState, ownerId: string): number {
   const team = teamOf(state, ownerId);
   const max = team.reduce((sum, c) => sum + c.maxHealth, 0);
@@ -150,8 +151,8 @@ export function canActivate(state: GameState, characterId: string): boolean {
 
 /**
  * End-of-round phase (§8 phase 5) + next-round setup, or match end.
- * Order: Avatar duration → statuses → terrain → Momentum → victory
- * (round limit applies at round 8) → refresh/advance when continuing.
+ * Order: Avatar duration → statuses → regeneration → terrain → Momentum →
+ * victory (the round limit applies at `maxRounds`) → refresh/advance.
  */
 export function endRound(state: GameState): string[] {
   const events: string[] = [];
@@ -177,6 +178,7 @@ export function endRound(state: GameState): string[] {
     }
   }
   events.push(...tickStatusesEndOfRound(state));
+  events.push(...tickRegeneration(state));
   events.push(...tickTerrainEndOfRound(state));
   if (state.winnerId !== null || state.isDraw) {
     state.log.push(...events);

@@ -37,13 +37,13 @@ describe("endRound", () => {
     expect(state.round).toBe(1);
   });
 
-  it("applies the round-8 tiebreaker instead of advancing", () => {
+  it("applies the round-limit tiebreaker instead of advancing", () => {
     const state = setup();
-    state.round = 8;
+    state.round = state.maxRounds;
     dealDamage(state, "p2-c0", 999, "test");
     endRound(state);
     expect(state.winnerId).toBe("p1");
-    expect(state.round).toBe(8);
+    expect(state.round).toBe(state.maxRounds);
   });
 
   it("removes untilNextRound shields and keeps untilConsumed ones", () => {

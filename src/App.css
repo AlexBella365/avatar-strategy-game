@@ -236,7 +236,7 @@
 .side-col {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 .hand ul,
 .log ul {
@@ -338,6 +338,7 @@ header p {
 }
 .resources {
   font-size: 0.95rem;
+  margin: 6px;
 }
 .activation,
 .hand,

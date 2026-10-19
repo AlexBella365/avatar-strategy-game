@@ -16,7 +16,7 @@ import type {
 
 export const STARTING_FOCUS = 1;
 export const ENERGY_PER_ROUND = 4;
-export const MAX_ROUNDS = 8;
+export const MAX_ROUNDS = 10;
 
 /** Deployment zones (spec §4.2): north team on row 0, south team on row 6. */
 export const DEPLOYMENT_ZONE_ROWS: Record<Side, number> = { north: 0, south: 6 };
@@ -87,6 +87,7 @@ export function createCharacter(
     position: { ...position },
     statuses: [],
     shields: [],
+    regeneration: [],
     passiveUsesThisRound: {},
     reactionUsedThisRound: false,
     activatedThisRound: false,

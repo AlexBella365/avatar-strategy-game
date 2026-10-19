@@ -72,11 +72,13 @@ Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
 the only Avatar State–capable character; Resonance buildup, activation cost,
 duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
 
-## Cards (18)
+## Cards (21)
 
 12 starter techniques + 2 signature gear (Glider, Boomerang) + Comet Strike bomb +
-3 universal cards anyone can take: **Travel Rations** (food = healing),
-**Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed). Every character
+6 defender cards: **Travel Rations** (food = heal-over-time), **Miraculous Balm**
+(instant spike heal 4, costs chi), **Second Wind** (instant self-heal 2 + Focus),
+**Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed) — all universal —
+plus the water-locked **Healing Waters** (instant heal 3). Every character
 fits at least 6 cards; the hand list shows each card's requirement and who fits.
 
 ## Card presentation
@@ -110,4 +112,6 @@ stay in sync.
 9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
 10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers, drawn in a board overlay so they aren't clipped by tiles)
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
-12. ⬜ End-to-end polish (passives, real AI opponent, roster waves)
+12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
+13. ⬜ End-to-end polish (passives, roster waves)
+14. ⬜ Balance pass — lethality first (no KO finishes; every match hits the round cap). See `specs/balance_testing_plan.md` §10 for the baseline and the prioritized next steps; re-run `SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts` after each change.

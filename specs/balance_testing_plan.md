@@ -30,7 +30,7 @@ Thresholds are v1 defaults. "Flag" = investigate in the next batch. "Fail" = blo
 | Card play-win delta (n ≥ 100 plays) | within ±10pp of baseline | ±10–15pp | ±15pp+ | re-cost; check if it has no counter (audit §3.1) |
 | Bank-vs-play ratio (chi actions) | mixed by archetype | >80% of actions are banks *and* banks correlate with winning | >90% | tempo underpriced — raise effect per chi on cheap cards, or lower bank values |
 | Avg team Energy spent / round | 2.5–4.0 of 4 | <2.0 or >3.9 | — | <2: cheap plays weak / banks dominate; >3.9: energy is not a constraint, cost axis is dead |
-| Games reaching round 8 (time) | 30–70% | >85% or <10% | >95% or <5% | >85% grindy: raise lethality; <10% bursty: cut top-end damage or raise health |
+| Games reaching round 10 (time) | 30–70% | >85% or <10% | >95% or <5% | >85% grindy: raise lethality; <10% bursty: cut top-end damage or raise health |
 | Round-1 KO rate | ~0% | >3% | >7% | deployment/burst problem (see placement doc §2) |
 | Avatar State activation (games where meter filled) | 20–80% | <10% or >90% | — | <10% overpriced (nobody accepts instant-loss risk); >90% underpriced |
 | Max disable chain (player-tier, no out in losing deck) | ≤ 1 round | 2 rounds | ≥3 rounds | re-gate lockdown cards; villain tier reviewed separately |
@@ -63,12 +63,21 @@ Every Villain/tier-gated card (bloodbending, combustion beams, suffocation-tier,
 ### 3.5 Rule-interaction audit
 Walk the cross-cutting rules: water-impassable routing (does every map have ≥2 meaningful routes without Water Shoes?), facing, reaction windows, forced movement vs blocking terrain, activation order with unequal living counts (currently only implicit — see mechanics doc §3.1). **Deployment audit (edge-row zones, mechanics §2.4 adopted):** every map leaves **≥3 free (non-blocking) tiles in each edge row** (rows 0 and 6) — fail any map where a legal deployment doesn't exist; check row-spanning line shapes make row-wide AoE auto-efficient against a shared edge row (column spacing must be a real counter-decision); confirm the side roll is independent of the initiative roll (one roll must never stack two first-mover advantages); check the basic-action floor (free adjacent 1-dmg strike / shield-1 brace) — fail any cheap card the free action outclasses, and flag brace-stacking if round-reached metrics inflate. **Fail** = a map or board state with only one viable line of play.
 
-## 4. Self-play harness (design — not yet implemented)
+## 4. Self-play harness (implemented — `src/game/ai/balanceSweep.test.ts`)
 
 ### 4.1 Foundation
 The engine is already harness-friendly: deterministic `state.rng`, a full rules core, and an existing bot entry point — `chooseAutoAction(state, playerId, random)` in `src/game/auto.ts` with tests that already loop complete games (`auto.test.ts`). The harness is a batch runner around that loop, no UI.
 
-**Pre-req fix (flagged, not implemented):** turn order is currently enforced only by the UI (`App.tsx` alternates `actingSide`; `canActivate` in `turns.ts:145` does not check player or initiative). A headless harness would measure "both players act whenever they want", not the real game. Order enforcement must move into the rules engine first (mechanics doc §3).
+**Implemented.** `src/game/ai/balanceSweep.test.ts` drives the Track A policy headless over seeded matches. It is **skipped unless `SWEEP_N` is set**, so `npm test` stays fast; run it explicitly:
+
+```bash
+SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts            # report -> /tmp/balance_sweep.txt
+SWEEP_N=100 SWEEP_OUT=/tmp/balance.txt npx vitest run src/game/ai/balanceSweep.test.ts
+```
+
+It reports §2.1 core metrics (Wilson CIs, KO/cap/draw rates, HP-share margin, healing) for the shipped roster, hero-mirror, and villain-mirror matchups, plus a lethality tuning grid (`hpScale` × `rounds`). It is T1-equivalent (greedy utility, full `GameState` — see §4.3). Results: **§10**.
+
+**Pre-req fix (flagged, still not implemented):** turn order is currently enforced only by the UI (`App.tsx` alternates `actingSide`; `canActivate` in `turns.ts:145` does not check player or initiative). The harness therefore alternates p1/p2 itself and measures "both players act whenever they want", not the real game. Fine for relative A/B comparisons; **not** decision-grade for matchup tables until order enforcement moves into the rules engine (mechanics doc §3).
 
 ### 4.2 Bot tiers
 - **T0 — random legal action.** Sanity + engine fuzz (finds crashes, infinite loops, illegal states).
@@ -136,3 +145,60 @@ A version may **not** be called balanced if any of these hold:
 5. Staple inclusion >95% — deck construction is an illusion.
 6. Draw rate >30% — the round-limit tiebreaker is doing too much work.
 7. Any threshold in §2.1 changed without a written decision note in this file.
+
+---
+
+## 10. Baseline run — results and next steps (v0.3: 10 rounds + heal-over-time + spike heals)
+
+First harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Medic: `src/game/ai/balanceSweep.test.ts`. Turn-order caveat (§4.1) applies.
+
+### 10.1 Measured
+
+| Matchup | result | cap-reach | KO finish | draws | HP-share margin |
+|---|---|---|---|---|---|
+| Shipped — heroes (p1, north) vs villains (p2) | **villains 100%** (0–100) | 100% | 0% | 0% | 0.191 |
+| Mirror heroes (seat alternated) | 36 / 46 | 100% | 0% | **18%** | 0.028 |
+| Mirror villains (seat alternated) | 54 / 45 | 100% | 0% | 1% | 0.093 |
+
+Neither game reaches **any** KO finish: first KO lands ≈ round 7, and the average match is decided by a *fractional health-share tiebreak* (0.028 margin in a same-roster mirror — a coin flip).
+
+### 10.2 Violations against §2.1
+
+- **Games reaching round 10: 100% → FAIL** (>95%). The 8→10 round bump and the heal-over-time rework did **not** fix pacing.
+- **Matchup: heroes vs villains 0% / 100% → FAIL** (beyond ±20pp). Cross-roster, not seat: both mirrors are near 50/50.
+- **Draw rate: 18% (hero mirror) → FLAG** (>20% fails; 18% is on the edge).
+- Round-1 KO 0% → OK. First-activation 38–52%, CIs straddle 50% → OK (no seat problem).
+- Not yet measured: avg team Energy spent/round, Avatar State activation rate, staple rates, bank:play.
+
+### 10.3 Lethality tuning grid (mirror heroes, n=100/cell)
+
+No cell clears the gates, even at the harshest setting:
+
+| hpScale \ rounds | 10 | 12 | 14 |
+|---|---|---|---|
+| ×0.6 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
+| ×0.7 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
+| ×0.8 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
+
+`hpScale` here is a proxy for "more lethal" (lower HP ≈ more damage); even ×0.6 + 14 rounds keeps cap-reach ≥99%. The shipped mismatch widens instead of resolving (margin 0.35→0.69). **A damage/HP ratio change alone is not sufficient** — engagement speed (mobility / board size / starting distance) has to move too.
+
+### 10.4 Key dynamics
+
+1. **Lethality is the whole story.** Time-to-first-KO (~7 rounds) exceeds the useful match length, so KO finishes ≈ 0% and every result is a tiebreak on a razor-thin share. Until this changes, matchup/pair tables measure noise.
+2. **The engine change flipped roster dominance.** Before `db956bf` (one-card-per-activation + cardless basic-action floor) heroes beat villains; now villains win **100%** (n=100). The free adjacent basic strike + the one-card cap likely favour the high-aggression villains (Zuko/Azula aggression 5) and starve hero sustain. This interaction needs an explicit audit.
+3. **Healing is nearly inert in AI play.** Per match: ~3–5 HP instant + ~2–3 HP regeneration; spike heals (Miraculous Balm / Healing Waters / Second Wind) are played ~0.1×/match. The heal/regeneration retune cannot move outcomes the policy never chooses.
+4. **Fair mirrors decide on 0.02–0.03 share margins** — team HP pools, not play, settle them.
+
+### 10.5 Next steps (prioritized)
+
+1. **Lethality pass — blocks everything else.** Target time-to-first-KO ≈ 4–5 rounds and KO-finish ≥ 40% (then cap-reach falls under 70%). Combine levers: raise effective damage and/or cut HP (~×0.5–0.6), **and** speed engagement (movement 1→2 tiles/activation, shorter board, or closer deployment). Re-run the §4 harness; look for a PASS cell.
+2. **Audit the cardless basic-action floor** (`basics.ts` + one-card-per-activation) against high-aggression characters — it appears to have created the 100% villain sweep. Rebalance or re-gate it.
+3. **Re-baseline, then run E1 pair tables at n ≥ 200.** Current results are tiebreak coin flips and must not be treated as matchup data.
+4. **Move turn-order enforcement into the engine** (§4.1) before trusting matchup numbers — today the harness lets both sides act freely.
+5. **Decide how heals should be exercised.** Either raise heal value / policy weight so the AI plays them, or accept the policy won't and validate the healing model via targeted scenario tests + human play.
+6. **Harness follow-ons:** emit the §4.4 JSONL per-game log; add T2 archetype bots (§4.2) once lethality is fixed.
+
+### 10.6 Immediate follow-ups (not balance)
+
+- Track A M2 remainder: the debug overlay (`chooseAutoActionTraced` + `ai/traceLog.ts` already exist; hook near `src/App.tsx` auto loop).
+- Optional `VITE_AI_POLICY=random` A/B baseline flag (npc_ai_plan §4).

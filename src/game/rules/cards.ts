@@ -23,7 +23,7 @@ import { CHARACTERS } from "../content/characters";
 import { getCardDefinition } from "../content/cards";
 import { CARD_ECONOMY, ECONOMY_TUNING, restrictionSatisfied } from "../content/economy";
 import { getTerrainDefinition } from "../content/terrain";
-import { cloneState, occupantAt } from "../state";
+import { cloneState, nextId, occupantAt } from "../state";
 import {
   activateAvatarState,
   creditPressure,
@@ -586,6 +586,17 @@ function resolvePlayCard(
             const credit = creditFor(actor.id, () => creditProtection(state, actor.id));
             if (credit) events.push(credit);
           }
+          break;
+        }
+        case "healOverTime": {
+          target.regeneration.push({
+            id: nextId("regen"),
+            amount: effect.amount,
+            remainingRounds: effect.rounds,
+          });
+          events.push(
+            `${target.definitionId} begins regenerating ${effect.amount}/round (${effect.rounds} round(s)).`,
+          );
           break;
         }
         case "shield": {

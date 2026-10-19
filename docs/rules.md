@@ -34,7 +34,7 @@ Each card has one type, one chi value (1–3), and a restriction tag:
 
 Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
 
-Universal cards fit everyone: **Travel Rations** (share a meal, heal 1 now + 1 at end of round), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
+Universal cards fit everyone: **Travel Rations** (share a meal, heal 1 now + 1 at end of round), **Miraculous Balm** (instant spike heal 4, costs 2 Energy + 2 chi), **Second Wind** (instant self-heal 2 + 1 Focus), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
 
 You can only assign a card to a character it fits (see Restrictions).
 
@@ -113,7 +113,7 @@ You read the range on your card, then check line of sight (blocked by walls/rock
 - **Tile:** You pick a tile. Whoever is there when it resolves is hit — moving away dodges it.
 - **Line / direction:** Uses your secretly chosen facing (north/east/south/west). It hits tiles in a line up to the stated length. The first wall usually stops it.
 - **Area (AoE):** You pick a center. It hits every valid character in the shape (`plus`, `line`, `radius`, etc.). Damage is full to each — it is not split.
-- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so. **Healing is slow:** a heal card gives a small amount now and the rest as **regeneration** that ticks at the end of the round, so it cannot undo burst damage in the same activation it lands. Healing is deliberately weaker than attacking.
+- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so. **Healing is slow:** a heal card gives a small amount now and the rest as **regeneration** that ticks at the end of the round, so it cannot undo burst damage in the same activation it lands. Healing is deliberately weaker than attacking. A few premium **spike** heals (**Miraculous Balm**, **Healing Waters**, **Second Wind**) are instant and larger, but cost chi, so they stay rare picks rather than repeatable sustain.
 
 No dice. No misses — unless a reaction or move makes your target illegal.
 
