@@ -81,6 +81,8 @@ It reports §2.1 core metrics (Wilson CIs, KO/cap/draw rates, HP-share margin, h
 
 **Pre-req fix (flagged, still not implemented):** turn order is currently enforced only by the UI (`App.tsx` alternates `actingSide`; `canActivate` in `turns.ts:145` does not check player or initiative). The harness therefore alternates p1/p2 itself and measures "both players act whenever they want", not the real game. Fine for relative A/B comparisons; **not** decision-grade for matchup tables until order enforcement moves into the rules engine (mechanics doc §3).
 
+**Track B cannot move these numbers.** The sweep calls `chooseAutoAction` with no weights, so `VITE_AI_LLM` (the optional LLM advisor, `npc_ai_plan.md` §3) never appears in any result here — every table in §10 is pure Track A. Deliberate: balance baselines must reproduce with the network off. It also means LLM advice is currently unmeasured (`npc_ai_plan.md` §7.7) — never compare a §10 table against an LLM-enabled run.
+
 ### 4.2 Bot tiers
 - **T0 — random legal action.** Sanity + engine fuzz (finds crashes, infinite loops, illegal states).
 - **T1 — greedy value.** Play the biggest affordable damage/shield; otherwise bank; move toward nearest enemy. Catches gross pricing errors.

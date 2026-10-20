@@ -11,7 +11,10 @@ export interface BudgetOptions {
 }
 
 export const DEFAULT_BUDGET: Required<BudgetOptions> = {
-  maxCallsPerMatch: 12,
+  // Mode 1 fires one stance call per side per round: 2 × MAX_ROUNDS(10) = 20
+  // calls for a full match. Must stay >= 2 * maxRounds or Track B dies silently
+  // mid-match (pinned by advisor.test.ts).
+  maxCallsPerMatch: 24,
   maxCallsPerRound: 4,
   tokenCeiling: 20_000,
 };

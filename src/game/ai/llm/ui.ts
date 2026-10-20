@@ -47,10 +47,9 @@ export function createStrategyController(
 
   return {
     adviceFor(state, side) {
-      if (state.round !== currentRound) {
-        currentRound = state.round;
-        advisor.startRound(state.round);
-      }
+      // Round tracking is only for dropping stale responses. The per-round
+      // *budget* is derived inside the advisor from the state itself.
+      if (state.round !== currentRound) currentRound = state.round;
       const key = `${side}:${state.round}`;
       const existing = advice.get(key);
       if (existing) return existing.deltas;

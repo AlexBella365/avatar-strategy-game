@@ -98,12 +98,24 @@ export function createAdvisor(opts: AdvisorOptions): LlmAdvisor {
     budgetDenied: 0,
   };
 
+  // The advisor sees a GameState, so it can derive the round itself — that
+  // keeps the per-round cap correct for *every* caller, not just the UI.
+  let lastRound = -1;
+
+  function syncRound(state: GameState): void {
+    if (state.round !== lastRound) {
+      lastRound = state.round;
+      budget.startRound(state.round);
+    }
+  }
+
   async function consult(
     mode: JournalMode,
     state: GameState,
     playerId: string,
     messages: () => ChatMessage[],
   ): Promise<string | null> {
+    syncRound(state);
     const fingerprint = stateHash(state, playerId);
     const cacheKey = journalKey(mode, fingerprint);
 
@@ -180,7 +192,10 @@ export function createAdvisor(opts: AdvisorOptions): LlmAdvisor {
     },
 
     fingerprint: (state, playerId) => stateHash(state, playerId),
-    startRound: (round) => budget.startRound(round),
+    startRound: (round) => {
+      lastRound = round;
+      budget.startRound(round);
+    },
     metrics: () => ({ ...counts }),
     journal: () => journal,
     budget: () => budget,

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { cloneState } from "../../state";
 import { setup } from "../../testutils";
 import { createAdvisor, isStale } from "./advisor";
+import { DEFAULT_BUDGET } from "./budget";
 import { createJournal } from "./journal";
 import { stateHash } from "./hash";
 import type { HttpPost, LlmConfig } from "./types";
@@ -87,6 +88,42 @@ describe("advisor.strategy (Mode 1)", () => {
     expect(await advisor.strategy(other, "p1")).toBeNull();
     expect(calls()).toBe(1);
     expect(advisor.metrics().budgetDenied).toBe(1);
+  });
+
+  it("the default budget covers a full match of round-level calls", async () => {
+    const { http, calls } = fakeHttp('{"stance":"standard"}');
+    const advisor = createAdvisor({ config, http });
+    const base = setup();
+    // Regression (npc_ai_plan §7.4): Mode 1 costs 2 calls per round, so a cap
+    // below 2 × maxRounds makes Track B go silently dead mid-match.
+    expect(DEFAULT_BUDGET.maxCallsPerMatch).toBeGreaterThanOrEqual(2 * base.maxRounds);
+
+    for (let round = 1; round <= base.maxRounds; round += 1) {
+      for (const side of ["p1", "p2"]) {
+        const state = cloneState(base);
+        state.round = round;
+        expect(await advisor.strategy(state, side), `round ${round} / ${side}`).not.toBeNull();
+      }
+    }
+    expect(calls()).toBe(2 * base.maxRounds);
+    expect(advisor.metrics().budgetDenied).toBe(0);
+  });
+
+  it("derives the per-round cap from the state, with no caller telling it", async () => {
+    const { http, calls } = fakeHttp('{"stance":"cautious"}');
+    const advisor = createAdvisor({ config, http, budgetOptions: { maxCallsPerRound: 1 } });
+    const base = setup();
+    const r1 = cloneState(base);
+    const r2 = cloneState(base);
+    r2.round += 1;
+
+    expect(await advisor.strategy(r1, "p1")).not.toBeNull();
+    expect(await advisor.strategy(r1, "p2")).toBeNull(); // same round, cap = 1
+    expect(calls()).toBe(1);
+    expect(advisor.metrics().budgetDenied).toBe(1);
+
+    expect(await advisor.strategy(r2, "p1")).not.toBeNull(); // new round resets
+    expect(calls()).toBe(2);
   });
 
   it("replays from the journal with the network off", async () => {

@@ -128,4 +128,4 @@ stay in sync.
 12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
 13. ⬜ End-to-end polish (passives, roster waves)
 14. ⬜ Balance pass — lethality first (no KO finishes; every match hits the round cap). See `specs/balance_testing_plan.md` §10 for the baseline and the prioritized next steps; re-run `make sweep-baseline` after each change.
-15. 🧪 Optional LLM advisor (Track B, Mode 1) — **off by default** (`VITE_AI_LLM=1` to enable). Zero-dep `fetch` client in `src/game/ai/llm/`, local Ollama by default; advisory only and never blocks the loop. See `specs/npc_ai_plan.md` §3.
+15. 🧪 Optional LLM advisor (Track B, Mode 1) — **off by default** (`VITE_AI_LLM=1` to enable). Zero-dep `fetch` client in `src/game/ai/llm/`, local Ollama by default; advisory only and never blocks the loop. Design in `specs/npc_ai_plan.md` §3, verified-model and implementation findings in §7.
