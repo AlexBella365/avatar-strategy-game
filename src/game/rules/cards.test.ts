@@ -60,16 +60,22 @@ function play(
     id: instanceId,
     definitionId: opts.card.id,
   };
-  return applyGameAction(state, {
-    type: "PLAY_CARD",
-    playerId: player,
-    characterId: char,
-    cardInstanceId: instanceId,
-    selection: opts.selection,
-    card: opts.card,
-    movePath: opts.movePath,
-    reactions: opts.reactions,
-  });
+  // Resolution-level tests: the subject is card effects, not who holds the
+  // turn, so the turn-order check is bypassed (see ApplyOptions).
+  return applyGameAction(
+    state,
+    {
+      type: "PLAY_CARD",
+      playerId: player,
+      characterId: char,
+      cardInstanceId: instanceId,
+      selection: opts.selection,
+      card: opts.card,
+      movePath: opts.movePath,
+      reactions: opts.reactions,
+    },
+    { bypassTurnOrder: true },
+  );
 }
 
 const sel = (id: string): TargetSelection => ({ kind: "character", characterId: id });
@@ -84,14 +90,18 @@ describe("validation and costs", () => {
     expect(badOwner.errors[0].code).toBe("NOT_YOUR_CHARACTER");
 
     const state = setup();
-    const missing = applyGameAction(state, {
-      type: "PLAY_CARD",
-      playerId: "p1",
-      characterId: "p1-c0",
-      cardInstanceId: "nope",
-      selection: sel("p2-c0"),
-      card: strike([{ type: "damage", amount: 2 }]),
-    });
+    const missing = applyGameAction(
+      state,
+      {
+        type: "PLAY_CARD",
+        playerId: "p1",
+        characterId: "p1-c0",
+        cardInstanceId: "nope",
+        selection: sel("p2-c0"),
+        card: strike([{ type: "damage", amount: 2 }]),
+      },
+      { bypassTurnOrder: true },
+    );
     expect(missing.errors[0].code).toBe("NO_ASSIGNED_CARD");
 
     const outOfRange = play(setup(), {

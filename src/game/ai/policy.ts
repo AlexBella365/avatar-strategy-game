@@ -17,6 +17,7 @@ import { getCardDefinition } from "../content/cards";
 import { CHARACTERS } from "../content/characters";
 import { restrictionSatisfied } from "../content/economy";
 import { applyGameAction } from "../rules/cards";
+import { activationOwner } from "../rules/turns";
 import { key, reachableTiles } from "../rules/grid";
 import { movementAllowance } from "../rules/movement";
 import { hasStatus } from "../rules/statuses";
@@ -281,6 +282,9 @@ export function chooseAiAction(
   const top = opts.traceTop ?? 4;
 
   if (state.winnerId !== null || state.isDraw) return { action: null, trace: null };
+  // Turn order (rules §3): only the activation owner may act. Everyone else
+  // is either preparing (assign/scrap, legal at any time) or waiting.
+  if (activationOwner(state) !== playerId) return { action: null, trace: null };
   const player = state.players.find((p) => p.id === playerId);
   if (!player) return { action: null, trace: null };
   const mine = state.characters

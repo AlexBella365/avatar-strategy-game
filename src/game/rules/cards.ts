@@ -57,6 +57,7 @@ import {
   terrainAt,
 } from "./terrain";
 import { getAffectedCharacters, resolveTiles, validateTarget } from "./targeting";
+import { activationOwner } from "./turns";
 import { inBounds, isOrthogonalAdjacent, key } from "./grid";
 import type {
   ActionError,
@@ -102,10 +103,51 @@ function opposite(dir: Direction): Direction {
   }
 }
 
-export function applyGameAction(state: GameState, action: GameAction): ActionResult {
+export interface ApplyOptions {
+  /**
+   * Test-only escape hatch: skip the alternating-activation check (rules §3).
+   * Resolution-level unit tests stage scenarios ("Zuko attacks Toph") that do
+   * not care who holds the turn. Every production path — UI dispatch, the
+   * auto loop, the AI policy, the sweep harness — leaves this off, so the
+   * engine stays the single turn-order authority.
+   */
+  bypassTurnOrder?: boolean;
+}
+
+/** Actions that belong to an activation (rules §3 "On your activation"). */
+const ACTIVATION_SCOPED = new Set<string>([
+  "MOVE",
+  "PASS_ACTIVATION",
+  "ACTIVATE_AVATAR_STATE",
+  "PLAY_CARD",
+  "BASIC_ATTACK",
+  "BASIC_DEFENSE",
+]);
+
+export function applyGameAction(
+  state: GameState,
+  action: GameAction,
+  opts: ApplyOptions = {},
+): ActionResult {
   const next = cloneState(state);
   const events: string[] = [];
   const errors: ActionError[] = [];
+  // Turn order (rules §3): activations alternate, initiative first. Assignment
+  // and scrapping are not activation-scoped, so both sides may prepare in
+  // secret at any time.
+  if (!opts.bypassTurnOrder && ACTIVATION_SCOPED.has(action.type)) {
+    const mover = activationOwner(next);
+    if (mover === null) {
+      errors.push(
+        err("NO_ACTIVATION_LEFT", "Every living character has already activated this round."),
+      );
+      return { state: next, errors, events };
+    }
+    if (action.playerId !== mover) {
+      errors.push(err("NOT_YOUR_TURN", `Not your activation — ${mover} still to act.`));
+      return { state: next, errors, events };
+    }
+  }
   switch (action.type) {
     case "MOVE": {
       const actor = next.characters.find((c) => c.id === action.characterId);

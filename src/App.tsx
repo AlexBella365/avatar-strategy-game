@@ -28,7 +28,7 @@ import { blockingTiles, difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain, rollNorthPlayerId } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
-import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
+import { activationOwner, drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
 import { ECONOMY_TUNING, restrictionSatisfied } from "./game/content/economy";
@@ -281,13 +281,13 @@ export default function App() {
   };
 
   // Test-only auto-player loop (all hooks stay above the early return).
+  // Turn order is the engine's (rules §3): only the activation owner acts,
+  // so the loop asks the engine who holds the turn instead of alternating.
   useEffect(() => {
     if (autoSides.size === 0 || !state) return;
     if (state.winnerId !== null || state.isDraw) return;
-    const ownerOf = (id: string) => state.characters.find((c) => c.id === id)?.ownerId;
-    const autoPending = pendingActivations(state).filter((id) => autoSides.has(ownerOf(id) ?? ""));
-    if (autoPending.length === 0) {
-      if (pendingActivations(state).length > 0) return; // waiting on human
+    const mover = activationOwner(state);
+    if (!mover) {
       const t = setTimeout(() => {
         const next = cloneState(state);
         endRound(next);
@@ -297,8 +297,8 @@ export default function App() {
       }, 600);
       return () => clearTimeout(t);
     }
-    const side = ownerOf(autoPending[0])!;
-    const action = chooseAutoAction(state, side, Math.random, llm?.adviceFor(state, side));
+    if (!autoSides.has(mover)) return; // waiting on the human at the wheel
+    const action = chooseAutoAction(state, mover, Math.random, llm?.adviceFor(state, mover));
     if (!action) return;
     const t = setTimeout(() => {
       const result = applyGameAction(state, action);
@@ -307,12 +307,12 @@ export default function App() {
         const characterId = (action as { characterId: string }).characterId;
         const fallback = applyGameAction(state, {
           type: "PASS_ACTIVATION",
-          playerId: side,
+          playerId: mover,
           characterId,
         });
         if (fallback.errors.length === 0) {
           setState(fallback.state);
-          setMessage(`Auto (${side}) passed after: ${result.errors[0].message}`);
+          setMessage(`Auto (${mover}) passed after: ${result.errors[0].message}`);
         } else {
           setMessage(result.errors[0].message);
         }
@@ -333,6 +333,10 @@ export default function App() {
       floatSeq.current += nextFloats.length;
       if (nextFloats.length > 0) setFloats(nextFloats);
       setState(result.state);
+      // Hand the view over when the next activation belongs to a human
+      // (turn order is the engine's; see rules §3).
+      const nextOwner = activationOwner(result.state);
+      if (nextOwner && !autoSides.has(nextOwner)) setActingSide(nextOwner);
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -504,6 +508,15 @@ export default function App() {
     floatSeq.current += nextFloats.length;
     if (nextFloats.length > 0) setFloats(nextFloats);
     setState(result.state);
+    // Turn order is the engine's (rules §3): after an activation resolves,
+    // hand the view to whoever holds the next one — unless that side is on
+    // auto, in which case the loop above takes over.
+    const owner = activationOwner(result.state);
+    if (owner && owner !== actingSide && !autoSides.has(owner)) {
+      setActingSide(owner);
+      setSelected(null);
+      clearTransient();
+    }
     return true;
   };
 

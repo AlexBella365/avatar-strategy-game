@@ -142,11 +142,48 @@ export function pendingActivations(state: GameState): string[] {
     .map((c) => c.id);
 }
 
-/** Whether a character may act now (turn order is driven by the UI/hot-seat). */
+/**
+ * Who holds the current activation (rules §3: players alternate one
+ * character at a time, initiative acts first, initiative swaps each round).
+ *
+ * Derived rather than stored: the next mover is the eligible owner with the
+ * fewest completed activations this round (ties -> initiative). While both
+ * sides still have characters left that means strict alternation; once one
+ * side is exhausted the other finishes its remaining activations, and a KO'd
+ * character is simply never pending. `null` = the round's activations are
+ * over (call `endRound`).
+ */
+export function activationOwner(state: GameState): string | null {
+  if (state.winnerId !== null || state.isDraw) return null;
+  const alive = state.characters.filter((c) => c.health > 0);
+  const pending = new Set(pendingActivations(state));
+  if (pending.size === 0) return null;
+  const owners = [...new Set(alive.map((c) => c.ownerId))];
+  if (owners.length === 0) return null;
+  const done = new Map<string, number>(owners.map((o) => [o, 0]));
+  for (const c of alive) {
+    if (!pending.has(c.id)) done.set(c.ownerId, (done.get(c.ownerId) ?? 0) + 1);
+  }
+  const rank = (o: string): number => (o === state.initiativePlayerId ? 0 : 1);
+  const eligible = owners.filter((o) =>
+    alive.some((c) => c.ownerId === o && pending.has(c.id)),
+  );
+  const [mover] = eligible.sort(
+    (a, b) =>
+      (done.get(a) ?? 0) - (done.get(b) ?? 0) ||
+      rank(a) - rank(b) ||
+      (a < b ? -1 : 1),
+  );
+  return mover ?? null;
+}
+
+/** Whether a character may act now (life + not yet activated + holds the turn). */
 export function canActivate(state: GameState, characterId: string): boolean {
   if (state.winnerId !== null || state.isDraw) return false;
   const c = state.characters.find((ch) => ch.id === characterId);
-  return !!c && c.health > 0 && !c.activatedThisRound;
+  if (!c || c.health <= 0 || c.activatedThisRound) return false;
+  const owner = activationOwner(state);
+  return owner !== null && c.ownerId === owner;
 }
 
 /**

@@ -10,10 +10,10 @@
 // seeded matches and dumps an aggregate report (Wilson CIs, KO/cap/draw rates,
 // healing, and a lethality tuning grid) to SWEEP_OUT (default /tmp/balance_sweep.txt).
 //
-// Caveat (§4.1): turn order is still enforced only by the UI, so the harness
-// alternates p1/p2 itself — it measures "both sides act when they want", which
-// is fine for relative A/B comparisons but not a substitute for the real
-// initiative rules.
+// Caveat (§4.1) — resolved: alternating activations are now enforced by the
+// engine itself (activationOwner/applyGameAction, rules §3), so the harness
+// simply asks the engine who holds the turn. Tables here are decision-grade
+// for turn order; the remaining harness caveat is deployment/secrecy only.
 //
 // This file is excluded from tsconfig (it uses Node stdlib types the browser
 // target doesn't ship); vitest transpiles it directly, no type-check needed.
@@ -24,7 +24,7 @@ import { CHARACTERS } from "../content/characters";
 import { ECONOMY_TUNING } from "../content/economy";
 import { chooseAutoAction } from "../auto";
 import { applyGameAction } from "../rules/cards";
-import { drawCards, endRound, pendingActivations, teamHealthShare } from "../rules/turns";
+import { activationOwner, drawCards, endRound, teamHealthShare } from "../rules/turns";
 import type { CharacterDefinition, GameState, Position } from "../types";
 
 const RUN = process.env.SWEEP_N !== undefined;
@@ -93,24 +93,22 @@ function sim(state: GameState, seed: number): MatchRecord {
   let guard = 0;
   while (state.winnerId === null && !state.isDraw && state.round <= state.maxRounds && guard < 5000) {
     guard += 1;
-    let acted = false;
-    for (const playerId of ["p1", "p2"]) {
-      const action = chooseAutoAction(state, playerId, random);
-      if (!action) continue;
-      const result = applyGameAction(state, action);
-      if (result.errors.length > 0) {
-        throw new Error(`seed ${seed}: ${action.type} rejected: ${JSON.stringify(result.errors)}`);
-      }
-      Object.assign(state, result.state);
-      acted = true;
-      noteKOs();
-    }
-    if (pendingActivations(state).length === 0) {
+    const mover = activationOwner(state);
+    if (!mover) {
       endRound(state);
       noteKOs();
-    } else if (!acted) {
-      throw new Error(`seed ${seed}: stalled`);
+      continue;
     }
+    const action = chooseAutoAction(state, mover, random);
+    if (!action) {
+      throw new Error(`seed ${seed}: stalled (no action for mover ${mover})`);
+    }
+    const result = applyGameAction(state, action);
+    if (result.errors.length > 0) {
+      throw new Error(`seed ${seed}: ${action.type} rejected: ${JSON.stringify(result.errors)}`);
+    }
+    Object.assign(state, result.state);
+    noteKOs();
   }
 
   const log = state.log.join("\n");
@@ -150,12 +148,16 @@ function build(
   rosterP2: CharacterDefinition[],
   northPlayerId: "p1" | "p2",
   opts: Opts,
+  seed: number,
 ): GameState {
   const teams: [TeamSetup, TeamSetup] = [
     { playerId: "p1", characterDefs: rosterP1, positions: northPlayerId === "p1" ? OPEN[0] : OPEN[1] },
     { playerId: "p2", characterDefs: rosterP2, positions: northPlayerId === "p1" ? OPEN[1] : OPEN[0] },
   ];
-  const state = createInitialState(teams, 1, { northPlayerId });
+  // The match seed drives BOTH deck shuffles (state.ts offsets per team), so
+  // it must vary per match: otherwise every game in a cell replays the same
+  // opening hands and n only samples the policy's tie-break rolls.
+  const state = createInitialState(teams, seed, { northPlayerId });
   if (opts.rounds) state.maxRounds = opts.rounds;
   if (opts.hpScale && opts.hpScale !== 1) {
     for (const c of state.characters) {
@@ -173,7 +175,7 @@ function run(
   opts: Opts = {},
   northPlayerId: "p1" | "p2" = seed % 2 === 0 ? "p2" : "p1",
 ): MatchRecord {
-  const state = build(rosterP1, rosterP2, northPlayerId, opts);
+  const state = build(rosterP1, rosterP2, northPlayerId, opts, seed);
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
   return sim(state, seed);
@@ -193,9 +195,9 @@ const OUT: string[] = [
   "",
   "Raw output of the self-play harness `src/game/ai/balanceSweep.test.ts`.",
   `Generated with SWEEP_N=${N}: Track A utility policy, seeds 1..${N} per cell.`,
-  "Turn-order caveat: the harness alternates p1/p2 itself, so it is not",
-  "decision-grade until order enforcement moves into the engine",
-  "(specs/balance_testing_plan.md 4.1).",
+  "Turn order is engine-enforced (alternating activations, rules 3), so the",
+  "driver asks the engine who holds the turn — tables here are decision-grade",
+  "for order (specs/balance_testing_plan.md 4.1).",
   "Interpretation + prioritized next steps: specs/balance_testing_plan.md 10.",
   "",
   "Regenerate with:  make sweep-baseline",
