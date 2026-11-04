@@ -72,15 +72,15 @@ describe("damage and victory", () => {
     expect(state.winnerId).toBe("p1");
   });
 
-  it("round-8 tiebreakers: health share, then survivors, then draw", () => {
+  it("round-limit tiebreakers: health share, then survivors, then draw", () => {
     const hpShare = setup();
-    hpShare.round = 8;
+    hpShare.round = hpShare.maxRounds;
     hpShare.characters.find((c) => c.id === "p2-c0")!.health = 1;
     updateMatchResult(hpShare, { applyRoundLimit: true });
     expect(hpShare.winnerId).toBe("p1");
 
     const draw = setup();
-    draw.round = 8;
+    draw.round = draw.maxRounds;
     updateMatchResult(draw, { applyRoundLimit: true });
     // identical mirrored setup: equal share but p1/p2 max HP differ by roster...
     // force exact tie: equalize health shares via damage is brittle; assert no crash + decided

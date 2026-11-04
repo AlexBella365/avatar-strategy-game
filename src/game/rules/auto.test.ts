@@ -26,7 +26,7 @@ function fullAutoMatch(seed: number): GameState {
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
   let guard = 0;
-  while (state.winnerId === null && !state.isDraw && state.round <= 8 && guard < 2000) {
+  while (state.winnerId === null && !state.isDraw && state.round <= state.maxRounds && guard < 2000) {
     guard += 1;
     let acted = false;
     for (const playerId of ["p1", "p2"]) {
@@ -49,7 +49,7 @@ function fullAutoMatch(seed: number): GameState {
 describe("auto-player", () => {
   it("completes a full match with only authorized actions", () => {
     const state = fullAutoMatch(42);
-    expect(state.winnerId !== null || state.isDraw || state.round > 8).toBe(true);
+    expect(state.winnerId !== null || state.isDraw || state.round > state.maxRounds).toBe(true);
     expect(state.log.length).toBeGreaterThan(50);
   });
 

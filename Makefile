@@ -1,7 +1,13 @@
-.PHONY: help install dev build test test-watch typecheck preview clean
+.PHONY: help install dev build test test-watch test-one typecheck check ci sweep sweep-baseline llm-live preview clean
+
+# Balance sweep size (seeds per cell) and output path.
+SWEEP_N ?= 100
+SWEEP_OUT ?= /tmp/balance_sweep.txt
+# Track B live probe: local models to try (missing ones are skipped).
+LLM_MODELS ?= qwen3.5:0.8b,bonsai-2:latest
 
 help: ## Show this help
-	@grep -E '^[a-z-]+: .*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ": .*## "}; {printf "  %-12s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+: .*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ": .*## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
 install: ## Install dependencies
 	npm install
@@ -18,8 +24,30 @@ test: ## Run tests once
 test-watch: ## Run tests in watch mode
 	npm run test:watch
 
+test-one: ## Run a single test file: make test-one F=src/game/rules/healing.test.ts
+	@test -n "$(F)" || { echo "usage: make test-one F=<path/to/file.test.ts>"; exit 1; }
+	npx vitest run $(F)
+
 typecheck: ## Typecheck only
 	npm run typecheck
+
+check: ## Typecheck + full test suite (local CI gate)
+	npm run typecheck
+	npm test
+
+ci: ## Clean install from lockfile + typecheck + tests (CI entrypoint)
+	npm ci
+	npm run typecheck
+	npm test
+
+sweep: ## Balance self-play sweep (SWEEP_N=100 -> /tmp/balance_sweep.txt; override SWEEP_N=/SWEEP_OUT=)
+	SWEEP_N=$(SWEEP_N) SWEEP_OUT=$(SWEEP_OUT) npx vitest run src/game/ai/balanceSweep.test.ts
+
+sweep-baseline: ## Regenerate the committed sweep report (specs/balance_sweep_baseline.txt)
+	SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
+
+llm-live: ## Probe local LLM models for the Track B advisor (skips models that aren't pulled)
+	LLM_LIVE=1 LLM_MODELS="$(LLM_MODELS)" npx vitest run src/game/ai/llm/live.test.ts
 
 preview: ## Preview production build
 	npm run preview

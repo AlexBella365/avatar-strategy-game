@@ -1,0 +1,316 @@
+# NPC AI Plan — Track A: Utility AI (active) + Track B: Experimental LLM Layer
+
+**Status:** implementation notes and remaining work, non-normative. This document describes the current Track A policy and experimental Track B layer; historical observations are labeled in §6. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP), adapted to *this* codebase.
+**Scope:** **Track A (§2)** is the default and remains the authority — a self-contained, zero-dependency utility policy. **Track B (§3) is experimental**: Mode 1 is implemented behind a flag (`VITE_AI_LLM`, default off), but has not been evaluated against Track A. It is advisory-only, uses a zero-dependency `fetch` client, never blocks the loop, and never emits a `GameAction`. M5 (Mode 2 wired into the loop + quality gate) remains deferred.
+
+---
+
+## 0. What already exists (integration seams)
+
+The game is closer to an AI-ready state than it looks. These seams are fixed constraints on the design:
+
+| Seam | Location | What it gives us |
+|---|---|---|
+| Single action entry point | `applyGameAction(state, action)` in `src/game/rules/cards.ts` | Clones state, validates, resolves. **The AI only ever proposes a `GameAction`; the engine is the authority.** |
+| NPC policy entry point | `chooseAutoAction(state, playerId, random)` in `src/game/auto.ts` | Delegates to the Track A utility policy and returns one proposed action or `null`. The engine remains responsible for validation and resolution. |
+| Turn loop | `useEffect` auto loop in `src/App.tsx` (~L256) | Drives auto sides with a 500 ms tick, falls back to `PASS_ACTIVATION` on validation errors. Already async-friendly for Track B. |
+| Candidate helpers | `getLegalTargets`, `reachableTiles`, `movementAllowance`, `blockingTiles`, `difficultTiles`, `terrainAt`, `hasLineOfSight`, `hasStatus` | Legal-move/legaltarget enumeration is done; the AI scores what these return. |
+| Outcome math | `calculateDamage`, `rawDamage`, `attackVsEvasion` in `rules/damage.ts` | Expected-damage scoring uses the *engine's own* formulas — no shadow arithmetic. |
+| Determinism | `cloneState` + `nextRandom` (mulberry32, `state.rng`) | Pure simulation is one `structuredClone` away; seeded tie-breaks make every match replayable. |
+| Test harness | `src/game/rules/auto.test.ts` (full auto-vs-auto match) | The invariant test every new policy must keep passing. |
+
+Game-shape facts that matter for scoring: activation = *assign a face-down card → optional move (MP pool) → optional technique play → pass*; per-side 4 energy/round, focus 0–4, chi bank, cover/hazard terrain, heal-over-time regeneration, Avatar State risk/reward, round-10 tiebreakers.
+
+## 1. Design principles (non-negotiable)
+
+1. **Propose, never resolve.** The AI emits `GameAction`s through `applyGameAction`. If an action is rejected, the policy falls back (existing pass-on-error behavior) — we never bypass validation.
+2. **Pure simulation.** Scoring reads `cloneState(...)` copies; zero mutation of live state. Debug overlay and replay come free.
+3. **Deterministic by default.** All randomness flows through the seeded `random` parameter already in `chooseAutoAction`'s signature. Same seed + same state ⇒ same decisions. Track B must restore this property (see §B.5).
+4. **Scores normalized ≈ 0–1**, weights interpretable (the tuning workflow in the research doc depends on it).
+5. **One policy codebase, many personalities** — behavior differences are weight vectors, not branches.
+6. **No new runtime dependencies for Track A.** Track B adds *none* either: the LLM client is a `fetch` wrapper (repo currently depends only on React).
+7. **The engine stays LLM-free.** An LLM never produces a raw `GameAction` that reaches `applyGameAction` without passing the same legal-set filter a human click passes (§B.3).
+
+---
+
+## 2. Track A — Utility AI, zero LLM (the baseline; ships alone)
+
+**Status:** **A1 + A2 scoring logic implemented** (milestones M1/M2). The debug overlay UI remains; A3 lookahead is deferred, and A4 coordination is optional. See §A.7.
+
+### A.1 File layout
+
+```
+src/game/ai/
+  types.ts            // Weights, PersonalityId, Scored<T>, DecisionTrace, ChooseAiOptions
+  scoring.ts          // candidate scoring: position/threat/cover + simulation-backed play
+  personalities.ts    // BASE_WEIGHTS + archetype deltas + character -> archetype map
+  policy.ts           // chooseAiAction(state, playerId, opts) -> { action, trace }; step logic
+  traceLog.ts         // DecisionTrace ring buffer (cap 200) for the debug overlay
+  policy.test.ts      // scripted scenarios (§A.8)
+```
+
+Candidate generation and trace construction live in `policy.ts` (the board is 7×7; a separate
+`candidates.ts` would be indirection without benefit). `Scored<T>` in `types.ts` carries the
+per-component breakdown that the overlay renders.
+
+`src/game/auto.ts` keeps its public signature (`chooseAutoAction`, `evadeEscapes`) but delegates to
+`src/game/ai/policy.ts`; it also exposes `chooseAutoActionTraced` for the overlay. The old random
+heuristics are gone — the policy replaces them wholesale.
+
+### A.2 Candidate generation
+
+Enumerate *macro-actions for the current activation step*, reusing engine helpers so everything is legal by construction:
+
+| Step | Candidates | Source helper |
+|---|---|---|
+| Assign | each `teamHand` card whose restrictions pass and that fits the character's likely play | `restrictionSatisfied`, affordability mirror of `canAfford` |
+| Move | every `reachableTiles(...)` entry (bounded: sample at most ~N tiles, e.g. keep only tiles that are strictly better than current on some signal) | `reachableTiles`, `movementAllowance` |
+| Technique | `PLAY_CARD` × every legal `TargetSelection` from `getLegalTargets(...).filter(isLegal)` | `getLegalTargets` |
+| Utility | `PASS_ACTIVATION`, `SCRAP_ASSIGNED`, `ACTIVATE_AVATAR_STATE` when eligible | engine validation |
+
+### A.3 Scoring signals (`scoring.ts`) — mapped to this game
+
+Each signal returns 0–1; the total is `Σ wᵢ · sᵢ`, weights from `personalities.ts`.
+
+| Signal | Encourages | Implementation sketch |
+|---|---|---|
+| Expected damage | aggression | `calculateDamage` on a `cloneState` copy with `attackVsEvasion` hit chance folded in; 0 for non-damage plays |
+| Net board delta | action economy | (damage dealt + shields/heals granted − incoming damage taken) over the projected state |
+| Target distance | closing / kiting | `manhattan` to nearest *or* focus target |
+| Incoming threat | caution | enemy reachability ∩ attack ranges covering the candidate tile (reuses `reachableTiles` per enemy, `hasLineOfSight`) |
+| Cover / terrain | tactical positioning | `terrainAt(...).cover` vs. incoming attack class; hazard/`onEntryStatus`/water penalties |
+| HP ratio | self-preservation | `health / maxHealth` of the projected state |
+| Focus fire | coordination | damage on the enemy lowest-HP among those allies can also hit |
+| Economy discipline | resource play | energy/chi/focus efficiency; save expensive cards for clustered or wounded targets |
+| Status synergy | combo play | `bonusVsStatus`/`bonusIfTargetDisplaced`/water-empowered conditions evaluated as stated (never card-name checks) |
+| Avatar timing | risk management | resonance vs. threshold, own HP, opponent board — Avatar State activation is instant-loss-if-KO'd, so score it as *risk × payoff*, not a flat 0.7 random |
+
+**Simulation rule:** score *outcomes*, not intents — `simulate(state, action)` = `cloneState` + `applyGameAction` on the clone, then read the result. Errors ⇒ candidate dropped. This automatically stays correct as cards/rules change.
+
+### A.4 Personalities (`personalities.ts`)
+
+Weight vectors, not code branches. Initial archetypes (tuned in §A.7):
+
+```ts
+// shape only — actual weights are data, tuned via scripted scenarios
+{ aggressive: {...}, cautious: {...}, sniper: {...}, berserker: {...}, support: {...} }
+```
+
+Resolution order: explicit per-instance override → character-definition archetype (e.g. `role`/element heuristics) → `default`. Balance-testable: a personality change is a one-line data diff.
+
+### A.5 Selection
+
+1. Score all candidates on the projected state.
+2. Argmax with **seeded** tie-break.
+3. Near-tie variety: uniformly among candidates within 5% of the best score (seeded `random`).
+4. Emit `DecisionTrace` (`unit, step, top-5 candidates, component scores, chosen`) for the debug overlay and balance logs.
+
+### A.6 Debug overlay & logging
+
+- `DecisionTrace` appended to a ring buffer (cap ~200) behind a dev-only flag.
+- Overlay answering *"why did the NPC do that?"*: chosen action + component breakdown, same shape as the trace table.
+- Optional `?ai=trace` URL flag in dev builds.
+
+### A.7 Phases and exit criteria (from the research hierarchy, mapped to this repo)
+
+| Phase | Scope | Exit criteria |
+|---|---|---|
+| ✅ **A1 — v1** | `chooseAutoAction` delegates to the policy: candidates + approach/safety/cover signals + simulation-backed damage; seeded tie-breaks; trace plumbing | **done** — `auto.test.ts` passes unchanged; `policy.test.ts` scenarios pass; determinism test green |
+| ✅ **A2 — v2** | Threat map, cover, focus fire, energy/chi economy, Avatar-timing risk scoring, archetype weight vectors | **done (logic)** — archetypes measurably differ (`personality`-weighted `scorePlay` test); remaining: debug overlay UI |
+| ◻ **A3 — v3** | One-ply lookahead: for top-k candidates, simulate opponent's best reply on the clone and score the *resulting* state | no regressions on A2 scenarios; measurable survival gain in the "punish overextension" scenario |
+| ◻ **A4 — v4** | Squad coordination (focus-fire agreement, no body-blocking allies) | only if A3 matches visibly lack teamwork; default = skip |
+
+Explicitly **out of scope**: RL, MCTS, GOAP, behavior-tree libraries (research doc §"Avoid overengineering"; nothing here needs them).
+
+### A.8 Testing strategy (Track A)
+
+1. **Scripted scenarios** (`policy.test.ts`): each is a hand-built `GameState` + expected property (e.g. "at 3 HP vs. full-HP melee enemy, the chosen move increases distance" — property assertions, not golden actions).
+2. **Determinism**: same seed ⇒ identical decision sequence; different seeds ⇒ only near-tie outcomes differ.
+3. **Invariant**: full auto-vs-auto match completes with zero validation errors (extend `auto.test.ts` to N seeds × personality matchups).
+4. **Balance hook**: policy-vs-policy win rates feed `specs/balance_testing_plan.md` §2 (bots are the sample generator that doc already assumes).
+5. **Cost guard**: scoring must stay O(candidates × board) with the 7×7 grid — trivial, but add one timing assertion in CI (full match ≤ a few hundred ms) so future lookahead never creeps.
+
+---
+
+## 3. Track B — lightweight LLM layer (M4 built, Mode 2 deferred)
+
+**Status:** experimental; Mode 1 is implemented behind `VITE_AI_LLM` (default **off**) but has not been evaluated against Track A. Built: client (`client.ts`), validators (`json.ts`), digest (`digest.ts`), budget/cache/journal, Mode 1 (`strategy.ts` + `advisor.ts`), the App seam (`ui.ts`), and an offline test suite (mock transport only) plus an opt-in live probe. Mode 2 (`chooser.ts`) exists and is unit-tested but is **not wired into the policy loop** yet (M5). Removable by design: deleting `src/game/ai/llm/` and the two `App.tsx` references leaves Track A fully functional.
+
+### B.0 Principle
+
+**The LLM advises the utility policy; it never replaces the engine-validated action path.** Every LLM output is either (a) a *modifier* to weights/stance or (b) a *choice within the already-legal candidate set*. Invalid, late, or missing output ⇒ Track A argmax. Consequences: offline play works, cost is bounded and tunable, determinism is restorable, and deleting Track B deletes one directory.
+
+### B.1 Mode 1 — Round-level strategy advisor *(cheapest, recommended first)*
+
+**Granularity:** once per round per LLM-controlled side (≤ 8 calls/match).
+
+- Serialize a compact state digest: positions, HP/focus/energy/chi, hands *as card-type summaries* (no hidden info: only what that side can see), terrain highlights, resonance.
+- Prompt returns strict JSON: `{ stance: "aggressive"|"standard"|"cautious"|"turtle", focusTarget, riskTolerance, notes }`.
+- Output maps to **weight deltas** on the personality vector (clamped, e.g. ±0.3) plus a stance string shown in the UI/log ("Azula is pressing the attack").
+- Failure ⇒ keep previous stance (last known good, else default).
+
+### B.2 Mode 2 — Top-k action chooser *(the "flavor" call)*
+
+**Granularity:** at most once per technique play (the interesting decision), not per move/assign.
+
+- Track A scores all candidates and passes the **top 5** as `{ id, label, componentScores }` + a ~1-screen state digest.
+- LLM returns `{ choiceId, rationale }`; rationale is stored on the `DecisionTrace` and shown in the overlay/log — it doubles as NPC flavor text for free.
+- **Hard constraints:** choice must exist in the offered set (index/id validated); anything else ⇒ argmax fallback, counted in a `llmFallbacks` metric.
+- Never sent when: top-2 gap > threshold (the utility scorer is confident), flag off, timeout, or budget exhausted.
+
+### B.3 Mode 3 — Free-form action generation → **explicitly rejected**
+
+Letting the LLM emit a `GameAction` directly needs generation → validation → retry loops, has the highest token cost, worst latency, and adds no capability Track A/B1–B2 lack. Revisit only for scripted single-player boss moments, never for routine turns.
+
+### B.4 The TypeScript client (`src/game/ai/llm/`)
+
+Zero-dependency, plain-`fetch`; one client covers hosted *and* local. As-built layout (M4):
+
+| File | Responsibility |
+|---|---|
+| `client.ts` | `postChatJSON(config, messages, { http })` via `fetch` (two wires, see below); `baseUrl`/`model`/`apiKey`/`wire` from `import.meta.env` |
+| `json.ts` | tiny hand-rolled validators (no zod): `vObject`/`vEnum`/`vFinite`/`vOptional` + fence-tolerant `parseJsonObject`; failure is a value ⇒ fallback path |
+| `hash.ts` | `stableStringify` + FNV-1a `stateHash` for cache/journal/staleness keys |
+| `digest.ts` | visible-only state digest (never includes the enemy's hand/assignments/deck) |
+| `strategy.ts` | Mode 1: prompt, response → clamped (±0.3) weight deltas |
+| `chooser.ts` | Mode 2: top-k serialization, confidence-gap gate, response → validated candidate index |
+| `budget.ts` | hard caps: max calls/match, max calls/round, token ceiling, kill switch |
+| `cache.ts` | LRU `Map<mode + stateHash, response>` — identical situations cost 0 calls |
+| `journal.ts` | recorded responses keyed by `mode + stateHash` ⇒ deterministic replay with the network off |
+| `advisor.ts` | orchestration: cache → journal → budget → client → parse; **never throws**; exposes metrics |
+| `ui.ts` | the only App-facing surface (`createStrategyController`) so the layer stays removable |
+| `*.test.ts` | mock-transport tests; **no test hits the network**. `live.test.ts` is opt-in (`LLM_LIVE=1`) |
+
+Transport rules: `AbortSignal` + `clearTimeout`, one retry on network error (never on parse error), `temperature` low, `max_tokens` small (~150–200).
+
+**Two wires, not one (verified 2026-10-19 against Ollama 0.40.6).** The plan originally assumed a single OpenAI-compatible client. In practice Ollama's `/v1/chat/completions` shim routes *thinking* model output into `message.reasoning` and returns an empty `message.content` — so `qwen3.5:0.8b` and `bonsai-2` produced no usable JSON through it. The native `/api/chat` with `think:false` + `format:"json"` returns clean, fast JSON. The client therefore supports:
+
+| Wire | Endpoint | Use |
+|---|---|---|
+| `openai` | `{base}/chat/completions` | hosted (OpenAI/Azure/OpenRouter), LM Studio, vLLM; `response_format: json_object` |
+| `ollama` | `{base}/api/chat` | local Ollama; `think:false`, `format:"json"`, `options.num_predict` |
+
+`parseChatResponse` additionally falls back to `reasoning`/`thinking` when `content` is empty, so a thinking model through the `openai` wire still has a chance to parse. Wire selection is `VITE_LLM_WIRE` (auto: a localhost/`:11434` base URL ⇒ `ollama`).
+
+### B.5 Async integration (the one real hazard)
+
+App.tsx's auto loop is a synchronous `useEffect` tick; an LLM call is not. Required protocol:
+
+1. When a decision is needed: compute Track A result **immediately**, stash the live `stateHash`, set `pendingLlm` and apply the LLM request on top.
+2. On response: apply **only if** `stateHash` still matches; otherwise discard silently (state moved on — stale advice is worse than no advice).
+3. Hard deadline (e.g. 1.5 s): on timeout the tick proceeds with the Track A argmax; the UI never stalls on a model.
+4. Determinism: with the LLM disabled (default), decisions are exactly Track-A-seeded. With it enabled, the response is recorded in a decision journal so a match can be replayed without the network (replay reads the journal instead of re-calling).
+
+**As implemented (M4).** `ui.ts` fires the request fire-and-forget and the loop proceeds immediately with Track A; when the response lands it is applied on a later tick. Because Mode 1 advice is *round*-scoped, the staleness guard is "the requesting round is still the current round" (a strict `stateHash` match would invalidate the advice after every action within the round). The hard deadline is the client `timeoutMs` (default 2.5 s) — no separate UI timer is needed since the loop never awaits. `advisor.isStale` is available for Mode 2, where per-decision staleness is the right granularity.
+
+### B.6 Cost & latency budget (verify current pricing before shipping)
+
+| Mode | Calls/match | ~Tokens (in/out) | Notes |
+|---|---|---|---|
+| B1 strategy | ≤ 8 | ~700 / ~80 | tiny; cheapest possible use of a model |
+| B2 chooser | ≤ #technique plays | ~500 / ~60 | confidence-gap gate should cut this further |
+| Local model | unbounded | 0 | Ollama/LM Studio: free + offline; quality gate per §B.8 |
+
+Guardrails: per-match call cap (default ~12), per-round cap, total-token ceiling, and a single `LLM_ENABLED` flag — all kill-switchable at runtime.
+
+### B.7 Testing (Track B) — implemented offline
+
+- Mock transport returns valid/invalid/stale/timeout fixtures → assert fallback to argmax in every failure case. (`client.test.ts`, `advisor.test.ts`)
+- Budget tests: cap enforced, cache hit avoids a call. (`budget.test.ts`, `advisor.test.ts`)
+- Staleness: a response arriving after the state/round moved on is discarded. (`advisor.test.ts::isStale`, `ui.test.ts`)
+- Journal replay: a recorded response replays with the network off. (`advisor.test.ts`)
+- All Track A tests run with the LLM disabled — the default CI configuration. Confirmed: `VITE_AI_LLM` is unset in `npm test`; the only networked test is `src/game/ai/llm/live.test.ts`, skipped unless `LLM_LIVE=1` (run it with `make llm-live`).
+
+### B.8 Model selection & quality gate
+
+- Start with the cheapest available small model on the chosen endpoint; if local, any ~7–8B instruct model.
+- **Gate:** B2's choices must beat argmax on a held-out scenario suite ≥ 55% of the time, else B2 stays disabled (B1 stance flavor may ship purely cosmetically).
+- Never let a model choice change engine state directly — only weights/candidate selection downstream of Track A.
+
+**Local models verified (2026-10-19, Ollama 0.40.6, native `/api/chat`, `think:false`, one real Mode-1 call each):**
+
+| Model | Result | Latency | Verdict |
+|---|---|---|---|
+| `qwen3.5:0.8b` | valid stance JSON | ~0.5 s | **default** — fast and reliable |
+| `qwen3.5:4b` | valid stance JSON | ~1.1 s | good fallback |
+| `bonsai-2:latest` (9B Q2) | valid stance JSON | ~1.2 s | good fallback |
+| `qwen3.5:9b` | valid stance JSON | ~8.2 s | exceeds the 2.5 s deadline |
+| `tev1:0.8b` | HTTP 400 | — | no chat support (capability `decision`) — skipped |
+| `lfm2.5-thinking`, `tinyllama` | — | — | not pulled on this machine — skipped |
+
+Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow model degrades to a Track A fallback rather than stalling. Mode 2's quality gate (§B.8) is still unevaluated — it needs a held-out scenario suite (M5).
+
+---
+
+## 4. Sequencing, flags, and definition of done
+
+### Active — Track A
+
+| Milestone | Content | Depends on |
+|---|---|---|
+| **M1** | Track A1: candidates + core scoring + trace, wired through existing `chooseAutoAction`; scenario & determinism tests | — |
+| **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 — scoring logic is done; overlay UI remains the next roadmap priority |
+| **M3** | Track A3: one-ply lookahead; balance scenario suite runs policy-vs-policy | M2 and a stable balance scenario suite; defer until pacing baseline is usable |
+
+### Deferred — Track B
+
+| Milestone | Content | Depends on |
+|---|---|---|
+| ✅ **M4** | Track B client + Mode 1 (strategy advisor), feature-flagged off | M2 (stable digest format) — **done** |
+| ⬜ **M5** | Track B Mode 2 (top-k chooser) wired into the loop + journal replay + quality gate §B.8 | M4, M3 — client/chooser exist; loop wiring + gate remain |
+
+- **Flags (Track A):** currently no env flag — the utility policy *is* `chooseAutoAction` (the old random player is gone). A `VITE_AI_POLICY=random` A/B baseline is still a TODO. **Track B:** `VITE_AI_LLM` (default off) is implemented; when on, App.tsx resolves one Mode-1 stance per side per round and feeds the deltas through `chooseAutoAction`'s optional `weights` argument.
+- **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (overlay remains), personalities measurably distinct, no new runtime deps, and `auto.test.ts` passes.
+- **Roadmap exit criteria (Track B, deferred):** every failure path falls back cleanly, budget enforced, journal replay deterministic, quality gate recorded in §B.8.
+- **Non-goals:** GOAP/planners, behavior-tree libraries, RL, per-action free-form LLM generation, any engine change required by the AI.
+
+## 5. Resolved design questions and deferred work
+
+1. Does the AI get its own UI "side" (3rd seat) or only drive p1/p2 (today's `autoSides`)? *(Start: p1/p2 only — no UI work needed.)*
+2. Should personality live on `CharacterDefinition` (data) or on a separate AI-profile table keyed by definition id? *(Leaning: separate table — keeps `types.ts` engine-facing.)* — **Resolved: separate table** (`ai/personalities.ts::PERSONALITY_BY_CHARACTER`, element fallback). Engine types untouched.
+3. Reactions/Evade decisions (defender-side) are currently `reactions: []` in auto play — in scope for A2 (Evade is a scored move too) or deferred? *(Leaning: A2, since `evadeEscapes` already exists as the outcome check.)* — **Deferred to A3**: defender reactions need the opponent's reply simulation, which is exactly A3's lookahead.
+4. For Track B: hosted vs. local endpoint for development? — **Resolved: local Ollama for dev** (verified against `qwen3.5:0.8b`, `bonsai-2`, `qwen3.5:4b`); the client is wire-agnostic, so a hosted OpenAI-compatible endpoint is a config change only.
+
+## 6. Historical observations from the first implementation pass (M1/M2)
+
+This section records the initial diagnosis and is not the current balance report. For current measurements and tuning, use `specs/balance_testing_plan.md` §10; the original pacing and matchup figures below predate the lethality pass.
+
+Findings from 20 seeded policy-vs-policy matches (`setup()` rosters). These are **not AI bugs**; they are inputs to the balance plan:
+
+- **Matches run to the round limit and are decided on tiebreakers.** With movement = 1 tile/activation and 4 energy/round, a 14–18 HP roster is hard to deplete inside the limit. This is engine pacing, not passivity. *Attempted fix (round cap 8→10 + slower/weaker healing) did **not** resolve it:* a fresh n=100 harness run (`balance_testing_plan.md` §10) still shows **100% cap-reach, 0% KO finishes**, first KO ≈ round 7. Lethality (damage/HP ratio + engagement speed), not the round count, is the lever.
+- **Seat is fine; the roster matchup is not.** First-activation win rate is 38–52% (CIs include 50%) — no systematic p1/north win. But the shipped cross-roster matchup is now **villains 100% vs heroes** (n=100): the one-card-per-activation + cardless basic-action engine change (`db956bf`) appears to have flipped hero/villain dominance. Roster/`balance_testing_plan.md` issue, not policy; tracked in §10.5 there.
+- **Healing is inert in AI play.** ~3–5 instant HP + ~2–3 regeneration HP per match; the new spike-heal cards are played ~0.1×/match. The policy rarely chooses heals, so the heal-model rebalance is not exercised by self-play (see `balance_testing_plan.md` §10.5 item 5).
+- **Focus fire works.** Damage consistently collapses one enemy (azula commonly ends at 3–4 HP), confirming the `focusFire` signal reaches target selection.
+- **Open for A3:** the AI cannot *finish* a wounded-but-out-of-range target, and never retreats a low-HP ally out of enemy range — both want one-ply lookahead.
+
+### 6.1 Policy defects found by the lethality pass (fixed in `ai/policy.ts`)
+
+The 100%-cap baseline was partly an AI bug, not only engine pacing. Four defects together suppressed hero damage:
+
+1. **The scrap threshold exceeded an attack's whole score.** `SCRAP_THRESHOLD = 0.15` sat above the utility of a 2-damage attack for the `cautious`/`support` weights (≈0.09–0.13), so Aang and Katara scrapped every attack card they drew. Lowered to `0.01`: an unplayed assigned card is auto-scrapped at round end anyway, so any positive-value legal play dominates banking it.
+2. **Assignment ignored playability.** `fittingCards` only checked restriction fit, so the policy assigned cards with no legal target or no affordable cost; the next activation then scrapped them and reassigned — an assign→scrap→assign loop that burned roughly half of each hand for chi. The replacement, `playableCards`, requires restriction fit **and** affordability **and** at least one legal target from the current tile.
+3. **The cardless basic actions from `db956bf` were never used.** A unit with no playable card passed instead of using the free basic attack/defense. The policy now falls back to a basic attack on the lowest-HP adjacent enemy, else basic defense. The trace phase is `"basic"`.
+4. **Movement range came only from the assigned card.** If a unit held a ranged card it stayed at range even when its playable cards were melee, and units with no attack card never closed to melee. `attackRangeFor` now selects the best *usable* damage card (assigned or in hand) and returns `null` when there is none, which makes the unit approach to range 1 for the basic attack.
+
+Also nudged two personality vectors toward damage (`cautious` damage 0.7→0.9 / focusFire 0.9→1.0 / safety+survival 1.3→1.2; `support` damage 0.6→0.9 / focusFire 0.8→1.0 / support 1.4→1.3) so they no longer under-value attacks relative to their own utility scale.
+
+Result on the hero mirror: average damage per match rose from ~24 to ~45–47 and card plays from ~23 to ~33. The remaining lethality gap is engine/data tuning (`balance_testing_plan.md` §10), not these defects.
+
+## 7. Findings from the Track B implementation pass (M4)
+
+The design notes live in §3; this is what only showed up once it was actually built (2026-10-19/20, Ollama 0.40.6).
+
+1. **The "one OpenAI-compatible client" assumption was wrong for local models.** Ollama's `/v1/chat/completions` shim routes *thinking* models' output into `message.reasoning` and returns an empty `message.content`, so `qwen3.5:0.8b` and `bonsai-2` yielded nothing parseable through it. The native `/api/chat` with `think:false` + `format:"json"` answers in 0.5–1.2 s. Hence the two-wire client (§B.4) plus the `reasoning`/`thinking` fallback inside `parseChatResponse`.
+2. **Latency, not quality, picks the default model.** `qwen3.5:9b` answered correctly but in ~8.2 s — over 3× the 2.5 s deadline, so in the UI it would fall back to Track A almost every round. `qwen3.5:0.8b` (~0.5 s) is the default for that reason; `qwen3.5:4b` and `bonsai-2` (~1.1–1.2 s) are the verified fallbacks (table in §B.8).
+3. **Mode 1 staleness must be round-granular, not state-granular.** A strict `stateHash` match invalidates the advice after the first action *within* the round — i.e. immediately, since the advice is meant to persist for the round. The controller drops a response only if the requesting round is no longer current (§B.5). `advisor.isStale` remains for Mode 2, where per-decision staleness is the right granularity.
+4. **The call budget has to be derived from the loop, not guessed — twice over.** Two separate defects, both silent:
+   - *Match cap too low.* Mode 1 costs one call per side per round ⇒ 2 × 10 = **20** calls/match, but the initial default was **12**: Track B would have gone dead around round 6 with no visible error. `maxCallsPerMatch` is now **24**, and a regression test pins `DEFAULT_BUDGET.maxCallsPerMatch ≥ 2 × maxRounds`.
+   - *Round counter never advanced.* `budget.startRound` was only called by `ui.ts`, so anyone using `createAdvisor` directly (a headless harness, Mode 2, tests) silently hit the per-round cap (4) **once, for the whole match**. The advisor now derives the round from the `GameState` it is handed; the counter is self-synchronizing and `startRound` is redundant (kept for external callers).
+
+   Per-round cap stays 4 (one shared controller serves both auto sides), token ceiling 20 000 (a Mode-1 call is ~370 tokens ⇒ ~7.4 k for a full match).
+5. **Fire-and-forget is the only safe async shape for this loop.** `App.tsx`'s auto loop is a synchronous `useEffect`; awaiting would stall the UI on a model. The loop now computes Track A immediately and upgrades to advice on a later tick, so a dead or slow server is indistinguishable from "flag off". A *single* controller instance per App (not per side) means the budget is shared — which is exactly why finding 4 mattered.
+6. **The deletion claim holds: two references.** `App.tsx` imports only `game/ai/llm/ui`, and nothing else in `src/` reaches into `src/game/ai/llm/`. If the folder is removed, the only surviving edit is the optional `weights` argument on `chooseAutoAction` — a no-op when omitted. `package.json` and `package-lock.json` are untouched: **zero new runtime dependencies** holds.
+7. **Track B is invisible to the balance harness.** `balanceSweep.test.ts` calls `chooseAutoAction` with no weights, so every number published in `balance_testing_plan.md` §10 is pure Track A. That is deliberate (sweeps must reproduce offline), but it also means LLM advice is currently **unmeasured** — no A/B exists yet. Do not compare a §10 table against any LLM-enabled run.
+8. **Offline tests are easy; live tests fight the harness.** Vitest intercepts `console.*`, so `make llm-live` proves the models respond but prints nothing — raw responses had to be read through a throwaway `vite-node` script. `live.test.ts` is the only networked test and stays skipped unless `LLM_LIVE=1`. A cold model load once blew the default 5 s `testTimeout`, so `vite.config.ts` now sets `testTimeout: 30_000` / `hookTimeout: 20_000`.
+9. **Not every candidate model is usable.** `tev1:0.8b` exposes capability `decision` only and returns HTTP 400 on `/api/chat`; `lfm2.5-thinking` and `tinyllama` were not pulled on this machine. The live probe skips rather than fails them ("try all, skip what doesn't work").
+10. **What is deliberately still missing (M5).** `chooser.ts` (Mode 2) is written and unit-tested but never called from the policy loop; the §B.8 quality gate has no held-out scenario suite yet; journal replay is unit-tested but no match has been recorded end-to-end and replayed. Until the quality gate passes, Mode 1 stance flavor is the only Track B behavior that ships.

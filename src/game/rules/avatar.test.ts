@@ -52,14 +52,20 @@ function play(
     id: instanceId,
     definitionId: opts.card.id,
   };
-  return applyGameAction(state, {
-    type: "PLAY_CARD",
-    playerId: player,
-    characterId: char,
-    cardInstanceId: instanceId,
-    selection: opts.selection,
-    card: opts.card,
-  });
+  // Resolution-level tests: the subject is Avatar/resonance effects, not who
+  // holds the turn, so the turn-order check is bypassed (see ApplyOptions).
+  return applyGameAction(
+    state,
+    {
+      type: "PLAY_CARD",
+      playerId: player,
+      characterId: char,
+      cardInstanceId: instanceId,
+      selection: opts.selection,
+      card: opts.card,
+    },
+    { bypassTurnOrder: true },
+  );
 }
 
 const sel = (id: string): TargetSelection => ({ kind: "character", characterId: id });
@@ -160,20 +166,29 @@ describe("activation", () => {
   }
 
   function activate(state: GameState) {
-    return applyGameAction(state, {
-      type: "ACTIVATE_AVATAR_STATE",
-      playerId: "p1",
-      characterId: "p1-c0",
-    });
+    // Resolution-level tests: bypass the turn-order check (see ApplyOptions).
+    return applyGameAction(
+      state,
+      {
+        type: "ACTIVATE_AVATAR_STATE",
+        playerId: "p1",
+        characterId: "p1-c0",
+      },
+      { bypassTurnOrder: true },
+    );
   }
 
   it("rejects non-Avatars, low resonance, low focus, and repeats", () => {
     expect(
-      applyGameAction(setup(), {
-        type: "ACTIVATE_AVATAR_STATE",
-        playerId: "p1",
-        characterId: "p1-c1",
-      }).errors[0].code,
+      applyGameAction(
+        setup(),
+        {
+          type: "ACTIVATE_AVATAR_STATE",
+          playerId: "p1",
+          characterId: "p1-c1",
+        },
+        { bypassTurnOrder: true },
+      ).errors[0].code,
     ).toBe("NOT_AVATAR_CAPABLE");
 
     const unready = ready();
@@ -207,12 +222,16 @@ describe("activation", () => {
     });
     expect(blocked.errors[0].code).toBe("TECHNIQUE_SPENT");
 
-    const moved = applyGameAction(result.state, {
-      type: "MOVE",
-      playerId: "p1",
-      characterId: "p1-c0",
-      to: { x: 1, y: 1 } as Position,
-    });
+    const moved = applyGameAction(
+      result.state,
+      {
+        type: "MOVE",
+        playerId: "p1",
+        characterId: "p1-c0",
+        to: { x: 1, y: 1 } as Position,
+      },
+      { bypassTurnOrder: true },
+    );
     expect(moved.errors).toEqual([]); // movement still allowed
   });
 

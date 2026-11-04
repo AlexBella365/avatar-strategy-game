@@ -57,6 +57,19 @@ make build
 Or directly with npm (`npm install`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run build`).
 Run `make help` for all targets.
 
+### Optional: LLM NPC advisor (Track B)
+
+Off by default — the NPC uses the pure utility AI. To let a local model pick a
+per-round stance (it can only nudge Track A weights, never act directly):
+
+```sh
+VITE_AI_LLM=1 npm run dev            # defaults to Ollama at http://localhost:11434
+VITE_AI_LLM=1 VITE_LLM_MODEL=qwen3.5:0.8b npm run dev
+```
+
+Server-side smoke test (skips models that aren't pulled): `make llm-live`.
+See `specs/npc_ai_plan.md` §3 for the design and the verified local models.
+
 ## Editing the board
 
 The demo board is hand-editable text at `src/game/maps/demo.grid.txt`: seven rows
@@ -77,11 +90,13 @@ Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
 the only Avatar State–capable character; Resonance buildup, activation cost,
 duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
 
-## Cards (18)
+## Cards (21)
 
 12 starter techniques + 2 signature gear (Glider, Boomerang) + Comet Strike bomb +
-3 universal cards anyone can take: **Travel Rations** (food = healing),
-**Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed). Every character
+6 defender cards: **Travel Rations** (food = heal-over-time), **Miraculous Balm**
+(instant spike heal 4, costs chi), **Second Wind** (instant self-heal 2 + Focus),
+**Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed) — all universal —
+plus the water-locked **Healing Waters** (instant heal 3). Every character
 fits at least 6 cards; the hand list shows each card's requirement and who fits.
 
 ## Card presentation
@@ -115,4 +130,9 @@ stay in sync.
 9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
 10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers, drawn in a board overlay so they aren't clipped by tiles)
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
-12. ⬜ End-to-end polish (passives, real AI opponent, roster waves)
+12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
+13. ⬜ NPC AI debug overlay — finish Track A M2 by surfacing the existing decision traces in the UI; see `specs/npc_ai_plan.md` §A.6–A.7.
+14. ⬜ End-to-end polish (passives, roster waves)
+15. ✅ Lethality pass — shipped tuning is now data (`src/game/content/balance.ts`): movement 2, HP ×0.65, deployment rows 1/5, damage ×1.5. At n=100 the shipped matchup finishes 41% by KO, reaches the cap 50%, and draws 0% — the §2.1 lethality gate passes (tightly). See `specs/balance_testing_plan.md` §10.
+16. ⬜ Roster/card parity — the remaining balance blocker: villains win 75% of shipped games (heroes 25%), beyond the ±20pp matchup gate. Start with the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 and re-baseline at n≥200.
+17. 🧪 Experimental LLM advisor (Track B, Mode 1) — off by default (`VITE_AI_LLM=1` to enable); evaluation against Track A is pending. Mode 2 (LLM top-k choice) remains deferred; see `specs/npc_ai_plan.md` §3–5.

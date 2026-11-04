@@ -73,6 +73,7 @@ export interface CharacterState {
   position: Position;
   statuses: StatusInstance[];
   shields: ShieldInstance[]; // absorb damage FIFO; expiry handled by round loop
+  regeneration: RegenInstance[]; // heal-over-time pools; ticked by the round loop
   passiveUsesThisRound: Record<string, number>;
   reactionUsedThisRound: boolean;
   /** One prepared conditional response, armed until the opponent's next activation ends. */
@@ -113,6 +114,15 @@ export interface ShieldInstance {
   id: string; // stable instance id
   amount: number;
   duration?: "untilNextRound" | "untilConsumed";
+}
+
+/** One heal-over-time pool: restores `amount` HP at the end of each of the
+ *  next `remainingRounds` round-end steps (spec: healing is slower and weaker
+ *  than damage). Multiple pools stack; KO clears them. */
+export interface RegenInstance {
+  id: string; // stable instance id
+  amount: number; // HP restored per end-of-round tick
+  remainingRounds: number; // ticks left
 }
 
 export type AllegianceFilter = "enemies" | "allies" | "all" | "selfAndAllies";
@@ -175,6 +185,13 @@ export type CardEffect =
       waterEmpoweredBonus?: number;
     }
   | { type: "heal"; amount: number }
+  | {
+      /** Delayed healing: restores `amount` HP at the end of each of the next
+       *  `rounds` round-end steps. Slower and weaker than an instant heal. */
+      type: "healOverTime";
+      amount: number;
+      rounds: number;
+    }
   | {
       type: "shield";
       amount: number;
@@ -305,9 +322,27 @@ export interface PlayerState {
 /** Deployment side: north = row 0, south = row 6 (spec §4.2). */
 export type Side = "north" | "south";
 
+/**
+ * Per-match balance knobs. Optional: omitted fields fall back to
+ * `DEFAULT_MATCH_TUNING` (content/balance.ts), so normal play/tests use the
+ * shipped values and the self-play harness can grid-search alternatives.
+ */
+export interface MatchTuning {
+  movement: number;
+  hpScale: number;
+  deploymentInset: number;
+  energyPerRound: number;
+  /** Multiplier on card healing (instant and heal-over-time). */
+  healingScale: number;
+  /** Multiplier on incoming damage after the engine's damage formula. */
+  damageScale: number;
+}
+
 export interface GameState {
   round: number; // 1..8
   maxRounds: number;
+  /** Balance overrides for this match (harness experiments); undefined = defaults. */
+  tuning?: MatchTuning;
   initiativePlayerId: string;
   /** Which player deploys north (row 0); the other deploys south. Seeded roll at setup. */
   northPlayerId: string;

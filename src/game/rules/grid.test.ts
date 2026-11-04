@@ -19,6 +19,9 @@ import {
   sortTiles,
 } from "./grid";
 
+/** Keep geometry tests on the historical edge rows; shipped inset is 1. */
+const EDGE_TUNING = { deploymentInset: 0 };
+
 function setup(positions: [Position[], Position[]]) {
   const teams: [TeamSetup, TeamSetup] = [
     {
@@ -32,7 +35,9 @@ function setup(positions: [Position[], Position[]]) {
       positions: positions[1],
     },
   ];
-  return createInitialState(teams, 1, { northPlayerId: "p1" });
+  // These geometry tests use the historical edge rows (inset 0); shipped
+  // deployment is one row inward.
+  return createInitialState(teams, 1, { northPlayerId: "p1", tuning: EDGE_TUNING });
 }
 
 const OPEN: [Position[], Position[]] = [
@@ -109,7 +114,7 @@ describe("board bounds and deployment", () => {
       { playerId: "p2", characterDefs: [CHARACTERS[2], CHARACTERS[4], CHARACTERS[5]], positions: OPEN[0] },
     ];
     // Flipped sides: p1 deploys south (row 6), p2 north (row 0) — legal.
-    const flipped = createInitialState(teams, 1, { northPlayerId: "p2" });
+    const flipped = createInitialState(teams, 1, { northPlayerId: "p2", tuning: EDGE_TUNING });
     expect(flipped.northPlayerId).toBe("p2");
     expect(flipped.characters.find((c) => c.id === "p1-c0")!.position.y).toBe(6);
     // Same positions, sides not flipped: p1 stands on row 0 but is south — rejected.
@@ -119,7 +124,7 @@ describe("board bounds and deployment", () => {
         { ...teams[1], positions: OPEN[1] },
       ],
       1,
-      { northPlayerId: "p2" },
+      { northPlayerId: "p2", tuning: EDGE_TUNING },
     )).toThrow(/south deployment zone \(row 6\)/);
   });
 
@@ -144,16 +149,19 @@ describe("board bounds and deployment", () => {
       // p1 on row 0 is only legal when the roll puts p1 north.
       const expected = rollNorthPlayerId(["p1", "p2"], seed);
       if (expected === "p1") {
-        const state = createInitialState(teams, seed);
+        const state = createInitialState(teams, seed, { tuning: EDGE_TUNING });
         expect(state.northPlayerId).toBe("p1");
       } else {
-        expect(() => createInitialState(teams, seed)).toThrow(/deployment zone/);
+        expect(() => createInitialState(teams, seed, { tuning: EDGE_TUNING })).toThrow(
+          /deployment zone/,
+        );
         const swapped = createInitialState(
           [
             { ...teams[0], positions: [{ x: 0, y: 6 }] },
             { ...teams[1], positions: [{ x: 0, y: 0 }] },
           ],
           seed,
+          { tuning: EDGE_TUNING },
         );
         expect(swapped.northPlayerId).toBe("p2");
       }

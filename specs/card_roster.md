@@ -1,14 +1,14 @@
 # Card Roster v1 — Full Pool (existing + proposed)
 
 **Status:** Live pool documents current code; expansion sections remain design proposals. Non-normative for engine rules.
-**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 22-card pool).
+**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 25-card pool).
 **Goal:** Reach **~20 usable cards per character type** (Water / Earth / Fire / Air / Non-bending), built from ATLA + LOK lore, **with a shared core** so common effects aren't reprinted per element.
 
 **Conditional defense prototypes:** see [`conditional_defense_cards_v1.md`](conditional_defense_cards_v1.md) for a batch exploring prepared responses, trigger families, and lore variants. Four cards are in the live pool as intentionally unbalanced prototypes; the remaining concepts are design-only.
 
 ## 1. Existing live pool (ships today — `cards.ts` + `economy.ts`)
 
-22 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
+25 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
 
 | id | name | cardType / kind | ⚡+💠 (⇪) | Fits (restriction) | rulesText (verbatim) |
 |---|---|---|---|---|---|
@@ -26,16 +26,21 @@
 | `ice-bind` | Ice Bind | attack / attack | 1+1 (2) | Water | `Ranged 3. 1 damage; Bound (2) if the target is OffBalance.` |
 | `sokkas-feint` | Sokka's Feint | attack / attack | 1+0 (1) | Sokka only (unique) | `Ranged 3. Expose the target and gain 1 Focus. Sokka only.` |
 | `precision-strike` | Precision Strike | attack / attack | 1+1 (2) | Non-bending | `Ranged 4, Perception 4+. 2 damage, +2 accuracy, cannot be evaded.` |
-| `water-recovery` | Water Recovery | support / defense | 1+0 (1) | Water, Avatar | `Heal an ally in range 3 for 3.` |
+| `water-recovery` | Water Recovery | support / defense | 1+0 (1) | Water, Avatar | `Heal an ally in range 3 for 1 now, then 1 at end of round (2 total).` |
 | `seismic-read` | Seismic Read | support / attack | 1+0 (1) | Earth | `Ranged 4. Expose the target and gain 1 Focus.` |
 | `aang-glider` | Aang's Glider | support / gear | 1+1 (2) | Aang only (unique) | `Gear (Aang only). +1 movement while equipped.` |
 | `sokka-boomerang` | Sokka's Boomerang | support / gear | 1+1 (2) | Sokka only (unique) | `Gear (Sokka only). +1 damage on your attacks while equipped.` |
 | `comet-strike` | Comet Strike | attack / attack | 2+3 (3) | Fire | `Radius-1 bomb at an origin within 4. 5 damage to each enemy. 2 Energy + 3 chi.` |
-| `travel-rations` | Travel Rations | support / defense | 1+0 (1) | Anyone | `Share a meal: heal an ally in range 3 for 2. Anyone can carry rations.` |
+| `travel-rations` | Travel Rations | support / defense | 1+0 (1) | Anyone | `Share a meal: heal an ally in range 3 for 1 now, then 1 at end of round (2 total). Anyone can carry rations.` |
 | `smoke-bomb` | Smoke Bomb | defense / defense | 1+0 (1) | Anyone | `Vanish in smoke: shield 2 until next round and gain 1 Focus. Anyone can use it.` |
 | `dust-toss` | Dust Toss | attack / attack | 1+0 (1) | Anyone | `Throw dust: ranged 2, 1 damage + Exposed. Anyone can throw dust.` |
+| `miraculous-balm` | Miraculous Balm | support / defense | 2+2 (2) | Anyone | `Miraculous Balm: instantly heal an adjacent ally 4. A rare cure — 2 Energy + 2 chi.` |
+| `healing-waters` | Healing Waters | support / defense | 1+1 (2) | Water, Avatar | `Healing Waters: instantly heal an ally in range 3 for 3. Waterbenders only.` |
+| `second-wind` | Second Wind | support / defense | 1+0 (1) | Anyone | `Second Wind: instantly heal yourself 2 and gain 1 Focus. Anyone can dig deep.` |
 
-Per-type signature counts from this live pool: Water 4 (water-whip, ice-bind, water-recovery, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 3 (travel-rations, smoke-bomb, dust-toss). Gear/unique 2 (aang-glider, sokka-boomerang).
+**Heal tiers (balance):** most healing is deliberately slow and weak — `water-recovery` / `travel-rations` split a reduced total into an instant point plus end-of-round **regeneration**. The three `Spike` cards above are the exception: instant, larger heals, paid for with chi (`miraculous-balm` 2, `healing-waters` 1) so they stay rare build-around options rather than repeatable sustain.
+
+Per-type signature counts from this live pool: Water 5 (water-whip, ice-bind, water-recovery, healing-waters, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 5 (travel-rations, smoke-bomb, dust-toss, miraculous-balm, second-wind). Gear/unique 2 (aang-glider, sokka-boomerang).
 
 ## 2. Design-intent additions (from `card_design_prototypes.md` §8/§9 — new cards, not yet in `cards.ts`)
 
@@ -119,7 +124,7 @@ No card below requires a new `CardEffect` variant beyond what exists.
 
 ## 6. Universal pool — fits EVERY character (`restrictions: []`)
 
-Existing (3): **Travel Rations**, **Smoke Bomb**, **Dust Toss** (see §1).
+Existing (5): **Travel Rations**, **Smoke Bomb**, **Dust Toss**, **Miraculous Balm**, **Second Wind** (see §1).
 
 New (3):
 
@@ -129,7 +134,7 @@ New (3):
 | `quick-step` | defense (mobility) | 1+0 (1) | self | `Quick Step: this activation you may move up to 3 tiles, ignoring difficult terrain.` | generic |
 | `centering-breath` | support | 1+0 (1) | self | `Centering Breath: gain 1 Focus (max 4).` | generic |
 
-**Universal total: 6** (counts toward all five types).
+**Universal total: 8** (counts toward all five types).
 
 ## 7. Cross-class pool — fits two or more types
 
@@ -151,9 +156,9 @@ These are the "common to several character types" cards: shared mechanics whose 
 
 ## 8. Water pool
 
-**Existing:** Water Whip, Ice Bind, Water Recovery (3 — §1).
+**Existing:** Water Whip, Ice Bind, Water Recovery, Healing Waters (4 — §1).
 
-New signature (8):
+New signature (7):
 
 | id | Kind | ⚡+💠 (⇪) | Targeting | rulesText (verbatim) | Lore |
 |---|---|---|---|---|---|
@@ -161,7 +166,6 @@ New signature (8):
 | `tidal-wave` | attack (AoE) | 2+2 (3) | line 3 (facing) | `Tidal Wave: line 3 in your facing. 2 damage to each enemy + push 1 (not split).` | Korra |
 | `water-arms` | attack | 1+0 (1) | melee | `Water Arms: melee. 2 damage + pull 1.` | Ming-Hua |
 | `bloodbend` | attack | 2+3 (3) | ranged 3 | `Bloodbend: ranged 3. Bound (2) + Exhausted. Requires Discipline 5+ and Villain.` — `requiresAttributes:{discipline:5}`, `+alignment villain` | Hama/Amon |
-| `healing-waters` | defense | 1+0 (1) | ally R3 | `Healing Waters: heal an ally in range 3 for 3 and remove one status.` | Katara |
 | `octopus-guard` | defense (area) | 1+1 (1) | self+adjacent | `Octopus Guard: shield 2 to self and adjacent allies until next round.` | Katara |
 | `freeze-grenade` | attack (terrain) | 1+1 (2) | tile R3 | `Freeze Grenade: range 3 tile. 1 damage, and that tile becomes Ice (difficult, 2 rounds).` | Katara |
 | `mist-veil` | defense (terrain) | 1+1 (2) | self tile | `Mist Veil: your tile and its neighbors become Smoke (blocks sight) until end of next round.` — needs `smoke` terrain (§5) | Katara fog |
@@ -264,11 +268,11 @@ New signature (12):
 
 | Type | Universal | Cross | Existing signature | New signature | **Total** |
 |---|---:|---:|---:|---:|---:|
-| Water | 6 | 4 | 3 | 8 | **21** |
-| Earth | 6 | 4 | 3 | 8 | **21** |
-| Fire | 6 | 4 | 3 | 8 (+Rocket Flight) | **21+** |
-| Air | 6 | 4 | 2 | 8 | **20** |
-| Non-bending | 6 | 2 | 1 | 12 | **21** |
+| Water | 8 | 4 | 4 | 7 | **23** |
+| Earth | 8 | 4 | 3 | 8 | **23** |
+| Fire | 8 | 4 | 3 | 8 (+Rocket Flight) | **23+** |
+| Air | 8 | 4 | 2 | 8 | **22** |
+| Non-bending | 8 | 2 | 1 | 12 | **23** |
 
 Unique/gear/companion cards add on top per character (Glider, Boomerang, Water Shoes, Sword, etc.) but aren't counted here.
 

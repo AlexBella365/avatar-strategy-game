@@ -50,6 +50,9 @@ export const STARTER_DECK_IDS: string[] = [
   "earth-smash",
   "seismic-snare",
   "octopus-intercept",
+  "miraculous-balm",
+  "healing-waters",
+  "second-wind",
 ];
 
 /** chi value / chi cost / energy / restrictions / slot per card. */
@@ -77,6 +80,11 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "earth-smash": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["earth", "avatar"] }], slotType: "defense" },
   "seismic-snare": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["earth", "avatar"] }], slotType: "defense" },
   "octopus-intercept": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "defense" },
+  // Spike heals: instant (not delayed), so they cost more — chi gates them so
+  // they stay rare against the weak end-of-round regeneration baseline.
+  "miraculous-balm": { value: 2, chiCost: 2, energy: 2, restrictions: [], slotType: "defense" },
+  "healing-waters": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "defense" },
+  "second-wind": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
 };
 
 /** Restriction gate for assign AND play (banking is always legal). */

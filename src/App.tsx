@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Board, { FACES, PORTRAITS } from "./ui/Board";
 import { TERRAIN_LEGEND } from "./ui/terrainTiles";
 import { attackFxKind, type AttackFx } from "./ui/attackFx";
 import { healthDeltas, type CombatText } from "./ui/combatText";
 import { ATTACK_FX_DISMISS_MS, COMBAT_FLOAT_DISMISS_MS } from "./ui/animationTiming";
 import { chooseAutoAction, evadeEscapes } from "./game/auto";
+import { createStrategyController, type EnvLike } from "./game/ai/llm/ui";
 import PlayingCard, { MiniCard, MiniCardBack } from "./ui/PlayingCard";
 import "./ui/PlayingCard.css";
 import { bendingColor, bendingLabel } from "./ui/elements";
@@ -27,7 +28,7 @@ import { blockingTiles, difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain, rollNorthPlayerId } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
-import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
+import { activationOwner, drawCards, endRound, pendingActivations } from "./game/rules/turns";
 import { CARDS, getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
 import { ECONOMY_TUNING, restrictionSatisfied } from "./game/content/economy";
@@ -35,18 +36,20 @@ import type { Restriction } from "./game/types";
 import { key, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
-/** Edge-row default slots (spec §4.2): north deploys row 0, south row 6.
- *  Lateral position is free per player; the interactive secret-pick UI is
- *  future work — defaults keep the demo playable on the assigned side. */
+/** Default slots for the shipped deployment inset (spec §4.2 + balance pass):
+ *  north deploys row 1, south row 5 (one row in from each edge). Lateral
+ *  position is free per player; the interactive secret-pick UI is future work —
+ *  defaults keep the demo playable on the assigned side. Keep these in sync
+ *  with `DEFAULT_MATCH_TUNING.deploymentInset` in game/content/balance.ts. */
 const NORTH_SLOTS: Position[] = [
-  { x: 1, y: 0 },
-  { x: 3, y: 0 },
-  { x: 5, y: 0 },
+  { x: 1, y: 1 },
+  { x: 3, y: 1 },
+  { x: 5, y: 1 },
 ];
 const SOUTH_SLOTS: Position[] = [
-  { x: 1, y: 6 },
-  { x: 3, y: 6 },
-  { x: 5, y: 6 },
+  { x: 1, y: 5 },
+  { x: 3, y: 5 },
+  { x: 5, y: 5 },
 ];
 
 /** Draftable fighters (companions like Appa/Momo enter through team rules). */
@@ -367,6 +370,17 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoSides, setAutoSides] = useState<Set<string>>(new Set());
+  // Track B (optional LLM advisor). Off unless VITE_AI_LLM is set; it never
+  // blocks the loop — advice upgrades on a later tick, or not at all.
+  const [llmTick, setLlmTick] = useState(0);
+  const llm = useMemo(
+    () =>
+      createStrategyController({
+        env: import.meta.env as EnvLike,
+        onChange: () => setLlmTick((n) => n + 1),
+      }),
+    [],
+  );
   const [menu, setMenu] = useState<{ charId: string; x: number; y: number } | null>(null);
   const [plan, setPlan] = useState<"play-first" | "move-first" | null>(null);
   const [basicTargeting, setBasicTargeting] = useState(false); // picking an adjacent enemy for the cardless basic attack
@@ -404,13 +418,13 @@ export default function App() {
   };
 
   // Test-only auto-player loop (all hooks stay above the early return).
+  // Turn order is the engine's (rules §3): only the activation owner acts,
+  // so the loop asks the engine who holds the turn instead of alternating.
   useEffect(() => {
     if (autoSides.size === 0 || !state) return;
     if (state.winnerId !== null || state.isDraw) return;
-    const ownerOf = (id: string) => state.characters.find((c) => c.id === id)?.ownerId;
-    const autoPending = pendingActivations(state).filter((id) => autoSides.has(ownerOf(id) ?? ""));
-    if (autoPending.length === 0) {
-      if (pendingActivations(state).length > 0) return; // waiting on human
+    const mover = activationOwner(state);
+    if (!mover) {
       const t = setTimeout(() => {
         const next = cloneState(state);
         endRound(next);
@@ -420,8 +434,8 @@ export default function App() {
       }, 600);
       return () => clearTimeout(t);
     }
-    const side = ownerOf(autoPending[0])!;
-    const action = chooseAutoAction(state, side);
+    if (!autoSides.has(mover)) return; // waiting on the human at the wheel
+    const action = chooseAutoAction(state, mover, Math.random, llm?.adviceFor(state, mover));
     if (!action) return;
     const t = setTimeout(() => {
       const result = applyGameAction(state, action);
@@ -430,12 +444,12 @@ export default function App() {
         const characterId = (action as { characterId: string }).characterId;
         const fallback = applyGameAction(state, {
           type: "PASS_ACTIVATION",
-          playerId: side,
+          playerId: mover,
           characterId,
         });
         if (fallback.errors.length === 0) {
           setState(fallback.state);
-          setMessage(`Auto (${side}) passed after: ${result.errors[0].message}`);
+          setMessage(`Auto (${mover}) passed after: ${result.errors[0].message}`);
         } else {
           setMessage(result.errors[0].message);
         }
@@ -448,10 +462,14 @@ export default function App() {
       floatSeq.current += nextFloats.length;
       if (nextFloats.length > 0) setFloats(nextFloats);
       setState(result.state);
+      // Hand the view over when the next activation belongs to a human
+      // (turn order is the engine's; see rules §3).
+      const nextOwner = activationOwner(result.state);
+      if (nextOwner && !autoSides.has(nextOwner)) setActingSide(nextOwner);
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, autoSides]);
+  }, [state, autoSides, llm, llmTick]);
 
   if (!state) {
     const toggleDraft = (side: "p1" | "p2", id: string) => {
@@ -646,6 +664,15 @@ export default function App() {
     floatSeq.current += nextFloats.length;
     if (nextFloats.length > 0) setFloats(nextFloats);
     setState(result.state);
+    // Turn order is the engine's (rules §3): after an activation resolves,
+    // hand the view to whoever holds the next one — unless that side is on
+    // auto, in which case the loop above takes over.
+    const owner = activationOwner(result.state);
+    if (owner && owner !== actingSide && !autoSides.has(owner)) {
+      setActingSide(owner);
+      setSelected(null);
+      clearTransient();
+    }
     return true;
   };
 
@@ -1054,6 +1081,12 @@ export default function App() {
           <button onClick={() => toggleAuto("p2")}>
             Auto P2: {autoSides.has("p2") ? "on" : "off"}
           </button>
+          {llm && (
+            <>
+              {" · "}
+              <span className="llm-status">LLM: {llm.status() ?? "thinking…"}</span>
+            </>
+          )}
         </p>
       </header>
 

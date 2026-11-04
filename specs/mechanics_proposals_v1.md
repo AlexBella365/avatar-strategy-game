@@ -133,7 +133,7 @@ Supersedes the open choice above: **P1 in a specific single-row form, with rando
 
 ### 3.3 Options
 
-- **O1 — Randomized start, strict alternation (must-do baseline).** Coin-flip/rng `initiativeStart` per game; alternation as today. *Pros:* one-line fix for (a); preserves the symmetric structure that already balances across 8 rounds (4 firsts each if it started even — with random start, each player is first in 4 of 8 rounds only if parity holds; deaths shift this, which is why P6 measures it). *Cons:* still leaves first-activation as an uncompensated edge if it proves >57% (plan §2.1). **Delta:** `state.ts` init + rng seed; test both branches.
+- **O1 — Randomized start, strict alternation (must-do baseline).** Coin-flip/rng `initiativeStart` per game; alternation as today. *Pros:* one-line fix for (a); preserves the symmetric structure that already balances across 10 rounds (5 firsts each if it started even — with random start, each player is first in 5 of 10 rounds only if parity holds; deaths shift this, which is why P6 measures it). *Cons:* still leaves first-activation as an uncompensated edge if it proves >57% (plan §2.1). **Delta:** `state.ts` init + rng seed; test both branches.
 - **O2 — Choice with compensation.** Roll a coin; winner **chooses** first activation or **second activation + compensation** (opens round 1 with 5 team Energy instead of 4, or +1 chi bank). Classic first-player-advantage compensation; makes the value of tempo an explicit, tunable number. *Pros:* zero hidden info, choice = decision, knob = directly A/B-able in harness E4/P6. *Cons:* one more pre-game step; compensation size will be wrong at first (that's fine — it's a lever). **Delta:** setup action + energy/chi modifier + tests.
 - **O3 — Initiative as a contested resource (flagship v0.4 candidate).** Add `initiativeNextRound`: certain successes — landing a Reaction (e.g., Redirect Lightning), breaking a Bind, winning an Agni-Kai-style exchange — **steal next round's initiative**. *Pros:* turns order-of-play into an earned payoff and deepens the reaction/facing system you already built; creates a genuine "was that worth giving up initiative?" decision every round; rich counterplay (don't trigger their reaction if it steals tempo). *Cons:* largest delta of the three (effect type + display + interaction with the round-flip rule); risk that reaction cards double-dip (defense *and* tempo — price accordingly); needs plan P3's deterrence probe.
 - **O4 — Secret activation queue.** At round start, each team secretly orders its own characters' activations (extends the face-down assignment fantasy). *Pros:* planning depth; punishes autopilot. *Cons:* bookkeeping for hot-seat, and with alternation the *team* order matters less than *who acts first/last* — half the depth for real cost. Park it.
@@ -148,6 +148,43 @@ Supersedes the open choice above: **P1 in a specific single-row form, with rando
 3. **v0.4 flagship:** prototype **O3** — it converts "order of play" from setup bookkeeping into an expression of skill, which is what the third brief item deserves. Prototype on 2–3 cards first (Redirect Lightning gaining initiative is already lore-perfect: Iroh's whole teaching was *reading the opponent's move and answering first*).
 
 **Engine deltas (flagged):** `initiativeStart` in state init; order-enforcement function + `canActivate` change + tests (incl. 3v2/3v1); setup flow for O2; optional `initiativeNextRound` field + effect type for O3; log lines for plan JSONL.
+
+---
+
+## §4 One action per activation (decision, 2026-10-19) — one card, basic-action floor
+
+Rule clarification, adopted and implemented (commit `db956bf`; spec v2 §8
+Phase 3, docs/rules.md "On your activation"):
+
+1. **One card per activation.** A character plays exactly the one card
+   assigned to it — reassigning after a play cannot unlock a second play
+   (rejected with `TECHNIQUE_SPENT`). Unplayed cards are discarded/banked
+   for chi as before (pass scraps the assigned card; end-of-round
+   auto-scrap/auto-bank). The play is spent even on a fizzle (card paid and
+   discarded).
+2. **Basic actions (cardless floor).** A character with no assigned card is
+   never a wasted activation: it may use one very weak free basic action —
+   **basic attack** (orthogonally adjacent enemy, 1 damage, no evade
+   reaction) or **basic defense** (self shield 1 until next round). One per
+   activation, sharing the action slot.
+
+**Implementation:** the shared slot is `techniqueBlockedThisActivation` —
+set on card commit, on Avatar State activation, and on either basic action
+(`rules/basics.ts`, actions `BASIC_ATTACK`/`BASIC_DEFENSE`). UI shows
+"Basic attack / Basic shield" for cardless, unspent characters.
+
+**Consequences accepted / intended:**
+
+- **Anti-dead-turn valve.** The free adjacent strike puts a ~1-damage floor
+  under every activation, so boards stall less; real cards must stay
+  strictly stronger per cost or they are outclassed by a free action.
+- **Brace economy watch.** Shield 1 per activation is deliberately minimal,
+  but per-round brace stacking could grind matches longer — watch round
+  reached and damage-per-activation metrics (plan §2.1); if brace meta
+  emerges, gate the basic defense or decay shields (plan §3.5).
+- **AI follow-up (flagged, not implemented):** bots currently pass when the
+  slot is spent and never evaluate basic actions — worth a E-harness probe
+  later; not a correctness issue (pass is always legal).
 
 ---
 

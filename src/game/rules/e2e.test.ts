@@ -7,6 +7,7 @@ import { getCardDefinition } from "../content/cards";
 import { CHARACTERS } from "../content/characters";
 import { ECONOMY_TUNING } from "../content/economy";
 import { createInitialState } from "../state";
+import { TEST_TUNING } from "../testutils";
 import type { ActionResult, GameState, Position, TargetSelection } from "../types";
 
 function demoMatch(): GameState {
@@ -24,7 +25,7 @@ function demoMatch(): GameState {
       },
     ],
     7,
-    { northPlayerId: "p1" },
+    { northPlayerId: "p1", tuning: TEST_TUNING },
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);
@@ -84,45 +85,48 @@ function pass(state: GameState, playerId: string, charId: string): void {
 function scriptedTwoRounds(): { state: GameState; snapshots: string[] } {
   const state = demoMatch();
   const snapshots: string[] = [];
-  // --- Round 1: both sides step across the neutral zone ---
+  // --- Round 1: both sides step across the neutral zone, alternating
+  // activations (rules §3: initiative acts first, then the opponent). ---
   move(state, "p1", "p1-c0", { x: 1, y: 1 }); // aang
-  move(state, "p1", "p1-c1", { x: 3, y: 1 }); // katara
-  move(state, "p1", "p1-c2", { x: 5, y: 1 }); // toph
   pass(state, "p1", "p1-c0");
-  pass(state, "p1", "p1-c1");
-  pass(state, "p1", "p1-c2");
   move(state, "p2", "p2-c0", { x: 1, y: 5 }); // zuko
-  move(state, "p2", "p2-c1", { x: 3, y: 5 }); // sokka
-  move(state, "p2", "p2-c2", { x: 5, y: 5 }); // azula
   pass(state, "p2", "p2-c0");
+  move(state, "p1", "p1-c1", { x: 3, y: 1 }); // katara
+  pass(state, "p1", "p1-c1");
+  move(state, "p2", "p2-c1", { x: 3, y: 5 }); // sokka
   pass(state, "p2", "p2-c1");
+  move(state, "p1", "p1-c2", { x: 5, y: 1 }); // toph
+  pass(state, "p1", "p1-c2");
+  move(state, "p2", "p2-c2", { x: 5, y: 5 }); // azula
   pass(state, "p2", "p2-c2");
   expect(pendingActivations(state)).toHaveLength(0);
   endRound(state);
-  // --- Round 2: engaged lines trade blows (toph steps in first) ---
+  // --- Round 2: initiative swapped to p2, so the villains open (they have no
+  // technique assigned and pass); the heroes trade blows in between. ---
   expect(state.round).toBe(2);
+  expect(state.initiativePlayerId).toBe("p2");
   assignKnown(state, "p1", "p1-c0", "air-blast"); // aang
   assignKnown(state, "p1", "p1-c1", "water-whip"); // katara
   assignKnown(state, "p1", "p1-c2", "seismic-read"); // toph (earth-legal ranged reach across the wider board)
+  pass(state, "p2", "p2-c0"); // zuko
   move(state, "p1", "p1-c0", { x: 1, y: 2 }); // aang steps in
-  move(state, "p1", "p1-c1", { x: 3, y: 2 }); // katara steps in
-  move(state, "p1", "p1-c2", { x: 5, y: 2 }); // toph steps in
   const r1 = playAssigned(state, "p1", "p1-c0", { kind: "character", characterId: "p2-c0" });
   snapshots.push(JSON.stringify(r1.events));
+  pass(state, "p1", "p1-c0"); // aang's activation ends with the pass
+  pass(state, "p2", "p2-c1"); // sokka
+  move(state, "p1", "p1-c1", { x: 3, y: 2 }); // katara steps in
   const r2 = playAssigned(state, "p1", "p1-c1", { kind: "character", characterId: "p2-c1" });
   snapshots.push(JSON.stringify(r2.events));
+  pass(state, "p1", "p1-c1");
+  pass(state, "p2", "p2-c2"); // azula
+  move(state, "p1", "p1-c2", { x: 5, y: 2 }); // toph steps in
   const r3 = playAssigned(state, "p1", "p1-c2", { kind: "character", characterId: "p2-c2" });
   snapshots.push(JSON.stringify(r3.events));
+  pass(state, "p1", "p1-c2");
   snapshots.push(
     `sokka:${JSON.stringify(state.characters.find((c) => c.id === "p2-c1")!.position)},` +
       `azula-offbalance:${state.characters.find((c) => c.id === "p2-c2")!.statuses.some((s) => s.statusId === "OffBalance")}`,
   );
-  pass(state, "p1", "p1-c0");
-  pass(state, "p1", "p1-c1");
-  pass(state, "p1", "p1-c2");
-  pass(state, "p2", "p2-c0");
-  pass(state, "p2", "p2-c1");
-  pass(state, "p2", "p2-c2");
   snapshots.push(`chi:${state.players[0].chi},${state.players[1].chi}`);
   return { state, snapshots };
 }

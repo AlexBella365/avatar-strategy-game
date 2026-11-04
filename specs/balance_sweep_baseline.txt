@@ -1,0 +1,44 @@
+# Balance sweep — baseline report (v0.3 engine)
+
+Raw output of the self-play harness `src/game/ai/balanceSweep.test.ts`.
+Generated with SWEEP_N=100: Track A utility policy, seeds 1..100 per cell.
+Turn order is engine-enforced (alternating activations, rules 3), so the
+driver asks the engine who holds the turn — tables here are decision-grade
+for order (specs/balance_testing_plan.md 4.1).
+Interpretation + prioritized next steps: specs/balance_testing_plan.md 10.
+
+Regenerate with:  make sweep-baseline
+  (or) SWEEP_N=100 SWEEP_OUT=specs/balance_sweep_baseline.txt npx vitest run src/game/ai/balanceSweep.test.ts
+
+---
+
+===== shipped: heroes(p1, north) vs villains(p2) (n=100) =====
+p1 25 (25.0%) | p2 75 (75.0%) | draws 0 (0.0%)
+north/first-mover 25.0%  95% CI [17.5%, 34.3%]
+decision: KO 41 (41.0%) | tiebreak 50 (50.0%) | limit-draw 0 | ko-draw 0 | unresolved 9
+cap-reach 50.0% | avg rounds 9.02 | avg KOs 3.55 | round-1 KO 0 (0.0%)
+first KO round: min 2 | avg 3.8
+damage/match 59.50 | HP-share margin avg 0.290 median 0.298
+plays/match 18.11 | spike-heal plays 1.10 | instant heal 6.02 | regen 2.73
+
+===== mirror heroes (seat alternated) (n=100) =====
+p1 39 (39.0%) | p2 57 (57.0%) | draws 4 (4.0%)
+north/first-mover 47.0%  95% CI [37.5%, 56.7%]
+decision: KO 5 (5.0%) | tiebreak 86 (86.0%) | limit-draw 4 | ko-draw 0 | unresolved 5
+cap-reach 90.0% | avg rounds 9.80 | avg KOs 2.84 | round-1 KO 0 (0.0%)
+first KO round: min 3 | avg 5.3
+damage/match 61.04 | HP-share margin avg 0.234 median 0.226
+plays/match 28.41 | spike-heal plays 2.72 | instant heal 12.03 | regen 4.05
+
+===== mirror villains (seat alternated) (n=100) =====
+p1 38 (38.0%) | p2 61 (61.0%) | draws 1 (1.0%)
+north/first-mover 54.0%  95% CI [44.3%, 63.4%]
+decision: KO 75 (75.0%) | tiebreak 24 (24.0%) | limit-draw 1 | ko-draw 0 | unresolved 0
+cap-reach 25.0% | avg rounds 8.50 | avg KOs 4.03 | round-1 KO 1 (1.0%)
+first KO round: min 1 | avg 3.0
+damage/match 58.66 | HP-share margin avg 0.327 median 0.357
+plays/match 12.13 | spike-heal plays 0.08 | instant heal 2.75 | regen 2.15
+
+Lethality gates on the shipped defaults:
+PASS  SHIPPED DEFAULTS           cap 50%  KO 41%  draws 0%  margin 0.290
+tuning: {"movement":2,"hpScale":0.65,"deploymentInset":1,"energyPerRound":4,"healingScale":1,"damageScale":1.5}

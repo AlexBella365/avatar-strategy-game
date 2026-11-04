@@ -18,10 +18,12 @@ If both teams survive after round 10, you compare:
 ## Setup
 
 1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
-2. A random roll assigns your edge rows: one of you deploys on north row 0, the other on south row 6. Place your 3 characters on 3 different tiles of your row, in secret; both sides reveal after locking. Rows 1–5 start empty.
+2. A random roll assigns your sides: one of you deploys on north row 1, the other on south row 5. Place your 3 characters on 3 different tiles of your row, in secret; both sides reveal after locking. Rows 0, 2–4, and 6 start empty. (Starting one row in from the edge shortens the walk to contact — see the balance note below.)
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
 4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
+
+> **Balance tuning (current build).** Starting/max HP is 65% of each character's printed value, all damage is ×1.5, and you deploy one row in from your edge. These are match *data*, not bespoke rules: `src/game/content/balance.ts` holds the numbers, and `specs/balance_testing_plan.md` §10 records the self-play measurements behind them.
 
 ## Your cards
 
@@ -34,7 +36,7 @@ Each card has one type, one chi value (1–3), and a restriction tag:
 
 Each character has **M = 4 slots total**: max 2 Gear, max 2 Attacks, max 2 Defenses (intentional — you can't fill every category, so you choose a build). Gear occupies a Gear slot while it stays. Attacks/Defenses don't stay, but persistent bonuses they grant (e.g. +1 damage stance) occupy their slot type. To equip beyond the cap, you replace (discard) one card already in that slot type. Replaced Gear loses its bonus immediately.
 
-Universal cards fit everyone: **Travel Rations** (share a meal, heal 1 now + 1 at end of round), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
+Universal cards fit everyone: **Travel Rations** (share a meal, heal 1 now + 1 at end of round), **Miraculous Balm** (instant spike heal 4, costs 2 Energy + 2 chi), **Second Wind** (instant self-heal 2 + 1 Focus), **Smoke Bomb** (shield 2 + Focus), **Dust Toss** (chip damage + Exposed).
 
 You can only assign a card to a character it fits (see Restrictions).
 
@@ -52,7 +54,7 @@ Play rounds in this order:
 When you activate a character, you reveal its assigned card and facing token, then do these two in either order:
 
 - **Card decision:** **Play** (pay Energy + Focus + chi, reveal, resolve, discard — except Gear, which stays equipped) or **Scrap** (bank its chi secretly, play nothing). That is the character's **one card for this activation** — you cannot play a second card even if you reassign; leftovers never carry over (they're discarded or banked for chi at end of round).
-- **Move (one block):** Move 1 tile orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may skip moving.
+- **Move (one block):** Move up to **2 tiles** orthogonally (+ Gear bonuses). You cannot split your move around the card play, and you cannot enter or pass through occupied tiles or blocking terrain. Difficult terrain (e.g. ice) costs 2 to enter. You may skip moving.
 
 **No card assigned?** The activation is never wasted — use a **basic action** instead (both free, very weak, one per activation):
 - **Basic attack:** strike an orthogonally adjacent enemy for **1** damage. Cannot be evaded.
@@ -113,7 +115,7 @@ You read the range on your card, then check line of sight (blocked by walls/rock
 - **Tile:** You pick a tile. Whoever is there when it resolves is hit — moving away dodges it.
 - **Line / direction:** Uses your secretly chosen facing (north/east/south/west). It hits tiles in a line up to the stated length. The first wall usually stops it.
 - **Area (AoE):** You pick a center. It hits every valid character in the shape (`plus`, `line`, `radius`, etc.). Damage is full to each — it is not split.
-- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so. **Healing is slow:** a heal card gives a small amount now and the rest as **regeneration** that ticks at the end of the round, so it cannot undo burst damage in the same activation it lands. Healing is deliberately weaker than attacking.
+- **Defense:** You shield, heal, or cleanse. Shields block damage only, not push or statuses, unless the card says so. **Healing is slow:** a heal card gives a small amount now and the rest as **regeneration** that ticks at the end of the round, so it cannot undo burst damage in the same activation it lands. Healing is deliberately weaker than attacking. A few premium **spike** heals (**Miraculous Balm**, **Healing Waters**, **Second Wind**) are instant and larger, but cost chi, so they stay rare picks rather than repeatable sustain.
 
 No dice. No misses — unless a reaction or move makes your target illegal.
 
@@ -156,7 +158,7 @@ The test map is fixed — learn it like a chessboard. It is deliberately **not**
 - **Wall:** blocks movement and sight. Earth abilities **raise** new walls or **level** existing ones back to Plains.
 - **Road:** an open path across the field — no bonus and normal cost. Non-bending civilians are planned to travel here (later).
 
-Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is the top, you deploy on edge rows y0 / y6 — side rolled per match). No empty tiles — everything without a feature is neutral grass. The board is a hand-editable file (`src/game/maps/demo.grid.txt`): 7 rows, one letter per cell, cells split by `|`:
+Test map (`G` grass, `R` road, `P` pond, `K` rocks, `F` forest, `W` wall; y0 is the top, you deploy on rows y1 / y5 — side rolled per match). No empty tiles — everything without a feature is neutral grass. The board is a hand-editable file (`src/game/maps/demo.grid.txt`): 7 rows, one letter per cell, cells split by `|`:
 
 ```
 G|G|G|G|G|G|K
@@ -180,7 +182,7 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 
 ## Example
 
-> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 3 damage (+1 was displaced) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just reposition (skip the move).
+> Round 2: You drew 5, assigned Zuko–**Rising Flame**, banked 2 cards for +3 chi (bank now 5). Zuko reveals: you **Play** — pay 2 Energy, resolve 2 damage (+1 because Toph was displaced this round) vs. Toph. Toph spends 1 Focus to Evade 1 tile — still adjacent, so she still takes 3. Next, Sokka reveals a **Boomerang (Gear)** you can't afford to lose: you **Scrap** it for +2 chi to fund Comet Strike next round, and just reposition (skip the move).
 
 ## Tips
 

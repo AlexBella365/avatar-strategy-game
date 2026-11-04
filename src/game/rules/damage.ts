@@ -3,6 +3,7 @@
 // with card resolution (step 4); this module hosts the shared HP/shield/KO
 // core used by hazards, entry triggers, and tests.
 import type { AttributeSet, GameState } from "../types";
+import { tuningOf } from "../content/balance";
 import { getCharacterOrThrow } from "./statuses";
 import { updateMatchResult } from "./turns";
 
@@ -97,7 +98,9 @@ export function dealDamage(
   const c = getCharacterOrThrow(state, characterId);
   if (c.health <= 0) return { events, knockedOut: false, matchEnded: false, hpLost: 0 };
   const hpBefore = c.health;
-  let remaining = Math.max(0, amount);
+  // Balance hook: one multiplier for every damage source, applied after the
+  // rulebook's per-attack math so card/basic/hazard damage scale together.
+  let remaining = Math.max(0, Math.round(amount * tuningOf(state).damageScale));
   while (remaining > 0 && c.shields.length > 0) {
     const shield = c.shields[0];
     const absorbed = Math.min(shield.amount, remaining);

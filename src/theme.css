@@ -9,12 +9,12 @@
   --p2-color: hsl(310, 80%, 50%);
 
   /* Bending / element colours */
-  --element-air: #bfb09f;
+  --element-air: #d0c1b0;
   --element-fire: #d62728;
   --element-earth: #2a9d48;
   --element-water: #1e78ff;
   --element-nonbender: #8765cb;
-  --element-avatar: #c8ccd2;
+  --element-avatar: #d0c1b0;
 
   /* Terrain fallback colours (drawn behind the tile art) */
   --terrain-plains: #9ec46a;

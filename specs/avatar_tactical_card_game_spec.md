@@ -104,7 +104,7 @@ Each player selects a team of three characters and a legal loadout.
 A player wins immediately when all three opposing characters are knocked
 out.
 
-If both teams have survivors after round 8, compare: 1. Total remaining
+If both teams have survivors after round 10, compare: 1. Total remaining
 health as a percentage of total maximum health. 2. Number of surviving
 characters. 3. If still tied, declare a draw.
 
@@ -459,7 +459,7 @@ fizzles after costs are paid, unless its definition says otherwise.
 4.  Remove Momentum.
 5.  Check victory.
 6.  If no winner and round \< 8, begin next round.
-7.  If round 8 has ended, resolve tiebreakers.
+7.  If round 10 has ended, resolve tiebreakers.
 
 ------------------------------------------------------------------------
 
@@ -1178,7 +1178,7 @@ Automated tests are required for all core rules.
 
 -   Start a match, play at least two rounds, and resolve a knockout.
 -   A match can end by full knockout.
--   Round 8 tiebreaker works.
+-   Round 10 tiebreaker works.
 -   A complete sample combo resolves as specified.
 -   Replaying the same action sequence produces the same state and event
     sequence.
