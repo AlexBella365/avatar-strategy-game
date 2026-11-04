@@ -115,7 +115,8 @@ suggest the target's point of view. Affected characters show a floating red `-x`
 (or green `+y` heal). Tile effects and combat text are drawn in a board-level
 overlay (`.fx-overlay`) that mirrors the tile grid, so effects can spill across
 cell borders instead of being clipped by a tile. All durations live in
-`src/ui/animationTiming.ts`; reduced-motion preferences disable the effects.
+`src/ui/animationTiming.ts`, including the screen flash's element-specific
+duration; reduced-motion preferences disable the effects.
 
 ## Roadmap (grid model + v0.3 economy)
 
