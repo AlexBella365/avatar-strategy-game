@@ -28,7 +28,7 @@ import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain, rollNorthPlayerId } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
 import { drawCards, endRound, pendingActivations } from "./game/rules/turns";
-import { getCardDefinition } from "./game/content/cards";
+import { CARDS, getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
 import { ECONOMY_TUNING, restrictionSatisfied } from "./game/content/economy";
 import type { Restriction } from "./game/types";
@@ -51,6 +51,35 @@ const SOUTH_SLOTS: Position[] = [
 
 /** Draftable fighters (companions like Appa/Momo enter through team rules). */
 const FIGHTERS = CHARACTERS.filter((d) => !d.companion);
+// Temporary prototype switch: admin-only landing tabs are enabled for now.
+const ADMIN_MODE = true;
+
+function CardRoster() {
+  const restrictionLabel = (r: Restriction): string => {
+    switch (r.type) {
+      case "unique": return `${CHARACTERS.find((d) => d.id === r.characterId)?.name ?? r.characterId} only`;
+      case "element": return r.elements.join(" or ");
+      case "alignment": return r.alignment === "hero" ? "Heroes" : "Villains";
+    }
+  };
+  return (
+    <section className="roster-page">
+      <div className="roster-heading">
+        <div><h2>Card roster</h2><p className="dim">{CARDS.length} cards · full rules text and assignment requirements</p></div>
+      </div>
+      <div className="roster-mosaic">
+        {CARDS.map((def) => {
+          const requirements = def.economy?.restrictions ?? [];
+          const fits = requirements.length ? requirements.map(restrictionLabel).join(" + ") : "Anyone";
+          return <div className="roster-card" key={def.id}>
+            <PlayingCard def={def} assigning={false} fits={fits} onAssign={() => undefined} />
+            <div className="roster-meta"><span>{fits}</span><span>Bank {def.economy?.value ?? 1} chi</span></div>
+          </div>;
+        })}
+      </div>
+    </section>
+  );
+}
 
 function demoState(picks?: { p1: string[]; p2: string[] }, mapId = "demo"): GameState {
   const pickDefs = (ids: string[]) =>
@@ -223,6 +252,7 @@ function SheetCard(props: {
 
 export default function App() {
   const [state, setState] = useState<GameState | null>(null);
+  const [activeTab, setActiveTab] = useState<"game" | "roster">("game");
   const [actingSide, setActingSide] = useState("p1");
   const [selected, setSelected] = useState<string | null>(null);
   const [moveMode, setMoveMode] = useState(false);
@@ -400,6 +430,16 @@ export default function App() {
     const mapIndex = MAPS.findIndex((m) => m.id === map.id);
     const cycleMap = (dir: 1 | -1) =>
       setMapId(MAPS[(mapIndex + dir + MAPS.length) % MAPS.length].id);
+    if (ADMIN_MODE && activeTab === "roster") {
+      return <div className="app">
+        <header><h1>Avatar Tactical Card Game — Prototype</h1><p className="fan-note">Unofficial fan prototype. Non-commercial, no affiliation with Nickelodeon or Avatar Studios.</p></header>
+        <nav className="page-tabs" aria-label="Admin pages">
+          <button type="button" onClick={() => setActiveTab("game")}>Game</button>
+          <button type="button" className="selected" aria-current="page">Card roster</button>
+        </nav>
+        <CardRoster />
+      </div>;
+    }
     return (
       <div className="app">
         <header>
@@ -408,6 +448,10 @@ export default function App() {
             Unofficial fan prototype. Non-commercial, no affiliation with Nickelodeon or Avatar Studios.
           </p>
         </header>
+        {ADMIN_MODE && <nav className="page-tabs" aria-label="Admin pages">
+          <button type="button" className="selected" aria-current="page">Game</button>
+          <button type="button" onClick={() => setActiveTab("roster")}>Card roster</button>
+        </nav>}
         <section className="setup versus">
           <p>
             Hot-seat 3v3 duel on a 7×7 grid. P1 drafts first, then P2 (mirror picks
@@ -462,6 +506,17 @@ export default function App() {
         </section>
       </div>
     );
+  }
+
+  if (ADMIN_MODE && activeTab === "roster") {
+    return <div className="app">
+      <header><h1>Avatar Tactical Card Game — Prototype</h1><p>Round {state.round} · Card roster</p></header>
+      <nav className="page-tabs" aria-label="Admin pages">
+        <button type="button" onClick={() => setActiveTab("game")}>Game</button>
+        <button type="button" className="selected" aria-current="page">Card roster</button>
+      </nav>
+      <CardRoster />
+    </div>;
   }
 
   const me = state.players.find((p) => p.id === actingSide)!;
@@ -899,6 +954,11 @@ export default function App() {
           </button>
         </p>
       </header>
+
+      {ADMIN_MODE && <nav className="page-tabs" aria-label="Admin pages">
+        <button type="button" className="selected" aria-current="page">Game</button>
+        <button type="button" onClick={() => setActiveTab("roster")}>Card roster</button>
+      </nav>}
 
       {gameOver && (
         <section className="gameover">
