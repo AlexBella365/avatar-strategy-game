@@ -5,13 +5,23 @@
 import type { CardDefinition } from "../game/types";
 
 export type AttackFxKind = "fire" | "water" | "air" | "earth" | "slash";
+export type MoveShape = "projectile" | "line" | "area" | "push-pull" | "dash";
+export type ScreenImpactKind = "dust" | AttackFxKind;
 
 /** One in-flight effect: which kind, which tiles, and a monotonic id so the
  *  CSS animation restarts even when the same tiles are hit again. */
 export interface AttackFx {
   kind: AttackFxKind;
+  shape: MoveShape;
   /** Tile keys (see grid `key`) covered by the effect. */
   tiles: string[];
+  /** Origin and endpoint for the shared vector overlay. */
+  from: string;
+  to: string;
+  /** Optional traversed tiles, including origin and destination. */
+  path: string[];
+  /** Optional brief, full-viewport cue shown from the affected player's POV. */
+  screenImpact?: ScreenImpactKind;
   seq: number;
 }
 
