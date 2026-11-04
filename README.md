@@ -116,7 +116,8 @@ suggest the target's point of view. Affected characters show a floating red `-x`
 overlay (`.fx-overlay`) that mirrors the tile grid, so effects can spill across
 cell borders instead of being clipped by a tile. All durations live in
 `src/ui/animationTiming.ts`, including the screen flash's element-specific
-duration; reduced-motion preferences disable the effects.
+duration. The screen flash does not intercept board input, and reduced-motion
+preferences disable the effects.
 
 ## Roadmap (grid model + v0.3 economy)
 
