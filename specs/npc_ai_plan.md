@@ -1,6 +1,6 @@
 # NPC AI Plan — Track A: Utility AI (active) + Track B: Experimental LLM Layer
 
-**Status:** implementation plan, non-normative. The branch name below records the original work context and may be stale. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP) adapted to *this* codebase.
+**Status:** implementation notes and remaining work, non-normative. This document describes the current Track A policy and experimental Track B layer; historical observations are labeled in §6. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP), adapted to *this* codebase.
 **Scope:** **Track A (§2)** is the default and remains the authority — a self-contained, zero-dependency utility policy. **Track B (§3) is experimental**: Mode 1 is implemented behind a flag (`VITE_AI_LLM`, default off), but has not been evaluated against Track A. It is advisory-only, uses a zero-dependency `fetch` client, never blocks the loop, and never emits a `GameAction`. M5 (Mode 2 wired into the loop + quality gate) remains deferred.
 
 ---
@@ -12,7 +12,7 @@ The game is closer to an AI-ready state than it looks. These seams are fixed con
 | Seam | Location | What it gives us |
 |---|---|---|
 | Single action entry point | `applyGameAction(state, action)` in `src/game/rules/cards.ts` | Clones state, validates, resolves. **The AI only ever proposes a `GameAction`; the engine is the authority.** |
-| AI placeholder | `chooseAutoAction(state, playerId, random)` in `src/game/auto.ts` | Returns one authorized action or `null`. Its header says *"A real AI policy lands later"* — this is the function we replace the insides of. Same signature = App.tsx loop unchanged. |
+| NPC policy entry point | `chooseAutoAction(state, playerId, random)` in `src/game/auto.ts` | Delegates to the Track A utility policy and returns one proposed action or `null`. The engine remains responsible for validation and resolution. |
 | Turn loop | `useEffect` auto loop in `src/App.tsx` (~L256) | Drives auto sides with a 500 ms tick, falls back to `PASS_ACTIVATION` on validation errors. Already async-friendly for Track B. |
 | Candidate helpers | `getLegalTargets`, `reachableTiles`, `movementAllowance`, `blockingTiles`, `difficultTiles`, `terrainAt`, `hasLineOfSight`, `hasStatus` | Legal-move/legaltarget enumeration is done; the AI scores what these return. |
 | Outcome math | `calculateDamage`, `rawDamage`, `attackVsEvasion` in `rules/damage.ts` | Expected-damage scoring uses the *engine's own* formulas — no shadow arithmetic. |
@@ -35,7 +35,7 @@ Game-shape facts that matter for scoring: activation = *assign a face-down card 
 
 ## 2. Track A — Utility AI, zero LLM (the baseline; ships alone)
 
-**Status:** **A1 + A2 scoring logic implemented** (milestones M1/M2). A3/A4 are pending; the debug overlay UI remains to complete M2. See §A.7.
+**Status:** **A1 + A2 scoring logic implemented** (milestones M1/M2). The debug overlay UI remains; A3 lookahead is deferred, and A4 coordination is optional. See §A.7.
 
 ### A.1 File layout
 
@@ -57,7 +57,7 @@ per-component breakdown that the overlay renders.
 `src/game/ai/policy.ts`; it also exposes `chooseAutoActionTraced` for the overlay. The old random
 heuristics are gone — the policy replaces them wholesale.
 
-### A.2 Candidate generation (`candidates.ts`)
+### A.2 Candidate generation
 
 Enumerate *macro-actions for the current activation step*, reusing engine helpers so everything is legal by construction:
 
@@ -249,7 +249,7 @@ Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow m
 | Milestone | Content | Depends on |
 |---|---|---|
 | **M1** | Track A1: candidates + core scoring + trace, wired through existing `chooseAutoAction`; scenario & determinism tests | — |
-| **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 — scoring logic is done; overlay UI is the next roadmap priority |
+| **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 — scoring logic is done; overlay UI remains the next roadmap priority |
 | **M3** | Track A3: one-ply lookahead; balance scenario suite runs policy-vs-policy | M2 and a stable balance scenario suite; defer until pacing baseline is usable |
 
 ### Deferred — Track B
@@ -260,18 +260,20 @@ Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow m
 | ⬜ **M5** | Track B Mode 2 (top-k chooser) wired into the loop + journal replay + quality gate §B.8 | M4, M3 — client/chooser exist; loop wiring + gate remain |
 
 - **Flags (Track A):** currently no env flag — the utility policy *is* `chooseAutoAction` (the old random player is gone). A `VITE_AI_POLICY=random` A/B baseline is still a TODO. **Track B:** `VITE_AI_LLM` (default off) is implemented; when on, App.tsx resolves one Mode-1 stance per side per round and feeds the deltas through `chooseAutoAction`'s optional `weights` argument.
-- **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (complete the overlay before balance tuning), personalities measurably distinct, no new runtime deps, `auto.test.ts` untouched and passing.
+- **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (overlay remains), personalities measurably distinct, no new runtime deps, and `auto.test.ts` passes.
 - **Roadmap exit criteria (Track B, deferred):** every failure path falls back cleanly, budget enforced, journal replay deterministic, quality gate recorded in §B.8.
 - **Non-goals:** GOAP/planners, behavior-tree libraries, RL, per-action free-form LLM generation, any engine change required by the AI.
 
-## 5. Open questions (to settle during M1/M2)
+## 5. Resolved design questions and deferred work
 
 1. Does the AI get its own UI "side" (3rd seat) or only drive p1/p2 (today's `autoSides`)? *(Start: p1/p2 only — no UI work needed.)*
 2. Should personality live on `CharacterDefinition` (data) or on a separate AI-profile table keyed by definition id? *(Leaning: separate table — keeps `types.ts` engine-facing.)* — **Resolved: separate table** (`ai/personalities.ts::PERSONALITY_BY_CHARACTER`, element fallback). Engine types untouched.
 3. Reactions/Evade decisions (defender-side) are currently `reactions: []` in auto play — in scope for A2 (Evade is a scored move too) or deferred? *(Leaning: A2, since `evadeEscapes` already exists as the outcome check.)* — **Deferred to A3**: defender reactions need the opponent's reply simulation, which is exactly A3's lookahead.
 4. For Track B: hosted vs. local endpoint for development? — **Resolved: local Ollama for dev** (verified against `qwen3.5:0.8b`, `bonsai-2`, `qwen3.5:4b`); the client is wire-agnostic, so a hosted OpenAI-compatible endpoint is a config change only.
 
-## 6. Observations from the first implementation pass (M1/M2)
+## 6. Historical observations from the first implementation pass (M1/M2)
+
+This section records the initial diagnosis and is not the current balance report. For current measurements and tuning, use `specs/balance_testing_plan.md` §10; the original pacing and matchup figures below predate the lethality pass.
 
 Findings from 20 seeded policy-vs-policy matches (`setup()` rosters). These are **not AI bugs**; they are inputs to the balance plan:
 
