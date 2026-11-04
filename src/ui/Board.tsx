@@ -87,6 +87,11 @@ export default function Board({
     "--fx-air-ms": `${ANIMATION_TIMING.attackFx.air}ms`,
     "--fx-earth-ms": `${ANIMATION_TIMING.attackFx.earth}ms`,
     "--fx-slash-ms": `${ANIMATION_TIMING.attackFx.slash}ms`,
+    "--fx-projectile-ms": `${ANIMATION_TIMING.moveShape.projectile}ms`,
+    "--fx-line-ms": `${ANIMATION_TIMING.moveShape.line}ms`,
+    "--fx-area-ms": `${ANIMATION_TIMING.moveShape.area}ms`,
+    "--fx-displace-ms": `${ANIMATION_TIMING.moveShape["push-pull"]}ms`,
+    "--fx-dash-ms": `${ANIMATION_TIMING.moveShape.dash}ms`,
     "--combat-float-ms": `${ANIMATION_TIMING.combatFloat}ms`,
   } as CSSProperties;
   // Roads render as a rotated path tile; orientation comes from neighbouring
@@ -223,6 +228,36 @@ export default function Board({
           gridTemplateRows: `repeat(${GRID_ROWS}, 1fr)`,
         }}
       >
+        {fx && (() => {
+          const toPoint = (tile: string) => {
+            const [x, y] = tile.split(",").map(Number);
+            return { x: x + 0.5, y: y + 0.5 };
+          };
+          const points = fx.path.map(toPoint);
+          const d = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ");
+          const from = toPoint(fx.from);
+          const to = toPoint(fx.to);
+          const pathId = `move-path-${fx.seq}`;
+          return (
+            <svg className={`move-vector shape-${fx.shape} element-${fx.kind}`} viewBox={`0 0 ${GRID_COLS} ${GRID_ROWS}`} preserveAspectRatio="none" aria-hidden>
+              <defs><path id={pathId} d={d} /></defs>
+              {fx.shape === "area" ? (
+                <circle className="move-area-ring" cx={to.x} cy={to.y} r="0.43" />
+              ) : (
+                <>
+                  <path className="move-vector-trail" d={d} pathLength="1" />
+                  {(fx.shape === "projectile" || fx.shape === "line") && (
+                    <circle className="move-vector-point" r="0.075" cx={from.x} cy={from.y}>
+                      <animateMotion dur={`${ANIMATION_TIMING.moveShape[fx.shape]}ms`} fill="freeze">
+                        <mpath href={`#${pathId}`} />
+                      </animateMotion>
+                    </circle>
+                  )}
+                </>
+              )}
+            </svg>
+          );
+        })()}
         {fx &&
           fx.tiles.map((k) => {
             const [tx, ty] = k.split(",").map(Number);

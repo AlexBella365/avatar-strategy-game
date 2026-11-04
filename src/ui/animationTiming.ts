@@ -12,12 +12,23 @@ export const ANIMATION_TIMING = {
     earth: 550,
     slash: 350,
   },
+  /** Vector cue timings by reusable move shape. */
+  moveShape: {
+    projectile: 420,
+    line: 480,
+    area: 520,
+    "push-pull": 400,
+    dash: 360,
+  },
   /** How long a floating "-x" / "+y" number stays on screen. */
   combatFloat: 1600,
 } as const;
 
 /** Longest attack effect, used to keep the overlay mounted long enough. */
-export const ATTACK_FX_MAX_MS = Math.max(...Object.values(ANIMATION_TIMING.attackFx));
+export const ATTACK_FX_MAX_MS = Math.max(
+  ...Object.values(ANIMATION_TIMING.attackFx),
+  ...Object.values(ANIMATION_TIMING.moveShape),
+);
 
 /** Dismiss the attack overlay a beat after its animation ends. */
 export const ATTACK_FX_DISMISS_MS = ATTACK_FX_MAX_MS + 120;
