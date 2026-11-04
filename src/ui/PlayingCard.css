@@ -110,21 +110,25 @@
 .pc-type-ribbon.kind-gear {
   background: #89671b;
 }
-.pc-costs {
+.pc-meta-row {
   display: flex;
   align-items: center;
   justify-content: center;
   align-self: stretch;
-  gap: 12px;
-  padding: 1px 3px;
-  border-radius: 5px;
+  gap: 3px;
+  white-space: nowrap;
+}
+.pc-costs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   color: var(--text-strong);
-  background: rgba(255, 255, 255, 0.62);
   font-weight: bold;
   line-height: 1.05;
 }
 .pc-cost {
-  font-size: 0.72rem;
+  font-size: 0.54rem;
 }
 .pc-name {
   font-weight: bold;
@@ -143,23 +147,22 @@
   padding: 3px 0;
 }
 .pc-combat {
-  align-self: stretch;
-  border-radius: 4px;
-  padding: 2px 4px;
+  flex: 0 1 auto;
+  padding: 0;
   color: #612c28;
-  background: rgba(160, 60, 45, 0.12);
-  font-size: 0.52rem;
+  background: transparent;
+  font-size: 0.45rem;
   font-weight: 800;
-  letter-spacing: 0.35px;
+  letter-spacing: 0.2px;
   line-height: 1.1;
   text-align: center;
   text-transform: uppercase;
 }
-.pc-combat-melee { color: #782b29; background: rgba(176, 55, 47, 0.16); }
-.pc-combat-ranged, .pc-combat-line { color: #285876; background: rgba(49, 113, 151, 0.14); }
-.pc-combat-area { color: #6b437e; background: rgba(107, 67, 126, 0.14); }
-.pc-combat-self { color: #50652c; background: rgba(80, 101, 44, 0.14); }
-.pc-combat-tile { color: #6b5a2d; background: rgba(107, 90, 45, 0.14); }
+.pc-combat-melee { color: #782b29; }
+.pc-combat-ranged, .pc-combat-line { color: #285876; }
+.pc-combat-area { color: #6b437e; }
+.pc-combat-self { color: #50652c; }
+.pc-combat-tile { color: #6b5a2d; }
 /* Full, verbatim ability text — never truncated. Sits under the art and takes
    the remaining height so the kind label stays pinned to the bottom. */
 .pc-rules {

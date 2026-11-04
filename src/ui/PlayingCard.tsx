@@ -123,18 +123,20 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
       onClick={onAssign}
       title={title}
     >
-      <div className="pc-costs" aria-label={`Energy cost ${def.energyCost}; chi cost ${chi}`}>
-        <span className="pc-cost">⚡ {def.energyCost}</span>
-        <span className="pc-cost">🌀 {chi}</span>
+      <div className="pc-meta-row">
+        <div className="pc-costs" aria-label={`Energy cost ${def.energyCost}; chi cost ${chi}`}>
+          <span className="pc-cost">⚡ {def.energyCost}</span>
+          <span className="pc-cost">🌀 {chi}</span>
+        </div>
+        <div className={`pc-combat pc-combat-${combat.className}`} title={combat.label}>
+          <span aria-hidden="true">{combat.mark}</span> {combat.label}
+        </div>
       </div>
       <div className={`pc-type-ribbon kind-${kind}`} aria-label={`${kind} card`}>
         <span aria-hidden="true">{KIND_ICON[kind] ?? "✦"}</span> {kind}
       </div>
       <div className="pc-name">{def.name}</div>
       <div className="pc-art">{def.art ?? suit}</div>
-      <div className={`pc-combat pc-combat-${combat.className}`} title={combat.label}>
-        <span aria-hidden="true">{combat.mark}</span> {combat.label}
-      </div>
       <div className="pc-rules">{def.rulesText}</div>
       <div className={`pc-affinity pc-affinity-${affinity.className}`} title={affinity.label} aria-label={affinity.label}>
         {affinity.portrait ? (
