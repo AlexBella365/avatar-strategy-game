@@ -7,6 +7,7 @@ import { getCardDefinition } from "../content/cards";
 import { CHARACTERS } from "../content/characters";
 import { ECONOMY_TUNING } from "../content/economy";
 import { createInitialState } from "../state";
+import { TEST_TUNING } from "../testutils";
 import type { ActionResult, GameState, Position, TargetSelection } from "../types";
 
 function demoMatch(): GameState {
@@ -24,7 +25,7 @@ function demoMatch(): GameState {
       },
     ],
     7,
-    { northPlayerId: "p1" },
+    { northPlayerId: "p1", tuning: TEST_TUNING },
   );
   drawCards(state, "p1", ECONOMY_TUNING.drawPerRound);
   drawCards(state, "p2", ECONOMY_TUNING.drawPerRound);

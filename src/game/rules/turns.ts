@@ -1,8 +1,9 @@
 // Authoritative victory checker + round loop. Spec §3, §8, §12A.5–§12A.6 + v0.3.
 import type { GameState } from "../types";
-import { ENERGY_PER_ROUND, MAX_ROUNDS, nextRandom } from "../state";
+import { MAX_ROUNDS, nextRandom } from "../state";
 import { CARD_ECONOMY } from "../content/economy";
 import { ECONOMY_TUNING } from "../content/economy";
+import { tuningOf } from "../content/balance";
 import { tickStatusesEndOfRound } from "./statuses";
 import { tickRegeneration } from "./healing";
 import { tickTerrainEndOfRound } from "./terrain";
@@ -238,8 +239,9 @@ export function endRound(state: GameState): string[] {
   // Next round: refresh, reset, alternate initiative.
   state.round += 1;
   state.roundEventLog = []; // per-round synergy/resonance tracking resets
+  const energyPerRound = tuningOf(state).energyPerRound;
   for (const player of state.players) {
-    player.energy = ENERGY_PER_ROUND;
+    player.energy = energyPerRound;
     events.push(...drawCards(state, player.id, ECONOMY_TUNING.drawPerRound));
   }
   for (const c of state.characters) {

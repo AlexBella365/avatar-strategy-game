@@ -46,7 +46,7 @@ export interface TraceAlternative {
 /** A single NPC decision, retained for the debug overlay and balance logs. */
 export interface DecisionTrace {
   characterId: string;
-  phase: "avatar" | "move" | "play" | "assign" | "pass" | "scrap";
+  phase: "avatar" | "move" | "play" | "assign" | "pass" | "scrap" | "basic";
   chosen: string;
   score: number;
   components: Record<string, number>;

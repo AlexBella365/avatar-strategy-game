@@ -6,7 +6,8 @@
 //   1. Avatar State activation (scored payoff vs. KO risk)
 //   2. Move, if movement remains (scored vs. staying put)
 //   3. Play or scrap the assigned card (scored over all legal targets)
-//   4. Assign the best-fitting hand card, else pass
+//   4. Assign the best playable hand card, else
+//   5. Basic attack (adjacent enemy) or basic defense (cardless fallback)
 //
 // The policy only *proposes* actions; applyGameAction remains the authority and
 // every emitted action is re-checked before it leaves (see `commit`).
@@ -18,7 +19,7 @@ import { CHARACTERS } from "../content/characters";
 import { restrictionSatisfied } from "../content/economy";
 import { applyGameAction } from "../rules/cards";
 import { activationOwner } from "../rules/turns";
-import { key, reachableTiles } from "../rules/grid";
+import { key, manhattan, reachableTiles } from "../rules/grid";
 import { movementAllowance } from "../rules/movement";
 import { hasStatus } from "../rules/statuses";
 import { getLegalTargets } from "../rules/targeting";
@@ -53,8 +54,17 @@ import type {
 
 /** Candidates within this fraction of the best are near-ties (variety). */
 const DEFAULT_TIE_BAND = 0.06;
-/** Play below this score is scrapped (banked for chi) instead. */
-const SCRAP_THRESHOLD = 0.15;
+/**
+ * Play below this score is scrapped (banked for chi) instead.
+ *
+ * Must stay near zero: an assigned card that is not played is auto-scrapped
+ * at round end anyway, so a legal, affordable play with any positive value is
+ * at least as good as banking it. The old 0.15 threshold was above the whole
+ * score of a 2-damage attack for `cautious`/`support` archetypes
+ * (≈0.09–0.13), so Aang and Katara scrapped every attack card they drew and
+ * the hero team barely dealt damage.
+ */
+const SCRAP_THRESHOLD = 0.01;
 /** Avatar State activates at or above this score. */
 const AVATAR_THRESHOLD = 0.5;
 /** A move must beat "stay" by this margin to be worth the movement point. */
@@ -153,12 +163,8 @@ function commit(
 // Step choosers.
 // ---------------------------------------------------------------------------
 
-/** Distance the actor wants from its nearest enemy, from its assigned card. */
-function desiredRangeFor(state: GameState, c: CharacterState): number {
-  const player = state.players.find((p) => p.id === c.ownerId);
-  const assigned = player?.assignments[c.id];
-  const card = assigned ? getCardDefinition(assigned.definitionId) : undefined;
-  if (!card) return 3;
+/** Distance the actor wants from its nearest enemy, from a card's targeting. */
+function desiredRangeForCard(card: CardDefinition): number {
   const t = card.targeting;
   switch (t.kind) {
     case "character":
@@ -174,6 +180,43 @@ function desiredRangeFor(state: GameState, c: CharacterState): number {
   }
 }
 
+/**
+ * Desired engagement distance from this unit's best usable damage card.
+ * `null` means it has no attack option at all → close to melee and use the
+ * cardless basic attack instead of idling at range.
+ */
+function attackRangeFor(
+  state: GameState,
+  player: { assignments: Record<string, CardInstance | null> },
+  c: CharacterState,
+  def: CharacterDefinition,
+  w: Weights,
+): number | null {
+  const candidates: { value: number; range: number }[] = [];
+  const consider = (card: CardDefinition | undefined) => {
+    if (!card || !card.effects.some((e) => e.type === "damage")) return;
+    candidates.push({
+      value: scoreCardPotential(state, c.id, card, w),
+      range: desiredRangeForCard(card),
+    });
+  };
+  const assignedCard = player.assignments[c.id]
+    ? getCardDefinition(player.assignments[c.id]!.definitionId)
+    : undefined;
+  if (assignedCard && canAfford(state, c.ownerId, c.id, assignedCard)) consider(assignedCard);
+  const hand = state.players.find((p) => p.id === c.ownerId)?.teamHand ?? [];
+  for (const instance of hand) {
+    const card = getCardDefinition(instance.definitionId);
+    if (!card || !canAfford(state, c.ownerId, c.id, card)) continue;
+    const fits = (card.economy?.restrictions ?? []).every((r) =>
+      restrictionSatisfied({ definitionId: def.id, element: def.element, role: def.role }, r),
+    );
+    if (fits) consider(card);
+  }
+  if (candidates.length === 0) return null;
+  return candidates.reduce((a, b) => (b.value > a.value ? b : a)).range;
+}
+
 function chooseMove(
   state: GameState,
   c: CharacterState,
@@ -181,6 +224,7 @@ function chooseMove(
   random: () => number,
   tieBand: number,
   top: number,
+  desiredRange: number,
 ): { chosen: Scored<Position>; ranked: Scored<Position>[] } | null {
   const allowance = movementAllowance(state, c.id) - c.movementSpent;
   if (allowance <= 0 || hasStatus(c, "Bound")) return null;
@@ -196,9 +240,8 @@ function chooseMove(
     difficult: difficultTiles(state),
   });
 
-  const desired = desiredRangeFor(state, c);
   const scoredPosition = (pos: Position, label: string): Scored<Position> => {
-    const { score, components } = scorePosition(state, c.id, pos, w, desired);
+    const { score, components } = scorePosition(state, c.id, pos, w, desiredRange);
     return { value: pos, score, components, label };
   };
   const stay = scoredPosition(c.position, "stay put");
@@ -249,9 +292,19 @@ function choosePlay(
   return select(candidates, random, tieBand, top);
 }
 
-function fittingCards(
+/**
+ * Cards this character could actually use *this activation*: restriction-fit,
+ * affordable, and with a legal target from the current tile.
+ *
+ * Assignment is free and can happen any time, but a card that cannot be
+ * played before the round ends is auto-scrapped anyway. Assigning only
+ * playable cards stops the old assign→scrap→assign churn that burned most of
+ * each side's hand for chi instead of dealing damage.
+ */
+function playableCards(
   state: GameState,
   playerId: string,
+  c: CharacterState,
   def: CharacterDefinition,
 ): CardInstance[] {
   const player = state.players.find((p) => p.id === playerId);
@@ -259,12 +312,14 @@ function fittingCards(
   return player.teamHand.filter((instance) => {
     const card = getCardDefinition(instance.definitionId);
     if (!card) return false;
-    return (card.economy?.restrictions ?? []).every((r) =>
+    const fits = (card.economy?.restrictions ?? []).every((r) =>
       restrictionSatisfied(
         { definitionId: def.id, element: def.element, role: def.role },
         r,
       ),
     );
+    if (!fits || !canAfford(state, playerId, c.id, card)) return false;
+    return getLegalTargets(state, c.id, card).some((o) => o.isLegal);
   });
 }
 
@@ -325,8 +380,11 @@ export function chooseAiAction(
     return commit(state, playerId, c.id, action, toTrace("pass", c.id, chosen, [chosen]));
   }
 
-  // 2. Movement comes before the technique (marching is free).
-  const move = chooseMove(state, c, w, random, tieBand, top);
+  // 2. Movement comes before the technique (marching is free). Approach the
+  // best usable damage card's range; with no attack option, close to melee so
+  // the cardless basic attack (step 5) is actually reachable.
+  const desiredRange = (def && attackRangeFor(state, player, c, def, w)) ?? 1;
+  const move = chooseMove(state, c, w, random, tieBand, top, desiredRange);
   if (move) {
     const action: GameAction = {
       type: "MOVE",
@@ -387,9 +445,9 @@ export function chooseAiAction(
     return commit(state, playerId, c.id, action, toTrace("scrap", c.id, chosen, [chosen]));
   }
 
-  // 4. Assign the highest-potential fitting card, else pass.
+  // 4. Assign the highest-potential playable card, else pass.
   if (def) {
-    const fitting = fittingCards(state, playerId, def);
+    const fitting = playableCards(state, playerId, c, def);
     if (fitting.length > 0) {
       const candidates: Scored<{ instanceId: string; card: CardDefinition }>[] =
         fitting.map((instance) => {
@@ -419,14 +477,45 @@ export function chooseAiAction(
     }
   }
 
-  const chosen: Scored<null> = {
+  // 5. Cardless fallback (rules §8 Phase 3): never waste an activation.
+  // A basic action is free and shares the activation's one action slot, so it
+  // is only reached when no card can be played. Prefer a finishing strike on
+  // an adjacent enemy; otherwise brace.
+  const adjacent = state.characters
+    .filter(
+      (e) =>
+        e.ownerId !== playerId &&
+        e.health > 0 &&
+        manhattan(e.position, c.position) === 1,
+    )
+    .sort((a, b) => a.health - b.health)[0];
+  if (adjacent) {
+    const chosen: Scored<null> = {
+      value: null,
+      score: 1,
+      components: {},
+      label: `basic attack ${adjacent.definitionId} (${adjacent.health} HP)`,
+    };
+    const action: GameAction = {
+      type: "BASIC_ATTACK",
+      playerId,
+      characterId: c.id,
+      targetCharacterId: adjacent.id,
+    };
+    return commit(state, playerId, c.id, action, toTrace("basic", c.id, chosen, [chosen]));
+  }
+  const brace: Scored<null> = {
     value: null,
-    score: 0,
+    score: 0.5,
     components: {},
-    label: "pass (no fitting card)",
+    label: "basic defend",
   };
-  const action = passAction(playerId, c.id);
-  return commit(state, playerId, c.id, action, toTrace("pass", c.id, chosen, [chosen]));
+  const action: GameAction = {
+    type: "BASIC_DEFENSE",
+    playerId,
+    characterId: c.id,
+  };
+  return commit(state, playerId, c.id, action, toTrace("basic", c.id, brace, [brace]));
 }
 
 // Re-export for callers that want the play value shape (tests, overlay).

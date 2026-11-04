@@ -1,8 +1,8 @@
 // Voluntary + forced grid movement. Spec §4.4, §4.7, §4A.
 // Movement allowance: 1 tile/activation (+ equipped Gear bonuses).
 import { CARD_DEFINITIONS } from "../content/cards";
+import { tuningOf } from "../content/balance";
 import {
-  BASE_MOVEMENT,
   DIRECTION_VECTORS,
   inBounds,
   isOrthogonalAdjacent,
@@ -18,10 +18,10 @@ function tileCost(difficult: Set<string>, pos: Position): number {
   return difficult.has(key(pos)) ? 2 : 1;
 }
 
-/** Movement allowance: base 1 + equipped Gear bonuses. */
+/** Movement allowance: match base (default 1) + equipped Gear bonuses. */
 export function movementAllowance(state: GameState, characterId: string): number {
   const c = getCharacterOrThrow(state, characterId);
-  let allowance = BASE_MOVEMENT;
+  let allowance = tuningOf(state).movement;
   for (const gear of c.equippedGear) {
     allowance += CARD_DEFINITIONS[gear.definitionId]?.gearBonus?.movement ?? 0;
   }

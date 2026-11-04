@@ -29,7 +29,7 @@ export const PERSONALITIES: Record<PersonalityId, Partial<Weights>> = {
     cover: 0.3,
     survival: 0.5,
   },
-  cautious: { damage: 0.7, focusFire: 0.9, positioning: 0.6, safety: 1.3, cover: 1.0, survival: 1.3, economy: 0.9 },
+  cautious: { damage: 0.9, focusFire: 1.0, positioning: 0.6, safety: 1.2, cover: 1.0, survival: 1.2, economy: 0.9 },
   sniper: { damage: 1.1, focusFire: 1.2, positioning: 0.6, safety: 1.0, cover: 1.1, survival: 0.9 },
   berserker: {
     damage: 1.7,
@@ -41,7 +41,7 @@ export const PERSONALITIES: Record<PersonalityId, Partial<Weights>> = {
     survival: 0.15,
     support: 0.2,
   },
-  support: { damage: 0.6, focusFire: 0.8, support: 1.4, safety: 1.0, cover: 0.8, positioning: 0.6 },
+  support: { damage: 0.9, focusFire: 1.0, support: 1.3, safety: 1.0, cover: 0.8, positioning: 0.6 },
 };
 
 /** Explicit archetypes for the MVP roster; element is the fallback. */

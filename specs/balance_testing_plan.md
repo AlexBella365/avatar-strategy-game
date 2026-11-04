@@ -77,7 +77,7 @@ make sweep-baseline        # regenerate the committed specs/balance_sweep_baseli
 SWEEP_N=100 npx vitest run src/game/ai/balanceSweep.test.ts
 ```
 
-It reports §2.1 core metrics (Wilson CIs, KO/cap/draw rates, HP-share margin, healing) for the shipped roster, hero-mirror, and villain-mirror matchups, plus a lethality tuning grid (`hpScale` × `rounds`). It is T1-equivalent (greedy utility, full `GameState` — see §4.3). Results: **§10**.
+It reports §2.1 core metrics (Wilson CIs, KO/cap/draw rates, HP-share margin, healing) for the shipped roster, hero-mirror, and villain-mirror matchups, plus a lethality tuning grid (`movement` × `hpScale` × `deploymentInset` × `damageScale`; energy is held at 4). Tuning is per-match data (`src/game/content/balance.ts`), so the harness overrides it without touching engine logic. It is T1-equivalent (greedy utility, full `GameState` — see §4.3). Results: **§10**.
 
 **Pre-req fix — implemented.** Turn order is now enforced by the engine itself: `activationOwner(state)` in `turns.ts` derives who holds the activation (alternating, initiative first, rules §3), and `applyGameAction` rejects activation-scoped actions out of turn with `NOT_YOUR_TURN` (assignment/scrapping stay free, since they are secret preparation). The harness asks the engine who acts instead of alternating p1/p2 itself, so matchup tables here are decision-grade for turn order. The remaining harness simplification is deployment/secrecy only: both sides' assignments are visible to the policy, which the real game keeps hidden.
 
@@ -152,57 +152,62 @@ A version may **not** be called balanced if any of these hold:
 
 ---
 
-## 10. Baseline run — results and next steps (v0.3: 10 rounds + heal-over-time + spike heals)
+## 10. Lethality pass — results and next steps (v0.3 engine + shipped tuning)
 
-First harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. **Raw report committed at `specs/balance_sweep_baseline.txt`** (regenerate with the command in that file). Turn-order caveat (§4.1) applies.
+Second harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. The shipped match now runs on the defaults in `src/game/content/balance.ts`; **raw baseline cells are committed at `specs/balance_sweep_baseline.txt`** (regenerate with `make sweep-baseline`; the unfiltered harness also emits the tuning grid). Turn order is engine-enforced (§4.1); the remaining harness caveat is deployment/secrecy.
 
 ### 10.1 Measured
 
 | Matchup | result | cap-reach | KO finish | draws | HP-share margin |
 |---|---|---|---|---|---|
-| Shipped — heroes (p1, north) vs villains (p2) | **villains 100%** (0–100) | 100% | 0% | 0% | 0.191 |
-| Mirror heroes (seat alternated) | 36 / 46 | 100% | 0% | **18%** | 0.028 |
-| Mirror villains (seat alternated) | 54 / 45 | 100% | 0% | 1% | 0.093 |
+| Shipped — heroes (p1, north) vs villains (p2) | **villains 75%** (25–75) | 50% | **41%** | 0% | 0.290 |
+| Mirror heroes (seat alternated) | p1 39 / p2 57 | 90% | 5% | 4% | 0.234 |
+| Mirror villains (seat alternated) | p1 38 / p2 61 | 25% | **75%** | 1% | 0.327 |
 
-Neither game reaches **any** KO finish: first KO lands ≈ round 7, and the average match is decided by a *fractional health-share tiebreak* (0.028 margin in a same-roster mirror — a coin flip).
+First KO lands at **round 3.8** on average in the shipped matchup (min 2), versus ≈7 before the pass. Round-1 KOs: 0% shipped, 0% hero mirror, 1% villain mirror. The 9% "unresolved" shipped rows are Avatar-State instant losses (`fell while in Avatar State`), not missing results.
 
-### 10.2 Violations against §2.1
+### 10.2 Gate verdict against §2.1
 
-- **Games reaching round 10: 100% → FAIL** (>95%). The 8→10 round bump and the heal-over-time rework did **not** fix pacing.
-- **Matchup: heroes vs villains 0% / 100% → FAIL** (beyond ±20pp). Cross-roster, not seat: both mirrors are near 50/50.
-- **Draw rate: 18% (hero mirror) → FLAG** (>20% fails; 18% is on the edge).
-- Round-1 KO 0% → OK. First-activation 38–52%, CIs straddle 50% → OK (no seat problem).
-- Not yet measured: avg team Energy spent/round, Avatar State activation rate, staple rates, bank:play.
+- **Lethality — PASS on the declared rule:** cap-reach 50% (≤70%), KO finish 41% (≥40%), draws 0% (<10%). This is the first cell that clears all three, and it is tight: KO and cap are within about one Wilson step of their thresholds, so this is *not* yet a durable "balanced" claim.
+- **Time — healthy in the shipped matchup:** 50% of games reach round 10 (band 30–70%). **Hero mirror is still grindy: 90% cap-reach → FLAG** (>85%); villain mirror is 25% (bursty but not <10%).
+- **Matchup — FAIL:** heroes 25% / villains 75%, beyond the ±20pp bar. This is roster parity, not seat: both mirrors sit near 50% north/first-mover (47% and 54%, CIs include 50%) and near 50/50 by player.
+- **Round-1 KO:** 0–1% → OK (fail is >7%).
+- **Draws:** 0% shipped, 4% hero mirror, 1% villain mirror → OK (fail is >30%). The old 18% hero-mirror draw problem is gone.
+- Not yet measured: avg team Energy spent/round, Avatar State *activation* rate, staple rates, bank:play, per-character win rates.
 
-### 10.3 Lethality tuning grid (mirror heroes, n=100/cell)
+### 10.3 What moved (tuning data)
 
-No cell clears the gates, even at the harshest setting:
+All knobs are per-match data (`MatchTuning` in `src/game/types.ts`, defaults in `src/game/content/balance.ts`), so the harness can re-run any cell without engine edits.
 
-| hpScale \ rounds | 10 | 12 | 14 |
+| Knob | Old | Shipped | Why |
 |---|---|---|---|
-| ×0.6 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
-| ×0.7 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
-| ×0.8 | cap 100% · KO 0% | cap 100% · KO 0% | cap 100% · KO 0% |
+| `movement` | 1 | **2** | Contact happened in round 3–4; two tiles makes it round 1–2. |
+| `hpScale` | 1 | **0.65** | 16–20 HP pool → 10–13, so focused fire can finish inside 10 rounds. |
+| `deploymentInset` | 0 | **1** | Start on rows 1/5 instead of 0/6: one row closer without changing the board. |
+| `damageScale` | 1 | **1.5** | Applied in `dealDamage` after the rulebook formula, so cards, basics, and hazards scale together. |
+| `energyPerRound` | 4 | **4** | Exploring 6 changed plays/round but not the KO rate enough to justify a second economy variable. |
+| `healingScale` | 1 | **1** | Heals are now actually chosen by the improved policy, so the model is exercised without a multiplier. |
 
-`hpScale` here is a proxy for "more lethal" (lower HP ≈ more damage); even ×0.6 + 14 rounds keeps cap-reach ≥99%. The shipped mismatch widens instead of resolving (margin 0.35→0.69). **A damage/HP ratio change alone is not sufficient** — engagement speed (mobility / board size / starting distance) has to move too.
+Before the pass: 100% cap-reach, 0% KO finishes, first KO ≈ round 7, hero-mirror draws 18%. `hpScale` alone (the first baseline's grid) never cleared the gates — **engagement speed had to move with the damage/HP ratio.** The first cell that passed was `movement 2 · hp ×0.65 · inset 1 · damage ×1.5`; that cell is now the shipped default.
 
 ### 10.4 Key dynamics
 
-1. **Lethality is the whole story.** Time-to-first-KO (~7 rounds) exceeds the useful match length, so KO finishes ≈ 0% and every result is a tiebreak on a razor-thin share. Until this changes, matchup/pair tables measure noise.
-2. **The engine change flipped roster dominance.** Before `db956bf` (one-card-per-activation + cardless basic-action floor) heroes beat villains; now villains win **100%** (n=100). The free adjacent basic strike + the one-card cap likely favour the high-aggression villains (Zuko/Azula aggression 5) and starve hero sustain. This interaction needs an explicit audit.
-3. **Healing is nearly inert in AI play.** Per match: ~3–5 HP instant + ~2–3 HP regeneration; spike heals (Miraculous Balm / Healing Waters / Second Wind) are played ~0.1×/match. The heal/regeneration retune cannot move outcomes the policy never chooses.
-4. **Fair mirrors decide on 0.02–0.03 share margins** — team HP pools, not play, settle them.
+1. **Lethality now depends on the matchup.** The shipped cross-roster game finishes 41% by KO, but same-roster hero mirrors are still 90% cap-reach with 5% KOs. Global pacing is no longer the blocker; the *shape* of each kit is.
+2. **The matchup is still polarized.** Villains win 75% of shipped games. `rising-flame` 3→2 improved the pre-tuning baseline from ~21% to ~44%, but after the pass the shipped matchup sits at 25% — card/roster parity, not another global damage multiplier (which would push KO/cap outside their bands).
+3. **Mirror asymmetry points at kit shape.** Villains finish 75% of their mirrors by KO; heroes finish 5% and grind to a tiebreak. Hero sustain/control likely needs a damage floor or cheaper tempo, while villain burst may need a cost/range gate.
+4. **Seat is fine.** North/first-mover is 47% and 54% in the mirrors; both CIs include 50%.
+5. **Avatar-State instant loss is a live outcome** (~9% of shipped games, 5% of hero mirrors). It is working as designed; treat it as a separate risk axis when reading win rates.
 
 ### 10.5 Next steps (prioritized)
 
-1. **Lethality pass — blocks everything else.** Target time-to-first-KO ≈ 4–5 rounds and KO-finish ≥ 40% (then cap-reach falls under 70%). Combine levers: raise effective damage and/or cut HP (~×0.5–0.6), **and** speed engagement (movement 1→2 tiles/activation, shorter board, or closer deployment). Re-run the §4 harness; look for a PASS cell.
-2. **Audit the cardless basic-action floor** (`basics.ts` + one-card-per-activation) against high-aggression characters — it appears to have created the 100% villain sweep. Rebalance or re-gate it.
-3. **Re-baseline, then run E1 pair tables at n ≥ 200.** Current results are tiebreak coin flips and must not be treated as matchup data.
-4. **Move turn-order enforcement into the engine** (§4.1) before trusting matchup numbers — today the harness lets both sides act freely.
-5. **Decide how heals should be exercised.** Either raise heal value / policy weight so the AI plays them, or accept the policy won't and validate the healing model via targeted scenario tests + human play.
-6. **Harness follow-ons:** emit the §4.4 JSONL per-game log; add T2 archetype bots (§4.2) once lethality is fixed.
+1. **Roster/card parity — the next block.** Bring shipped heroes-vs-villains inside ±20pp at n≥200 without breaking the lethality bands. Start with the §3.1 counterplay and §3.2 efficiency audits under the tuned numbers (a printed 2-damage card now deals 3).
+2. **Re-baseline at n≥200.** Regenerate the full report (`make sweep-baseline`) and add per-character/type win rates to the harness; 25/75 is decision-grade for direction but not yet for pair tables.
+3. **Watch the tight gate.** KO 41% / cap 50% is within one Wilson step of both thresholds; a small roster change can flip it. Keep the PASS rule fixed and compare paired seeds.
+4. **Heals are now exercised** (1.1 spike-heal plays/match shipped; 2.7 in hero mirrors). Keep `healingScale` at 1 until matchup work shows a specific need.
+5. **Basic-action floor audit stays open:** the villains' 75% mirror KO rate and 1% round-1 KOs warrant checking whether the free strike is still undercosted for aggression-5 kits.
+6. **Harness follow-ons:** emit the §4.4 JSONL per-game log; add T2 archetype bots (§4.2) now that pacing is usable.
 
-### 10.6 Immediate follow-ups (not balance)
+### 10.6 Follow-ups (not balance)
 
-- Track A M2 remainder: the debug overlay (`chooseAutoActionTraced` + `ai/traceLog.ts` already exist; hook near `src/App.tsx` auto loop).
-- Optional `VITE_AI_POLICY=random` A/B baseline flag (npc_ai_plan §4).
+- Track A M2 remainder: debug overlay (`chooseAutoActionTraced` + `ai/traceLog.ts` already exist; hook near `src/App.tsx` auto loop), tracked in `npc_ai_plan.md` §A.7.
+- Optional `VITE_AI_POLICY=random` A/B baseline flag (npc_ai_plan.md §4); useful for policy comparisons, but not a prerequisite for resolving the current pacing failure.

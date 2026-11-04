@@ -59,10 +59,10 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
     targeting: { kind: "character", allegiance: "enemies", range: 3 },
     tags: ["Ranged", "FollowUp"],
     effects: [
-      { type: "damage", amount: 3, scalesWithAggression: true, bonusIfTargetDisplaced: 1 },
+      { type: "damage", amount: 2, scalesWithAggression: true, bonusIfTargetDisplaced: 1 },
     ],
     economy: withEconomy("rising-flame", "attack"),
-    rulesText: "Ranged 3. 3 damage (+1 if the target was displaced this round).",
+    rulesText: "Ranged 3. 2 damage (+1 if the target was displaced this round).",
   },
   "water-whip": {
     id: "water-whip",

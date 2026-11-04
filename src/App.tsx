@@ -36,18 +36,20 @@ import type { Restriction } from "./game/types";
 import { key, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
-/** Edge-row default slots (spec §4.2): north deploys row 0, south row 6.
- *  Lateral position is free per player; the interactive secret-pick UI is
- *  future work — defaults keep the demo playable on the assigned side. */
+/** Default slots for the shipped deployment inset (spec §4.2 + balance pass):
+ *  north deploys row 1, south row 5 (one row in from each edge). Lateral
+ *  position is free per player; the interactive secret-pick UI is future work —
+ *  defaults keep the demo playable on the assigned side. Keep these in sync
+ *  with `DEFAULT_MATCH_TUNING.deploymentInset` in game/content/balance.ts. */
 const NORTH_SLOTS: Position[] = [
-  { x: 1, y: 0 },
-  { x: 3, y: 0 },
-  { x: 5, y: 0 },
+  { x: 1, y: 1 },
+  { x: 3, y: 1 },
+  { x: 5, y: 1 },
 ];
 const SOUTH_SLOTS: Position[] = [
-  { x: 1, y: 6 },
-  { x: 3, y: 6 },
-  { x: 5, y: 6 },
+  { x: 1, y: 5 },
+  { x: 3, y: 5 },
+  { x: 5, y: 5 },
 ];
 
 /** Draftable fighters (companions like Appa/Momo enter through team rules). */

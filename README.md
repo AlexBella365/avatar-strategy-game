@@ -126,6 +126,8 @@ stay in sync.
 10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers, drawn in a board overlay so they aren't clipped by tiles)
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
 12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
-13. ⬜ End-to-end polish (passives, roster waves)
-14. ⬜ Balance pass — lethality first (no KO finishes; every match hits the round cap). See `specs/balance_testing_plan.md` §10 for the baseline and the prioritized next steps; re-run `make sweep-baseline` after each change.
-15. 🧪 Optional LLM advisor (Track B, Mode 1) — **off by default** (`VITE_AI_LLM=1` to enable). Zero-dep `fetch` client in `src/game/ai/llm/`, local Ollama by default; advisory only and never blocks the loop. Design in `specs/npc_ai_plan.md` §3, verified-model and implementation findings in §7.
+13. ⬜ NPC AI debug overlay — finish Track A M2 by surfacing the existing decision traces in the UI; see `specs/npc_ai_plan.md` §A.6–A.7.
+14. ⬜ End-to-end polish (passives, roster waves)
+15. ✅ Lethality pass — shipped tuning is now data (`src/game/content/balance.ts`): movement 2, HP ×0.65, deployment rows 1/5, damage ×1.5. At n=100 the shipped matchup finishes 41% by KO, reaches the cap 50%, and draws 0% — the §2.1 lethality gate passes (tightly). See `specs/balance_testing_plan.md` §10.
+16. ⬜ Roster/card parity — the remaining balance blocker: villains win 75% of shipped games (heroes 25%), beyond the ±20pp matchup gate. Start with the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 and re-baseline at n≥200.
+17. 🧪 Experimental LLM advisor (Track B, Mode 1) — off by default (`VITE_AI_LLM=1` to enable); evaluation against Track A is pending. Mode 2 (LLM top-k choice) remains deferred; see `specs/npc_ai_plan.md` §3–5.

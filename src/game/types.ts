@@ -295,9 +295,27 @@ export interface PlayerState {
 /** Deployment side: north = row 0, south = row 6 (spec §4.2). */
 export type Side = "north" | "south";
 
+/**
+ * Per-match balance knobs. Optional: omitted fields fall back to
+ * `DEFAULT_MATCH_TUNING` (content/balance.ts), so normal play/tests use the
+ * shipped values and the self-play harness can grid-search alternatives.
+ */
+export interface MatchTuning {
+  movement: number;
+  hpScale: number;
+  deploymentInset: number;
+  energyPerRound: number;
+  /** Multiplier on card healing (instant and heal-over-time). */
+  healingScale: number;
+  /** Multiplier on incoming damage after the engine's damage formula. */
+  damageScale: number;
+}
+
 export interface GameState {
   round: number; // 1..8
   maxRounds: number;
+  /** Balance overrides for this match (harness experiments); undefined = defaults. */
+  tuning?: MatchTuning;
   initiativePlayerId: string;
   /** Which player deploys north (row 0); the other deploys south. Seeded roll at setup. */
   northPlayerId: string;

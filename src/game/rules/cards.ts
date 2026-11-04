@@ -22,6 +22,7 @@
 import { CHARACTERS } from "../content/characters";
 import { getCardDefinition } from "../content/cards";
 import { CARD_ECONOMY, ECONOMY_TUNING, restrictionSatisfied } from "../content/economy";
+import { tuningOf } from "../content/balance";
 import { getTerrainDefinition } from "../content/terrain";
 import { cloneState, nextId, occupantAt } from "../state";
 import {
@@ -616,7 +617,8 @@ function resolvePlayCard(
         }
         case "heal": {
           const before = target.health;
-          target.health = Math.min(target.maxHealth, target.health + effect.amount);
+          const amount = Math.round(effect.amount * tuningOf(state).healingScale);
+          target.health = Math.min(target.maxHealth, target.health + amount);
           events.push(`${target.definitionId} recovers ${target.health - before}.`);
           if (
             card.cardType === "defense" &&
@@ -631,13 +633,14 @@ function resolvePlayCard(
           break;
         }
         case "healOverTime": {
+          const amount = Math.round(effect.amount * tuningOf(state).healingScale);
           target.regeneration.push({
             id: nextId("regen"),
-            amount: effect.amount,
+            amount,
             remainingRounds: effect.rounds,
           });
           events.push(
-            `${target.definitionId} begins regenerating ${effect.amount}/round (${effect.rounds} round(s)).`,
+            `${target.definitionId} begins regenerating ${amount}/round (${effect.rounds} round(s)).`,
           );
           break;
         }

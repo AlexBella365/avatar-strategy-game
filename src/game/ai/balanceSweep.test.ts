@@ -21,6 +21,7 @@ import { writeFileSync } from "node:fs";
 import { describe, it } from "vitest";
 import { createInitialState, type TeamSetup } from "../state";
 import { CHARACTERS } from "../content/characters";
+import { DEFAULT_MATCH_TUNING } from "../content/balance";
 import { ECONOMY_TUNING } from "../content/economy";
 import { chooseAutoAction } from "../auto";
 import { applyGameAction } from "../rules/cards";
@@ -29,6 +30,8 @@ import type { CharacterDefinition, GameState, Position } from "../types";
 
 const RUN = process.env.SWEEP_N !== undefined;
 const N = Number(process.env.SWEEP_N ?? 40);
+/** Per-cell size for the (wide) tuning grid; defaults to the baseline N. */
+const GRID_N = Number(process.env.SWEEP_GRID_N ?? N);
 const OUT_PATH = process.env.SWEEP_OUT ?? "/tmp/balance_sweep.txt";
 
 function mulberry(seed: number): () => number {
@@ -42,16 +45,17 @@ function mulberry(seed: number): () => number {
 }
 
 const byId = (id: string) => CHARACTERS.find((c) => c.id === id)!;
-const OPEN: [Position[], Position[]] = [
+/** Deployment slots for an inset (0 = edge rows 0/6, 1 = rows 1/5, ...). */
+const slots = (inset: number): [Position[], Position[]] => [
   [
-    { x: 1, y: 0 },
-    { x: 3, y: 0 },
-    { x: 5, y: 0 },
+    { x: 1, y: inset },
+    { x: 3, y: inset },
+    { x: 5, y: inset },
   ],
   [
-    { x: 1, y: 6 },
-    { x: 3, y: 6 },
-    { x: 5, y: 6 },
+    { x: 1, y: 6 - inset },
+    { x: 3, y: 6 - inset },
+    { x: 5, y: 6 - inset },
   ],
 ];
 const HEROES: CharacterDefinition[] = [byId("aang"), byId("katara"), byId("toph")];
@@ -61,6 +65,16 @@ interface Opts {
   rounds?: number;
   /** Lower HP ≈ a more lethal game (approximation of more damage). */
   hpScale?: number;
+  /** Base movement points per activation. */
+  movement?: number;
+  /** Team energy refreshed each round. */
+  energyPerRound?: number;
+  /** Deployment rows are inset this far from the board edges. */
+  deploymentInset?: number;
+  /** Multiplier on card healing. */
+  healingScale?: number;
+  /** Multiplier on all incoming damage. */
+  damageScale?: number;
 }
 
 interface MatchRecord {
@@ -150,21 +164,27 @@ function build(
   opts: Opts,
   seed: number,
 ): GameState {
+  const inset = opts.deploymentInset ?? DEFAULT_MATCH_TUNING.deploymentInset;
+  const [north, south] = slots(inset);
   const teams: [TeamSetup, TeamSetup] = [
-    { playerId: "p1", characterDefs: rosterP1, positions: northPlayerId === "p1" ? OPEN[0] : OPEN[1] },
-    { playerId: "p2", characterDefs: rosterP2, positions: northPlayerId === "p1" ? OPEN[1] : OPEN[0] },
+    { playerId: "p1", characterDefs: rosterP1, positions: northPlayerId === "p1" ? north : south },
+    { playerId: "p2", characterDefs: rosterP2, positions: northPlayerId === "p1" ? south : north },
   ];
   // The match seed drives BOTH deck shuffles (state.ts offsets per team), so
   // it must vary per match: otherwise every game in a cell replays the same
   // opening hands and n only samples the policy's tie-break rolls.
-  const state = createInitialState(teams, seed, { northPlayerId });
+  const state = createInitialState(teams, seed, {
+    northPlayerId,
+    tuning: {
+      hpScale: opts.hpScale ?? DEFAULT_MATCH_TUNING.hpScale,
+      movement: opts.movement ?? DEFAULT_MATCH_TUNING.movement,
+      energyPerRound: opts.energyPerRound ?? DEFAULT_MATCH_TUNING.energyPerRound,
+      deploymentInset: inset,
+      healingScale: opts.healingScale ?? DEFAULT_MATCH_TUNING.healingScale,
+      damageScale: opts.damageScale ?? DEFAULT_MATCH_TUNING.damageScale,
+    },
+  });
   if (opts.rounds) state.maxRounds = opts.rounds;
-  if (opts.hpScale && opts.hpScale !== 1) {
-    for (const c of state.characters) {
-      c.maxHealth = Math.max(1, Math.round(c.maxHealth * opts.hpScale));
-      c.health = c.maxHealth;
-    }
-  }
   return state;
 }
 
@@ -268,25 +288,44 @@ describe.skipIf(!RUN)("balance sweep", () => {
     summarise("shipped: heroes(p1, north) vs villains(p2)", shipped);
     summarise("mirror heroes (seat alternated)", mirrorH);
     summarise("mirror villains (seat alternated)", mirrorV);
+    emit("\nLethality gates on the shipped defaults:");
+    emit(gridRow("SHIPPED DEFAULTS", shipped));
+    emit(`tuning: ${JSON.stringify(DEFAULT_MATCH_TUNING)}`);
   }, 900000);
 
-  it("lethality tuning grid (hpScale x rounds)", () => {
-    const scales = [0.6, 0.7, 0.8];
-    const rounds = [10, 12, 14];
+  it("lethality tuning grid (movement x hp x deployment inset x damage)", () => {
+    // Energy was explored at 4/6 in the first pass; 4 was kept (it changes how
+    // often cards are played, not whether contact is lethal) so the grid can
+    // spend its cells on the knobs that matter: movement (contact timing), HP
+    // (kill window), inset (starting distance), and the damage multiplier.
+    const movements = [1, 2];
+    const hpScales = [1, 0.8, 0.65];
+    const insets = [0, 1];
+    const damageScales = [1, 1.5];
     const emitGrid = (rosterLabel: string, a: CharacterDefinition[], b: CharacterDefinition[]) => {
-      emit(`\n===== tuning grid: ${rosterLabel} (n=${N} per cell) =====`);
-      for (const hpScale of scales) {
-        for (const r of rounds) {
-          const recs: MatchRecord[] = [];
-          for (let s = 1; s <= N; s++) recs.push(run(a, b, s, { hpScale, rounds: r }));
-          emit(gridRow(`hp x${hpScale}, rounds=${r}`, recs));
+      emit(`\n===== tuning grid: ${rosterLabel} (n=${GRID_N} per cell) =====`);
+      for (const movement of movements) {
+        for (const hpScale of hpScales) {
+          for (const deploymentInset of insets) {
+            for (const damageScale of damageScales) {
+              const opts = { movement, hpScale, deploymentInset, damageScale, rounds: 10 };
+              const recs: MatchRecord[] = [];
+              for (let s = 1; s <= GRID_N; s++) recs.push(run(a, b, s, opts));
+              emit(
+                gridRow(
+                  `mv${movement} hp x${hpScale} in${deploymentInset} dmg x${damageScale}`,
+                  recs,
+                ),
+              );
+            }
+          }
         }
       }
     };
     emitGrid("shipped heroes vs villains", HEROES, VILLAINS);
     emitGrid("mirror heroes", HEROES, HEROES);
     emit("\nPASS = cap-reach <=70% AND KO-finish >=40% AND draws <10% (balance_testing_plan §2.1).");
-  }, 900000);
+  }, 1800000);
 
   it("writes the report", () => {
     writeFileSync(OUT_PATH, OUT.join("\n"));

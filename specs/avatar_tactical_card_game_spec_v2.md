@@ -96,7 +96,7 @@ Each player selects a team of three characters and a legal loadout.
 -   Character attributes: integers from **1 to 5**
 -   Battlefield: **7 columns × 7 rows**
 -   Coordinates: columns `0..6`, rows `0..6`; row 0 is the top edge
--   Each team deploys on a single edge row at opposite ends — north row 0, south row 6; which team takes which edge is rolled from the match seed
+-   Each team deploys on a single row at opposite ends — north row 0 and south row 6 base, or one row in (rows 1/5) under the shipped balance inset; which team takes which edge is rolled from the match seed
 -   Each player draws from:
     -   A team tactical deck.
     -   A separate technique deck/hand for each character.
@@ -133,9 +133,11 @@ The battlefield is a fixed **7-column × 7-row** rectangular grid. Each tile is 
 
 ### 4.2 Deployment
 
-Deployment uses a single edge row per team. The north player deploys on row 0 and the south player on row 6; which player takes which edge is rolled from the match seed before placement, so both teams know their row when choosing positions. Placement is secret and simultaneous: each team selects three distinct legal starting tiles anywhere in its edge row (lateral position is free), then positions are revealed before the first round's assignments are locked. Rows 1–5 begin neutral.
+Deployment uses a single row per team. By default the north player deploys on row 0 and the south player on row 6; which player takes which edge is rolled from the match seed before placement, so both teams know their row when choosing positions. Placement is secret and simultaneous: each team selects three distinct legal starting tiles anywhere in its row (lateral position is free), then positions are revealed before the first round's assignments are locked.
 
-The rules engine must validate any selected positions against the deployer's assigned side (row 0 for the north player, row 6 for the south player). Teams may not deploy on blocking terrain or on the same tile. Every map must offer at least three free (non-blocking) tiles in each edge row so both deployment rows are always legally placeable.
+**Balance tuning (shipped).** `deploymentInset = 1` (match data in `src/game/content/balance.ts`) starts each team one row in from its edge — north row 1, south row 5 — to shorten the walk to contact. Unaffected rows begin neutral.
+
+The rules engine must validate any selected positions against the deployer's assigned side (row `inset` for the north player, row `6 − inset` for the south player). Teams may not deploy on blocking terrain or on the same tile. Every map must offer at least three free (non-blocking) tiles in each deployment row so both rows are always legally placeable.
 
 ### 4.3 Distance and adjacency
 
@@ -188,7 +190,7 @@ Forced movement is deterministic and resolved one tile at a time.
 
 ### 4A.1 Standard movement allowance
 
-Each character may move up to **1 tile per activation**. Normal movement costs no Energy and is separate from the one-technique-per-activation limit. A character may move before or after playing a technique, but cannot exceed its total allowance for that activation. Cards may specify `moveBefore`, `moveAfter`, `bonusMovement`, `retreat`, `dash`, or `ignoreDifficultTerrain` effects.
+Each character may move up to **2 tiles per activation** in the shipped build (`movement = 2` in `src/game/content/balance.ts`; the base rule is 1 tile, and Gear adds on top). Normal movement costs no Energy and is separate from the one-technique-per-activation limit. A character may move before or after playing a technique, but cannot exceed its total allowance for that activation. Cards may specify `moveBefore`, `moveAfter`, `bonusMovement`, `retreat`, `dash`, or `ignoreDifficultTerrain` effects.
 
 - Each orthogonal tile entered costs 1 movement point.
 - Diagonal movement is not allowed by default.
@@ -1054,7 +1056,7 @@ The interface must expose tactical information clearly without relying on color 
 ### Battlefield view
 
 - Render a 7×7 grid with coordinate-consistent tiles.
-- Show deployment rows (north row 0 / south row 6) before match start, with a clear indicator of which player holds which side, and support the simultaneous secret-placement lock and reveal step.
+- Show deployment rows (north row `inset` / south row `6 − inset`; shipped inset 1) before match start, with a clear indicator of which player holds which side, and support the simultaneous secret-placement lock and reveal step.
 - Show each character's portrait, health, Focus, statuses, activation state, and Evade availability.
 - Distinguish blocking terrain, difficult terrain, cover, elemental sources, and hazards with icons plus labels/tooltips.
 - Show remaining Team Energy and active Avatar State duration/risk.

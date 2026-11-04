@@ -1,4 +1,5 @@
 // Match state: init + immutable helpers. Spec v2 §3, §4, §6, §8 + v0.3 economy.
+import { DEFAULT_MATCH_TUNING } from "./content/balance";
 import { STARTER_DECK_IDS } from "./content/economy";
 import { getMap } from "./maps";
 import { parseTerrainGrid } from "./mapGrid";
@@ -9,13 +10,13 @@ import type {
   CharacterDefinition,
   CharacterState,
   GameState,
+  MatchTuning,
   Position,
   Side,
   TerrainState,
 } from "./types";
 
 export const STARTING_FOCUS = 1;
-export const ENERGY_PER_ROUND = 4;
 export const MAX_ROUNDS = 10;
 
 /** Deployment zones (spec §4.2): north team on row 0, south team on row 6. */
@@ -35,9 +36,9 @@ export function sideOf(state: GameState, playerId: string): Side {
   return state.northPlayerId === playerId ? "north" : "south";
 }
 
-export function maxHealthFor(resilience: number, override?: number): number {
-  if (override !== undefined) return override;
-  return Math.max(10, 16 + 2 * (resilience - 3));
+export function maxHealthFor(resilience: number, override?: number, hpScale = 1): number {
+  const base = override !== undefined ? override : Math.max(10, 16 + 2 * (resilience - 3));
+  return Math.max(1, Math.round(base * hpScale));
 }
 
 function initialAvatarStatus(
@@ -76,13 +77,15 @@ export function createCharacter(
   ownerId: string,
   instanceId: string,
   position: Position,
+  hpScale = 1,
 ): CharacterState {
+  const maxHealth = maxHealthFor(def.attributes.resilience, def.maxHealthOverride, hpScale);
   return {
     id: instanceId,
     definitionId: def.id,
     ownerId,
-    health: maxHealthFor(def.attributes.resilience, def.maxHealthOverride),
-    maxHealth: maxHealthFor(def.attributes.resilience, def.maxHealthOverride),
+    health: maxHealth,
+    maxHealth,
     focus: STARTING_FOCUS,
     position: { ...position },
     statuses: [],
@@ -110,12 +113,16 @@ export function occupantAt(state: GameState, pos: Position): CharacterState | un
 export function deploymentErrors(
   teams: [TeamSetup, TeamSetup],
   northPlayerId: string,
+  inset = 0,
 ): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
   teams.forEach((team) => {
     const side: Side = team.playerId === northPlayerId ? "north" : "south";
-    const zoneRow = DEPLOYMENT_ZONE_ROWS[side];
+    const zoneRow =
+      side === "north"
+        ? DEPLOYMENT_ZONE_ROWS.north + inset
+        : DEPLOYMENT_ZONE_ROWS.south - inset;
     team.characterDefs.forEach((_def, i) => {
       const pos = team.positions[i];
       const label = `${team.playerId}-c${i}`;
@@ -144,10 +151,11 @@ export function deploymentErrors(
 export function createInitialState(
   teams: [TeamSetup, TeamSetup],
   seed = 1,
-  opts?: { northPlayerId?: string },
+  opts?: { northPlayerId?: string; tuning?: Partial<MatchTuning> },
 ): GameState {
   // Instance-id counter resets per match so replays are fully deterministic.
   idCounter = 0;
+  const tuning: MatchTuning = { ...DEFAULT_MATCH_TUNING, ...(opts?.tuning ?? {}) };
   // Sides: caller may pass the pre-rolled north player (UI rolls before the
   // players pick columns); otherwise derive it from the seed — same roll.
   const northPlayerId =
@@ -155,13 +163,19 @@ export function createInitialState(
   if (!teams.some((t) => t.playerId === northPlayerId)) {
     throw new Error(`Illegal deployment:\nUnknown north player "${northPlayerId}".`);
   }
-  const errors = deploymentErrors(teams, northPlayerId);
+  const errors = deploymentErrors(teams, northPlayerId, tuning.deploymentInset);
   if (errors.length > 0) throw new Error(`Illegal deployment:\n${errors.join("\n")}`);
   const characters: CharacterState[] = [];
   for (const team of teams) {
     team.characterDefs.forEach((def, i) => {
       characters.push(
-        createCharacter(def, team.playerId, `${team.playerId}-c${i}`, team.positions[i]),
+        createCharacter(
+          def,
+          team.playerId,
+          `${team.playerId}-c${i}`,
+          team.positions[i],
+          tuning.hpScale,
+        ),
       );
     });
   }
@@ -169,12 +183,13 @@ export function createInitialState(
   return {
     round: 1,
     maxRounds: MAX_ROUNDS,
+    tuning,
     initiativePlayerId: "p1",
     northPlayerId,
     characters,
     players: teams.map((t, ti) => ({
       id: t.playerId,
-      energy: ENERGY_PER_ROUND,
+      energy: tuning.energyPerRound,
       chi: 0,
       // Each side shuffles independently (seed offset per team) so opening
       // hands differ while staying fully deterministic per match seed.
@@ -187,7 +202,7 @@ export function createInitialState(
     terrain: [],
     log: [
       "Match created.",
-      `${northPlayerId} deploys north (row 0); ${southPlayerId} deploys south (row 6).`,
+      `${northPlayerId} deploys north (row ${tuning.deploymentInset}); ${southPlayerId} deploys south (row ${GRID_ROWS - 1 - tuning.deploymentInset}).`,
     ],
     winnerId: null,
     isDraw: false,

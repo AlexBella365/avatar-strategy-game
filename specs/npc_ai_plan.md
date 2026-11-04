@@ -1,7 +1,7 @@
-# NPC AI Plan — Track A: Utility AI (active) + Track B: LLM Layer (M4 built, flagged off)
+# NPC AI Plan — Track A: Utility AI (active) + Track B: Experimental LLM Layer
 
-**Status:** working plan, non-normative. Branch: `feature/npc-ai`. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP) adapted to *this* codebase.
-**Scope:** **Track A (§2)** is the default and remains the authority — a self-contained, zero-dependency utility policy. **Track B (§3) M4 is implemented behind a flag** (`VITE_AI_LLM`, default off): an advisory-only, zero-dependency `fetch` client. It never blocks the loop, never emits a `GameAction`, and deleting `src/game/ai/llm/` leaves Track A untouched. M5 (Mode 2 wired into the loop + quality gate) is still deferred.
+**Status:** implementation plan, non-normative. The branch name below records the original work context and may be stale. Based on the preliminary research in `specs/ai_setup_research.md` (utility AI vs. behavior trees vs. GOAP) adapted to *this* codebase.
+**Scope:** **Track A (§2)** is the default and remains the authority — a self-contained, zero-dependency utility policy. **Track B (§3) is experimental**: Mode 1 is implemented behind a flag (`VITE_AI_LLM`, default off), but has not been evaluated against Track A. It is advisory-only, uses a zero-dependency `fetch` client, never blocks the loop, and never emits a `GameAction`. M5 (Mode 2 wired into the loop + quality gate) remains deferred.
 
 ---
 
@@ -35,7 +35,7 @@ Game-shape facts that matter for scoring: activation = *assign a face-down card 
 
 ## 2. Track A — Utility AI, zero LLM (the baseline; ships alone)
 
-**Status:** **A1 + A2 implemented** (milestones M1/M2, engine side). A3/A4 pending; the debug *overlay UI* is the one remaining M2 item (the trace data + ring buffer already ship). See §A.7.
+**Status:** **A1 + A2 scoring logic implemented** (milestones M1/M2). A3/A4 are pending; the debug overlay UI remains to complete M2. See §A.7.
 
 ### A.1 File layout
 
@@ -134,7 +134,7 @@ Explicitly **out of scope**: RL, MCTS, GOAP, behavior-tree libraries (research d
 
 ## 3. Track B — lightweight LLM layer (M4 built, Mode 2 deferred)
 
-**Status:** M4 implemented behind `VITE_AI_LLM` (default **off**). Built: client (`client.ts`), validators (`json.ts`), digest (`digest.ts`), budget/cache/journal, Mode 1 (`strategy.ts` + `advisor.ts`), the App seam (`ui.ts`), and an offline test suite (mock transport only) plus an opt-in live probe. Mode 2 (`chooser.ts`) exists and is unit-tested but is **not wired into the policy loop** yet (M5). Removable by design: deleting `src/game/ai/llm/` and the two `App.tsx` references leaves Track A fully functional.
+**Status:** experimental; Mode 1 is implemented behind `VITE_AI_LLM` (default **off**) but has not been evaluated against Track A. Built: client (`client.ts`), validators (`json.ts`), digest (`digest.ts`), budget/cache/journal, Mode 1 (`strategy.ts` + `advisor.ts`), the App seam (`ui.ts`), and an offline test suite (mock transport only) plus an opt-in live probe. Mode 2 (`chooser.ts`) exists and is unit-tested but is **not wired into the policy loop** yet (M5). Removable by design: deleting `src/game/ai/llm/` and the two `App.tsx` references leaves Track A fully functional.
 
 ### B.0 Principle
 
@@ -249,8 +249,8 @@ Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow m
 | Milestone | Content | Depends on |
 |---|---|---|
 | **M1** | Track A1: candidates + core scoring + trace, wired through existing `chooseAutoAction`; scenario & determinism tests | — |
-| **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 |
-| **M3** | Track A3: one-ply lookahead; balance scenario suite runs policy-vs-policy | M2 |
+| **M2** | Track A2: threat/cover/focus-fire/economy signals + personalities + debug overlay | M1 — scoring logic is done; overlay UI is the next roadmap priority |
+| **M3** | Track A3: one-ply lookahead; balance scenario suite runs policy-vs-policy | M2 and a stable balance scenario suite; defer until pacing baseline is usable |
 
 ### Deferred — Track B
 
@@ -260,7 +260,7 @@ Default `timeoutMs` is 2.5 s and the App never blocks on a response, so a slow m
 | ⬜ **M5** | Track B Mode 2 (top-k chooser) wired into the loop + journal replay + quality gate §B.8 | M4, M3 — client/chooser exist; loop wiring + gate remain |
 
 - **Flags (Track A):** currently no env flag — the utility policy *is* `chooseAutoAction` (the old random player is gone). A `VITE_AI_POLICY=random` A/B baseline is still a TODO. **Track B:** `VITE_AI_LLM` (default off) is implemented; when on, App.tsx resolves one Mode-1 stance per side per round and feeds the deltas through `chooseAutoAction`'s optional `weights` argument.
-- **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (overlay is the last M2 item), personalities measurably distinct, no new runtime deps, `auto.test.ts` untouched and passing.
+- **Definition of done for Track A (active):** phases A1–A2 green in CI, trace explains any decision (complete the overlay before balance tuning), personalities measurably distinct, no new runtime deps, `auto.test.ts` untouched and passing.
 - **Roadmap exit criteria (Track B, deferred):** every failure path falls back cleanly, budget enforced, journal replay deterministic, quality gate recorded in §B.8.
 - **Non-goals:** GOAP/planners, behavior-tree libraries, RL, per-action free-form LLM generation, any engine change required by the AI.
 
@@ -280,6 +280,19 @@ Findings from 20 seeded policy-vs-policy matches (`setup()` rosters). These are 
 - **Healing is inert in AI play.** ~3–5 instant HP + ~2–3 regeneration HP per match; the new spike-heal cards are played ~0.1×/match. The policy rarely chooses heals, so the heal-model rebalance is not exercised by self-play (see `balance_testing_plan.md` §10.5 item 5).
 - **Focus fire works.** Damage consistently collapses one enemy (azula commonly ends at 3–4 HP), confirming the `focusFire` signal reaches target selection.
 - **Open for A3:** the AI cannot *finish* a wounded-but-out-of-range target, and never retreats a low-HP ally out of enemy range — both want one-ply lookahead.
+
+### 6.1 Policy defects found by the lethality pass (fixed in `ai/policy.ts`)
+
+The 100%-cap baseline was partly an AI bug, not only engine pacing. Four defects together suppressed hero damage:
+
+1. **The scrap threshold exceeded an attack's whole score.** `SCRAP_THRESHOLD = 0.15` sat above the utility of a 2-damage attack for the `cautious`/`support` weights (≈0.09–0.13), so Aang and Katara scrapped every attack card they drew. Lowered to `0.01`: an unplayed assigned card is auto-scrapped at round end anyway, so any positive-value legal play dominates banking it.
+2. **Assignment ignored playability.** `fittingCards` only checked restriction fit, so the policy assigned cards with no legal target or no affordable cost; the next activation then scrapped them and reassigned — an assign→scrap→assign loop that burned roughly half of each hand for chi. The replacement, `playableCards`, requires restriction fit **and** affordability **and** at least one legal target from the current tile.
+3. **The cardless basic actions from `db956bf` were never used.** A unit with no playable card passed instead of using the free basic attack/defense. The policy now falls back to a basic attack on the lowest-HP adjacent enemy, else basic defense. The trace phase is `"basic"`.
+4. **Movement range came only from the assigned card.** If a unit held a ranged card it stayed at range even when its playable cards were melee, and units with no attack card never closed to melee. `attackRangeFor` now selects the best *usable* damage card (assigned or in hand) and returns `null` when there is none, which makes the unit approach to range 1 for the basic attack.
+
+Also nudged two personality vectors toward damage (`cautious` damage 0.7→0.9 / focusFire 0.9→1.0 / safety+survival 1.3→1.2; `support` damage 0.6→0.9 / focusFire 0.8→1.0 / support 1.4→1.3) so they no longer under-value attacks relative to their own utility scale.
+
+Result on the hero mirror: average damage per match rose from ~24 to ~45–47 and card plays from ~23 to ~33. The remaining lethality gap is engine/data tuning (`balance_testing_plan.md` §10), not these defects.
 
 ## 7. Findings from the Track B implementation pass (M4)
 
