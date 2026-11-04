@@ -11,17 +11,14 @@
   align-items: start;
 }
 .playing-card {
-  --card-tint: #e8e1d3;
-  --card-glow: rgba(130, 120, 105, 0.18);
   position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   width: 100%;
   max-width: 150px;
   aspect-ratio: 5 / 7;
   border-radius: 10px;
-  background:
-    radial-gradient(ellipse at 82% 18%, var(--card-glow), transparent 42%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.98), var(--card-tint));
+  background: #fff;
   border: 2px solid var(--border-strong);
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
   padding: 28px 6px 7px;
@@ -33,58 +30,38 @@
   gap: 4px;
   font-size: 0.72rem;
 }
+/* Keep the 4:3 sprite intact: its four quadrants map to air, water, fire, earth. */
+.playing-card::before,
+.mini-card:not(.mini-back)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  transform: translateY(-50%);
+  border-radius: inherit;
+  background: url("../../artwork/symbols.jpeg") center / 100% 100% no-repeat;
+  opacity: 0.3;
+  -webkit-mask-image: radial-gradient(ellipse, #000 25%, transparent 94%);
+  mask-image: radial-gradient(ellipse, #000 25%, transparent 94%);
+  pointer-events: none;
+}
+.playing-card > :not(.pc-affinity):not(.pc-type-ribbon),
+.mini-card > * {
+  position: relative;
+  z-index: 1;
+}
 .playing-card:hover {
   transform: translateY(-4px);
 }
 .playing-card.assigning {
   outline: 3px solid var(--accent-select);
 }
-.playing-card.kind-gear {
-  --card-tint: #efe5ce;
-  --card-glow: rgba(194, 143, 44, 0.25);
-}
-.playing-card.kind-attack {
-  --card-glow: rgba(193, 67, 55, 0.16);
-}
-.playing-card.kind-defense {
-  --card-glow: rgba(65, 121, 190, 0.18);
-}
-.playing-card.element-water,
-.mini-card.element-water {
-  --card-tint: #d3edf0;
-  --card-glow: rgba(19, 151, 185, 0.36);
-}
-.playing-card.element-earth,
-.mini-card.element-earth {
-  --card-tint: #e5e3c9;
-  --card-glow: rgba(112, 132, 51, 0.34);
-}
-.playing-card.element-fire,
-.mini-card.element-fire {
-  --card-tint: #f3d9cb;
-  --card-glow: rgba(229, 91, 39, 0.34);
-}
-.playing-card.element-air,
-.mini-card.element-air {
-  --card-tint: #e4e6f4;
-  --card-glow: rgba(119, 124, 201, 0.32);
-}
-.playing-card.element-nonbender,
-.mini-card.element-nonbender {
-  --card-tint: #e8ddcb;
-  --card-glow: rgba(153, 111, 54, 0.3);
-}
-.playing-card.element-avatar {
-  --card-tint: #e7dcf3;
-  --card-glow: rgba(138, 82, 190, 0.36);
-}
-.playing-card.element-neutral,
-.mini-card.element-neutral {
-  --card-tint: #e8e1d3;
-  --card-glow: rgba(130, 120, 105, 0.18);
-}
 .pc-type-ribbon {
   position: absolute;
+  z-index: 2;
   top: -2px;
   left: -2px;
   right: -2px;
@@ -219,16 +196,14 @@
    Same shape language and 5:7 ratio as a playing card, sized to fit beside a
    sheet. */
 .mini-card {
-  --card-tint: #e8e1d3;
-  --card-glow: rgba(130, 120, 105, 0.18);
+  position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   width: 100%;
   aspect-ratio: 5 / 7;
   border-radius: 6px;
   border: 2px solid var(--border-strong);
-  background:
-    radial-gradient(ellipse at 80% 18%, var(--card-glow), transparent 48%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.98), var(--card-tint));
+  background: #fff;
   padding: 3px 2px;
   display: flex;
   flex-direction: column;
@@ -236,10 +211,6 @@
   gap: 2px;
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
   overflow: hidden;
-}
-.mini-card.kind-gear {
-  --card-tint: #efe5ce;
-  --card-glow: rgba(194, 143, 44, 0.25);
 }
 .mini-card.scouted {
   border-color: #9c4e9a;
