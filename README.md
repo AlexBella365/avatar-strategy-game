@@ -110,12 +110,12 @@ space either side of the board, and the acting player's hand sits under their ow
 sheets.
 
 Combat feedback is CSS-only: each attack type (fire/water/air/earth/slash) plays a
-short burst on every affected tile, and affected characters show a floating red
-`-x` (or green `+y` heal). Both are drawn in a board-level overlay (`.fx-overlay`)
-that mirrors the tile grid, so effects can spill across cell borders instead of
-being clipped by a tile. All durations live in `src/ui/animationTiming.ts` and are
-injected as CSS custom properties, so the keyframes and the JS dismissal timers
-stay in sync.
+short burst on every affected tile, with a matching full-screen impact flash to
+suggest the target's point of view. Affected characters show a floating red `-x`
+(or green `+y` heal). Tile effects and combat text are drawn in a board-level
+overlay (`.fx-overlay`) that mirrors the tile grid, so effects can spill across
+cell borders instead of being clipped by a tile. All durations live in
+`src/ui/animationTiming.ts`; reduced-motion preferences disable the effects.
 
 ## Roadmap (grid model + v0.3 economy)
 

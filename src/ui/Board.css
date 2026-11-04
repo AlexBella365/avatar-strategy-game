@@ -450,9 +450,79 @@
   }
 }
 
+/* Full-screen impact gives attacks a brief first-person hit without replacing
+   the tile-anchored effects. */
+.screen-impact {
+  --impact-rgb: 255, 255, 255;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(var(--impact-rgb), 0.12), transparent 58%),
+    radial-gradient(ellipse at center, transparent 32%, rgba(var(--impact-rgb), 0.18) 82%, rgba(0, 0, 0, 0.3));
+  animation: impact-screen 550ms ease-out forwards;
+}
+.screen-impact::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(var(--impact-rgb), 0.55) 20%,
+    rgba(var(--impact-rgb), 0.14) 48%,
+    transparent 72%
+  );
+  animation: impact-burst 550ms ease-out both;
+}
+.screen-impact.impact-fire {
+  --impact-rgb: 255, 91, 24;
+}
+.screen-impact.impact-water {
+  --impact-rgb: 75, 166, 255;
+}
+.screen-impact.impact-air {
+  --impact-rgb: 225, 238, 245;
+}
+.screen-impact.impact-earth {
+  --impact-rgb: 176, 139, 86;
+}
+.screen-impact.impact-slash {
+  --impact-rgb: 255, 255, 255;
+}
+@keyframes impact-screen {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+@keyframes impact-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.08);
+  }
+  28% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
 /* Respect users who prefer less motion: skip the effects entirely. */
 @media (prefers-reduced-motion: reduce) {
-  .attack-fx {
+  .attack-fx,
+  .screen-impact {
     display: none;
   }
 }
