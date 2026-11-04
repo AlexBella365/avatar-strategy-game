@@ -30,7 +30,7 @@
   gap: 4px;
   font-size: 0.72rem;
 }
-/* Keep the 4:3 sprite intact: its four quadrants map to air, water, fire, earth. */
+/* Show only the matching 4:3 sprite quadrant: air, water, fire, or earth. */
 .playing-card::before,
 .mini-card:not(.mini-back)::before {
   content: "";
@@ -42,11 +42,34 @@
   aspect-ratio: 4 / 3;
   transform: translateY(-50%);
   border-radius: inherit;
-  background: url("../../artwork/symbols.jpeg") center / 100% 100% no-repeat;
+  background-image: var(--element-symbol, none);
+  background-position: var(--element-symbol-position, center);
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
   opacity: 0.3;
   -webkit-mask-image: radial-gradient(ellipse, #000 25%, transparent 94%);
   mask-image: radial-gradient(ellipse, #000 25%, transparent 94%);
   pointer-events: none;
+}
+.playing-card.element-air,
+.mini-card.element-air {
+  --element-symbol: url("../../artwork/symbols.jpeg");
+  --element-symbol-position: left top;
+}
+.playing-card.element-water,
+.mini-card.element-water {
+  --element-symbol: url("../../artwork/symbols.jpeg");
+  --element-symbol-position: right top;
+}
+.playing-card.element-fire,
+.mini-card.element-fire {
+  --element-symbol: url("../../artwork/symbols.jpeg");
+  --element-symbol-position: left bottom;
+}
+.playing-card.element-earth,
+.mini-card.element-earth {
+  --element-symbol: url("../../artwork/symbols.jpeg");
+  --element-symbol-position: right bottom;
 }
 .playing-card > :not(.pc-affinity):not(.pc-type-ribbon),
 .mini-card > * {
