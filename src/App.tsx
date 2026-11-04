@@ -134,16 +134,116 @@ interface EvadeState {
  *  not offensive. Pure: resolves affected tiles from the pre-action state. */
 function buildAttackFx(
   state: GameState,
+  after: GameState,
   card: CardDefinition,
   sourceId: string,
   selection: TargetOption["selection"],
   seq: number,
+  movePath: Position[] = [],
 ): AttackFx | null {
   const kind = attackFxKind(card);
   if (!kind) return null;
-  const tiles = resolveTiles(state, sourceId, card, selection).map(key);
+  const affected = resolveTiles(state, sourceId, card, selection);
+  const tiles = affected.map(key);
   if (tiles.length === 0) return null;
-  return { kind, tiles, seq };
+  const source = state.characters.find((c) => c.id === sourceId);
+  if (!source) return null;
+  const sourceAfter = after.characters.find((c) => c.id === sourceId);
+  let from = source.position;
+  let to =
+    selection.kind === "character"
+      ? state.characters.find((c) => c.id === selection.characterId)?.position ?? affected[0]
+      : selection.kind === "tile"
+        ? selection.pos
+        : card.targeting.kind === "area" && card.targeting.shape === "allEnemies"
+          ? source.position
+          : affected[affected.length - 1];
+  let shape: AttackFx["shape"] =
+    card.targeting.kind === "direction" ||
+    (card.targeting.kind === "area" && card.targeting.shape === "line")
+      ? "line"
+      : card.targeting.kind === "area"
+        ? "area"
+        : "projectile";
+  let path = [key(from), ...affected.map(key)];
+
+  const displacement = card.effects.find((effect) => effect.type === "push" || effect.type === "pull");
+  if (displacement && selection.kind === "character") {
+    const targetBefore = state.characters.find((c) => c.id === selection.characterId);
+    const targetAfter = after.characters.find((c) => c.id === selection.characterId);
+    if (targetBefore && targetAfter) {
+      shape = "push-pull";
+      from = targetBefore.position;
+      to = targetAfter.position;
+      path = [key(from), key(to)];
+    }
+  } else if (
+    card.movement &&
+    sourceAfter &&
+    (source.position.x !== sourceAfter.position.x || source.position.y !== sourceAfter.position.y)
+  ) {
+    shape = "dash";
+    to = sourceAfter.position;
+    path = [key(source.position), ...movePath.map(key), key(to)].filter(
+      (tile, index, all) => index === 0 || tile !== all[index - 1],
+    );
+  }
+
+  const damagedEnemy = healthDeltas(state, after).some((delta) => {
+    if (delta.kind !== "damage") return false;
+    return after.characters.find((c) => c.id === delta.charId)?.ownerId !== source.ownerId;
+  });
+  return {
+    kind,
+    shape,
+    tiles,
+    from: key(from),
+    to: key(to),
+    path,
+    screenImpact: damagedEnemy ? kind : undefined,
+    seq,
+  };
+}
+
+function buildMoveFx(state: GameState, after: GameState, action: GameAction, seq: number, isNpcAction: boolean): AttackFx | null {
+  if (action.type !== "MOVE") return null;
+  const beforeChar = state.characters.find((c) => c.id === action.characterId);
+  const afterChar = after.characters.find((c) => c.id === action.characterId);
+  if (!beforeChar || !afterChar) return null;
+  const path = (action.path?.length ? action.path : [action.to]).map(key);
+  return {
+    kind: "air",
+    shape: "dash",
+    tiles: [key(afterChar.position)],
+    from: key(beforeChar.position),
+    to: key(afterChar.position),
+    path: [key(beforeChar.position), ...path],
+    screenImpact: isNpcAction ? "dust" : undefined,
+    seq,
+  };
+}
+
+function buildActionFx(state: GameState, after: GameState, action: GameAction, seq: number, isNpcAction = false): AttackFx | null {
+  if (action.type === "PLAY_CARD") {
+    return buildAttackFx(state, after, action.card, action.characterId, action.selection, seq, action.movePath);
+  }
+  if (action.type === "BASIC_ATTACK") {
+    const source = state.characters.find((c) => c.id === action.characterId);
+    const target = state.characters.find((c) => c.id === action.targetCharacterId);
+    if (!source || !target) return null;
+    const causedDamage = healthDeltas(state, after).some((delta) => delta.charId === target.id && delta.kind === "damage");
+    return {
+      kind: "slash",
+      shape: "projectile",
+      tiles: [key(target.position)],
+      from: key(source.position),
+      to: key(target.position),
+      path: [key(source.position), key(target.position)],
+      screenImpact: causedDamage ? "slash" : undefined,
+      seq,
+    };
+  }
+  return buildMoveFx(state, after, action, seq, isNpcAction);
 }
 
 /** Build floating "-x"/"+y" callouts for the HP changes of one action. */
@@ -221,6 +321,11 @@ function SheetCard(props: {
           {c.statuses.length > 0 && (
             <div className="sheet-row statuses">
               {c.statuses.map((s) => s.statusId).join(" · ")}
+            </div>
+          )}
+          {c.preparedResponse && (
+            <div className="sheet-row prepared-response">
+              ↻ Ready: {getCardDefinition(c.preparedResponse.cardId)?.name ?? "response"}
             </div>
           )}
           {c.avatarState && !c.avatarState.active && (
@@ -351,16 +456,8 @@ export default function App() {
         return;
       }
       setMessage(null);
-      if (action.type === "PLAY_CARD") {
-        const fx = buildAttackFx(
-          state,
-          action.card,
-          action.characterId,
-          action.selection,
-          fxSeq.current++,
-        );
-        if (fx) setAttackFx(fx);
-      }
+      const fx = buildActionFx(state, result.state, action, fxSeq.current++, true);
+      if (fx) setAttackFx(fx);
       const nextFloats = buildFloats(state, result.state, floatSeq.current);
       floatSeq.current += nextFloats.length;
       if (nextFloats.length > 0) setFloats(nextFloats);
@@ -562,6 +659,8 @@ export default function App() {
       return false;
     }
     setMessage(null);
+    const fx = buildActionFx(state, result.state, action, fxSeq.current++);
+    if (fx) setAttackFx(fx);
     const nextFloats = buildFloats(state, result.state, floatSeq.current);
     floatSeq.current += nextFloats.length;
     if (nextFloats.length > 0) setFloats(nextFloats);
@@ -674,8 +773,6 @@ export default function App() {
       reactions,
     });
     if (ok) {
-      const fx = buildAttackFx(state, card, selectedChar.id, selection, fxSeq.current++);
-      if (fx) setAttackFx(fx);
       setTargeting(null);
       setEvade(null);
       setPlan(null);
@@ -698,7 +795,12 @@ export default function App() {
     ) {
       const targetId = option.primaryCharacterId;
       const target = state.characters.find((c) => c.id === targetId)!;
-      if (canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
+      const airCocoon = target.preparedResponse && getCardDefinition(target.preparedResponse.cardId);
+      const airCocoonWillTrigger =
+        targeting.card.targeting.kind === "character" &&
+        targeting.card.targeting.range !== "melee" &&
+        airCocoon?.conditional?.trigger === "nonMeleeAttackTargeted";
+      if (!airCocoonWillTrigger && canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
         // Auto side evades only to tiles that actually dodge the attack.
         if (autoSides.has(target.ownerId)) {
           const escaping = getEvadeDestinations(state, targetId).filter((dest) =>

@@ -546,6 +546,10 @@ header p {
   color: var(--status-ink);
   font-weight: bold;
 }
+.sheet-row.prepared-response {
+  color: #315a78;
+  font-weight: 700;
+}
 .sheet-row.avatar-warn {
   color: var(--danger-ink);
   font-weight: bold;

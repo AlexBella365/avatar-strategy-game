@@ -233,4 +233,3 @@ If you want a library rather than custom code, `behaviortree` is a mature JavaSc
 [^2_40]: https://atlas.atherlabs.com/atherxperiment/onchain-utility-ai
 
 [^2_41]: https://andrewaltimit.github.io/Documentation/docs/ai-ml/game-ai.html
-

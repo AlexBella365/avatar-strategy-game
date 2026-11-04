@@ -56,7 +56,7 @@ Already covered: Earth Sweep, Earth Wall, Seismic Read, Boulder Hurl, Earth Lanc
 
 **Basic offense / control**
 - 💡 Earth and stone levitation (rock projectiles) — everyone — the bread-and-butter rock throw — [ATK ranged, cheap]. Note: roster's Boulder Hurl covers the heavy version; a cheap "rock toss" doesn't exist yet.
-- 💡 Earth bomb — Aang vs Zuko — rock slammed into the ground for burst damage + knock-up — [ATK AoE + OffBalance]. 
+- 💡 Earth bomb — Aang vs Zuko — rock slammed into the ground for burst damage + knock-up — [ATK AoE + OffBalance].
 - 💡 Earthquakes/fissures — Gow/advanced benders — strike ground to split it, throw opponents off balance; can trigger avalanches — [ATK AoE + STATUS: OffBalance, TERRAIN: difficult]. Signature "big earth" moment.
 - 💡 Ground shift — disorienting ground move under a target — [STATUS: OffBalance or PUSH].
 - 💡 Earth sinking — Boulder/Master Yu/General Fong — forcibly sink and imprison (even suffocate) an opponent in earth — [STATUS: Bound, expensive, villain-adjacent]. Earth's answer to Ice Prison.
@@ -77,7 +77,7 @@ Already covered: Earth Sweep, Earth Wall, Seismic Read, Boulder Hurl, Earth Lanc
 - 💡 Dust cloud — shake ground to raise concealing dust — [TERRAIN: smoke-identical, earth-source]. Second source for the smoke terrain concept.
 - 💡 Summon the storm — swirl gravel/dust/sand to fill the air — [TERRAIN: cover + STATUS: Exposed (grit in eyes)].
 - 💡 Rock cuff / slab shackles — Aang used slab shackles to hold Ozai for energybending — [STATUS: Bound, physical]. "Fits while disabled" flavor.
-- 💡 Earth shelter/dome — instant shelter, or trap — [TERRAIN: blocking dome]. 
+- 💡 Earth shelter/dome — instant shelter, or trap — [TERRAIN: blocking dome].
 - 💡 Rock hanging/magnetization — Dai Li cling to walls/ceilings — [positional utility; evades ground-based effects].
 - 💡 Earth preservation (tremor reading of footprints)/remote earthbending (Bumi) — scouting/lore cards, FOCUS-flavored.
 
@@ -97,15 +97,15 @@ Already covered: Rising Flame, Fire Sweep, Comet Strike, Fire Lash, Blue Flame, 
 
 **Basic offense**
 - 💡 Fire streams/fists/jabs — soldiers and every bender — continuous or rapid basic fire — [ATK ranged, cheap]. Fire's cheap spammable attack (mirror of water's ice projectiles).
-- 💡 Flame knives / finger flame jet — Zuko/Azula/Korra/Mako — blowtorch-close melee cutters; melted Tenzin's chains — [ATK melee, + vs Bound/terrain interactions]. 
+- 💡 Flame knives / finger flame jet — Zuko/Azula/Korra/Mako — blowtorch-close melee cutters; melted Tenzin's chains — [ATK melee, + vs Bound/terrain interactions].
 - 💡 Fire blade/flaming swords — Azula cut a wall; Zuko cut Katara's whips — [ATK melee, + vs constrained targets].
 - 💡 Fire lashes vs ✅ Fire Lash — Azula's long lash; Zuko's multiple area lashes — multi-lash AoE upgrade exists in ✅ Fire Sweep's line shape.
 - 💡 Fireball barrage / cloud of flame darts — swarm of small fireballs starting fires — [ATK multi-hit; starts Bonfire terrain].
 - 💡 Twin fireball blast — Zuko (Catacombs, Comet Agni Kai) — intertwined twin streams, comet-shaped — [ATK heavy, high cost]. Zuko signature nuke.
 - 💡 Fire comet — Iroh (broke Ba Sing Se's inner wall) — pressurized fire ball, long range — [ATK ranged heavy, structure-break flavor].
-- 💡 Fire missiles — Ozai/Aang at Wulong — long streams that follow the target — [ATK that ignores Evade? strong guardrail; needs care]. 
+- 💡 Fire missiles — Ozai/Aang at Wulong — long streams that follow the target — [ATK that ignores Evade? strong guardrail; needs care].
 - 💡 Charged attacks — Zuko/Iroh/Azula — hold and release enormous blasts — [ATK with setup/telegraph: pay now, fire next action]. Counterplay-visible big hit.
-- 💡 Fire bomb — Zuko/Aang/Ozai (Comet) — explosive burst at limb's end — [ATK AoE melee]. 
+- 💡 Fire bomb — Zuko/Aang/Ozai (Comet) — explosive burst at limb's end — [ATK AoE melee].
 - 💡 Fire pinwheel — Azula/Korra — long-range whirling disc of flame — [ATK ranged AoE shape].
 - 💡 Somersault/spiral flare kick, fire dropkick — acrobatic kick variants — Fire Kick's flashy cousins; skip unless a Zuko/Azula unique wants flavor.
 
@@ -114,10 +114,10 @@ Already covered: Rising Flame, Fire Sweep, Comet Strike, Fire Lash, Blue Flame, 
 - 💡 Wall of flames / pyre wall — Jeong Jeong — sustained inferno barrier — roster's ✅ Fire Wall is terrain-on-line; a self-centered defensive wall variant is distinct (SHIELD zone).
 - 💡 Blocking fire — swift kick/jab extinguishes an incoming fire blast — [REACTION vs fire attacks]. Cheap counter card.
 - 💡 Flame redirection — redirect an incoming fire blast back with fluid motion (mastery indicator) — [REACTION]; fire's answer to lightning redirection — note: ✅ Redirect Lightning exists, this is the fire-vs-fire version.
-- 💡 Disappearing fire — Jeong Jeong — sphere of flames masking escape — [SHIELD + stealth/break LOS]. 
+- 💡 Disappearing fire — Jeong Jeong — sphere of flames masking escape — [SHIELD + stealth/break LOS].
 - 💡 Smokescreen — Zuko/Ningka — smoke cloud, coughing enemies — [TERRAIN: smoke, fire-source]. Third source for smoke terrain.
 - 💡 Fan the flame — Zuko/Jeong Jeong — grow existing flames around you — [synergy card: buffs existing Bonfire terrain / equipped fire]. Tag-synergy showcase.
-- 💡 Heat metal — Iroh heated his shackles red-hot; Sozin cooled lava by redirecting heat — [utility: bypass Bound via gear sabotage, or counter lava]. 
+- 💡 Heat metal — Iroh heated his shackles red-hot; Sozin cooled lava by redirecting heat — [utility: bypass Bound via gear sabotage, or counter lava].
 - 💡 Breath of fire / wall of fiery breath — warm body against cold; wide flame gout holding foes back — [DEF vs cold terrain; cone zone]. Cold-counter sideboard card.
 
 **Mobility**
@@ -128,7 +128,7 @@ Already covered: Rising Flame, Fire Sweep, Comet Strike, Fire Lash, Blue Flame, 
 **Special sub-skills**
 - **Lightning generation** — Azula/Ozai/Iroh; common by LOK era (power plants) — ✅ Lightning Bolt; **redirection** — Iroh's invention from waterbending philosophy — ✅ Redirect Lightning. Lore note: Mako exploited waterbenders conducting lightning — potential "vs waterbender +1" rider on a future Lightning card.
 - **Combustionbending** — Combustion Man (spark), P'Li (third-eye beam) — ✅ Combustion Blast; P'Li's *beam* (focused, long-range, telegraphed tell = third eye) could be a distinct aimed-line upgrade; Combustion Man's tattoo-less variant is ATLA.
-- 💡 Blue fire — Azula only, hotter — ✅ Blue Flame gated on Aggression 4+. 
+- 💡 Blue fire — Azula only, hotter — ✅ Blue Flame gated on Aggression 4+.
 - 💡 Dragon fire / iridescent fire — Ran & Shaw; Roku (white-purple-green multi-color) — legendary tier, Avatar/villain guardrail.
 - 💡 White fire — Rangi — emotion-fueled, life-force cost (Hei-Ran's blazing sun also burns the user) — [high-power card with self-damage rider]; cool risk-flavor for a fire signature.
 - 💡 Dancing Dragon — Sun Warrior form — fluid stance improving firebending — [stance/buff card, FOCUS investment].
@@ -147,7 +147,7 @@ Already covered: Air Blast, Air Shield, Air Slice, Gust Wave, Cyclone, Air Scoot
 - 💡 Air swipe — Aang — crescent wave that catches flaming rocks and throws them back — [DEF→ATK, ranged-projectile counter]. Canonical "return fire."
 - 💡 Returning wind — race in a cyclone to catch arrows/hurled objects and send them back — [REACTION vs ranged]. Air's defensive-redirect identity card.
 - 💡 Concussive wake — Aang in Catacombs — run a circle, fire a body-shaped compressed blast — [ATK heavy + PUSH].
-- 💡 Shockwave / air bomb — leap and slam, bursting air in all directions — [ATK AoE centered on self + PUSH]. 
+- 💡 Shockwave / air bomb — leap and slam, bursting air in all directions — [ATK AoE centered on self + PUSH].
 - 💡 Thundering gust / breath of wind — jab or exhale a gale that tosses the heaviest foes — [PUSH line cone, no/low damage]. The "get off me" card.
 - 💡 Air vortex/tornado — trapped or disoriented foes; Aang's tornado transports — [STATUS: OffBalance + TERRAIN-ish zone, or MOB]. Tornado as MOB+damage combo was Aang's Wulong dodge move.
 - 💡 Air wheel — Tenzin — spinning wheel of air that cuts through objects and carries the bender — [ATK line + MOB combined].
@@ -158,7 +158,7 @@ Already covered: Air Blast, Air Shield, Air Slice, Gust Wave, Cyclone, Air Scoot
 - 💡 Air cushion — ✅ covered (Tenzin/Opal save-falls).
 - 💡 Stunning stance — struck, keep stance, return wind blast — [REACTION: retaliate when hit]. Punish-the-attacker card.
 - 💡 Cushion the forceful fist — air around body keeps physical strikes at bay — [SHIELD vs melee]. Anti-melee identity.
-- 💡 Barrier of noise — Yangchen's loud calm vortex — [TERRAIN: alarm/deny-stealth; utility]. 
+- 💡 Barrier of noise — Yangchen's loud calm vortex — [TERRAIN: alarm/deny-stealth; utility].
 - 💡 Sound manipulation — throw voice as distraction; air-powered screams deafen (Yangchen vs Fog of Lost Souls) — [STATUS: Exposed (disoriented) or bluff/reveal-mechanic flavor]. Interesting vs face-down cards: "distraction" could peek/misdirect.
 - 💡 Hypersensitivity — perceive shifts in air = split-second reactions (why Air Nomads shave heads) — passive evade identity; potential talent/gear hook, or Air Slice-style "cannot be ambushed" rider.
 

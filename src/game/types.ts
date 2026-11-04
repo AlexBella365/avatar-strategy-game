@@ -76,12 +76,37 @@ export interface CharacterState {
   regeneration: RegenInstance[]; // heal-over-time pools; ticked by the round loop
   passiveUsesThisRound: Record<string, number>;
   reactionUsedThisRound: boolean;
+  /** One prepared conditional response, armed until the opponent's next activation ends. */
+  preparedResponse: PreparedResponse | null;
   activatedThisRound: boolean;
   movementSpent: number; // movement points spent this activation; reset by round loop
   techniqueBlockedThisActivation: boolean; // this activation's one card play is spent (played a card, entered Avatar State, or used a basic action)
   equippedGear: CardInstance[]; // persistent gear (max 2); bonuses apply while equipped
   momentum: number; // 0..1 in MVP
   avatarState?: AvatarStateStatus;
+}
+
+export interface PreparedResponse {
+  cardId: string;
+  ownerId: string;
+  expiresAfterPlayerId: string;
+}
+
+export type ConditionalTrigger =
+  | "nonMeleeAttackTargeted"
+  | "rangedDamage"
+  | "enemyEndsAdjacent"
+  | "adjacentAllyMeleeTargeted";
+
+export type ConditionalResponse =
+  | { type: "airCocoon" }
+  | { type: "earthSmash"; damageReduction: number; counterDamage: number; counterRange: number }
+  | { type: "seismicSnare"; statusId: StatusId; duration: number }
+  | { type: "allyIntercept"; damageReduction: number };
+
+export interface ConditionalCardEffect {
+  trigger: ConditionalTrigger;
+  response: ConditionalResponse;
 }
 
 /** One shield pool on a character. */
@@ -222,6 +247,8 @@ export interface CardDefinition {
   tags: string[];
   effects: CardEffect[];
   reactionWindow?: "beforeDamage" | "afterTargeting" | "onMovement";
+  /** One-shot prepared response, armed by playing this card. */
+  conditional?: ConditionalCardEffect;
   canBeEvaded?: boolean;
   accuracyModifier?: number;
   cannotBeEvaded?: boolean;

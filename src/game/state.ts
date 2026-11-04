@@ -93,6 +93,7 @@ export function createCharacter(
     regeneration: [],
     passiveUsesThisRound: {},
     reactionUsedThisRound: false,
+    preparedResponse: null,
     activatedThisRound: false,
     movementSpent: 0,
     techniqueBlockedThisActivation: false,
