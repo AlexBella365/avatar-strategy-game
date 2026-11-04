@@ -117,7 +117,8 @@ overlay (`.fx-overlay`) that mirrors the tile grid, so effects can spill across
 cell borders instead of being clipped by a tile. All durations live in
 `src/ui/animationTiming.ts`, including the screen flash's element-specific
 duration. The screen flash does not intercept board input, and reduced-motion
-preferences disable the effects.
+preferences disable the effects. The newest battle-log entry is also shown in a
+live-updating banner above the board for quick action context.
 
 ## Roadmap (grid model + v0.3 economy)
 

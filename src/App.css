@@ -227,6 +227,32 @@
 .board-col {
   min-width: 0;
 }
+.latest-action {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-mid);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.latest-action-label {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.latest-action strong {
+  color: var(--text-strong);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .board-wrap {
   position: relative;
 }

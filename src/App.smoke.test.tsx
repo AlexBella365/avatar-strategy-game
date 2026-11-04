@@ -12,6 +12,9 @@ describe("demo smoke", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: /fight/i }));
+    expect(screen.getByLabelText("Latest action").textContent).toContain(
+      "Round 1 begins (initiative:",
+    );
     expect(document.querySelectorAll(".tile")).toHaveLength(49);
     expect(document.querySelectorAll(".sheet").length).toBeGreaterThanOrEqual(6);
     expect(document.querySelectorAll(".puck").length).toBeGreaterThanOrEqual(6);

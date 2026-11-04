@@ -553,6 +553,7 @@ export default function App() {
     .map((entry) => /^(\S+) plays (.+?) \(-/.exec(entry))
     .filter((m): m is RegExpExecArray => m !== null)
     .map((m) => ({ who: m[1], what: m[2] }));
+  const latestAction = state.log[state.log.length - 1] ?? "No actions yet.";
 
   const dispatch = (action: GameAction): boolean => {
     const result = applyGameAction(state, action);
@@ -1025,6 +1026,10 @@ export default function App() {
           {actingSide === "p1" && handPanel}
         </aside>
         <section className="board-col">
+          <section className="latest-action" aria-label="Latest action" aria-live="polite" aria-atomic="true">
+            <span className="latest-action-label">Latest action</span>
+            <strong>{latestAction}</strong>
+          </section>
           <div className="board-wrap">
             <Board
               state={state}
