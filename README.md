@@ -31,13 +31,18 @@ Player-facing rules live in `docs/rules.md`; engine and card design specs live i
 - `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
 - `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
 - `src/game/maps/demo.grid.txt` + `src/game/mapGrid.ts` — hand-editable 7×7 board and its parser
-- `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, character sheets with card slots, hands with assign/scrap, activation panel, battle log, icon legend
+- `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, character sheets with card slots, hands with assign/scrap, activation panel, battle log, icon legend, and the admin landing tabs
 - `src/ui/animationTiming.ts` — single source of truth for combat-animation durations (injected as CSS variables)
 - `src/ui/attackFx.ts` + `src/ui/combatText.ts` — element→attack-FX mapping and floating damage/heal numbers
 - `src/ui/terrainTiles.ts` — terrain → tile art, label, rules blurb (drives the board and legend)
 - `src/theme.css` — every themed colour, as CSS variables
 
 ## Run
+
+The landing page includes Game and Card roster tabs while the temporary
+`ADMIN_MODE` switch in `src/App.tsx` is enabled. The roster tab shows the full
+card set in a responsive mosaic with assignment requirements and chi bank
+values; the Game tab retains the fighter draft and match view.
 
 With Make:
 
