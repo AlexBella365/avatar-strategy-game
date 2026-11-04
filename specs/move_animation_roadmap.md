@@ -8,6 +8,8 @@
 - Keep the board and combat text readable. Prefer thin trails, soft rings, tile pulses, and short afterimages over full-screen flashes or large particles.
 - Share shape animations across cards. Element changes color and surface treatment, not the movement grammar.
 - Let duration follow the action: quick contact for a single target, travel time for a path, and a slightly longer cue for area or forced movement.
+- Keep every move, impact, and combat-number animation below one second; tune durations and stagger delays in `src/ui/animationTiming.ts`.
+- Optional screen-level impact cues briefly tint or texture the viewport from the affected side's perspective. Keep them faint, short, and non-blocking.
 - Keep rules resolution authoritative and immediate. Effects are presentation only and never delay or change a game action.
 - Respect `prefers-reduced-motion`; preserve static target/result cues when motion is reduced.
 
@@ -26,6 +28,8 @@
 
 Durations are starting ranges, not a promise that an effect must fill the full interval. Per-shape timing will live in `src/ui/animationTiming.ts` and be tuned after visual review.
 
+Full-screen cues use the same element palette as board effects, plus a dust cue for NPC movement. They are configured separately so a screen wash can be shortened or disabled without changing the board path animation. The initial durations are 190–460 ms; all move/impact and combat-number durations remain under one second.
+
 ## Delivery plan
 
 1. **Animation event model:** carry shape, element, source, endpoint, path, affected tiles, and sequence id into the board overlay. Derive it from before/after game state; do not infer a hit from card names.
@@ -43,4 +47,6 @@ Durations are starting ranges, not a promise that an effect must fill the full i
 - Added a board-coordinate SVG path layer for projectile, line, area, displacement, and dash cues; element tint is shared with the existing per-tile impact effects.
 - Connected resolved PLAY_CARD, BASIC_ATTACK, and MOVE actions to the animation event builder. Push/pull vectors use before/after target positions; normal actions keep game-state resolution immediate.
 - Added per-shape timings and reduced-motion behavior. SVG keeps the implementation lightweight; no canvas dependency is needed for this first set.
+- Added optional full-viewport impact washes for successful damage and a brief dust cloud for NPC movement, with effect durations and secondary-mark delays in the shared timing config.
+- Reduced floating combat text to 800 ms so move-related feedback fits the under-one-second timing target.
 - Review status: implementation is ready for visual playtesting. Automated tests were not run in this pass.

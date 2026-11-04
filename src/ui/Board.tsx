@@ -87,6 +87,8 @@ export default function Board({
     "--fx-air-ms": `${ANIMATION_TIMING.attackFx.air}ms`,
     "--fx-earth-ms": `${ANIMATION_TIMING.attackFx.earth}ms`,
     "--fx-slash-ms": `${ANIMATION_TIMING.attackFx.slash}ms`,
+    "--fx-water-echo-delay": `${ANIMATION_TIMING.attackFxDelay.waterEcho}ms`,
+    "--fx-slash-second-delay": `${ANIMATION_TIMING.attackFxDelay.slashSecond}ms`,
     "--fx-projectile-ms": `${ANIMATION_TIMING.moveShape.projectile}ms`,
     "--fx-line-ms": `${ANIMATION_TIMING.moveShape.line}ms`,
     "--fx-area-ms": `${ANIMATION_TIMING.moveShape.area}ms`,
@@ -100,6 +102,7 @@ export default function Board({
     state.terrain.filter((t) => t.terrainId === "road").map((t) => key({ x: t.x, y: t.y })),
   );
   return (
+    <>
     <div
       className="grid-board"
       style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`, ...timingVars }}
@@ -291,5 +294,16 @@ export default function Board({
         })}
       </div>
     </div>
+    {fx?.screenImpact && (
+      <div
+        key={`screen-${fx.seq}`}
+        className={`screen-impact impact-${fx.screenImpact}`}
+        style={{ "--screen-impact-ms": `${ANIMATION_TIMING.screenImpact[fx.screenImpact]}ms` } as CSSProperties}
+        aria-hidden
+      >
+        <span />
+      </div>
+    )}
+    </>
   );
 }

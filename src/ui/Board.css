@@ -324,6 +324,60 @@
   transform-origin: center;
   animation: move-area-expand var(--fx-vector-ms) ease-out forwards;
 }
+.screen-impact {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+  animation: screen-impact-fade var(--screen-impact-ms, 460ms) ease-out forwards;
+}
+.screen-impact.impact-dust {
+  background: radial-gradient(ellipse at 50% 72%, rgba(159, 133, 96, 0.2), rgba(133, 111, 84, 0.08) 46%, transparent 76%);
+}
+.screen-impact.impact-dust::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.24;
+  background-image:
+    radial-gradient(circle, rgba(225, 209, 176, 0.75) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(96, 79, 60, 0.5) 0 1.5px, transparent 2.5px),
+    radial-gradient(ellipse at 50% 100%, rgba(172, 146, 109, 0.34), transparent 60%);
+  background-size: 83px 71px, 127px 109px, 100% 100%;
+  background-position: 9px 14px, 42px 31px, center;
+  animation: screen-dust-rise var(--screen-impact-ms, 460ms) ease-out forwards;
+}
+.screen-impact.impact-dust span {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 48%, rgba(65, 53, 41, 0.08));
+}
+.screen-impact.impact-fire {
+  background: radial-gradient(ellipse at 50% 54%, rgba(255, 175, 73, 0.19), rgba(210, 68, 37, 0.07) 38%, transparent 72%);
+}
+.screen-impact.impact-water {
+  background: radial-gradient(ellipse at 50% 55%, rgba(115, 204, 247, 0.13), rgba(49, 132, 187, 0.055) 45%, transparent 76%);
+}
+.screen-impact.impact-air {
+  background: linear-gradient(112deg, transparent 15%, rgba(228, 241, 239, 0.12) 48%, transparent 82%);
+}
+.screen-impact.impact-earth {
+  background: radial-gradient(ellipse at 50% 64%, rgba(168, 151, 116, 0.16), transparent 68%);
+}
+.screen-impact.impact-slash {
+  background: linear-gradient(108deg, transparent 25%, rgba(255, 246, 221, 0.16) 49%, transparent 72%);
+}
+@keyframes screen-impact-fade {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes screen-dust-rise {
+  0% { opacity: 0; transform: translateY(7px) scale(0.985); }
+  24% { opacity: 0.72; }
+  100% { opacity: 0; transform: translateY(-5px) scale(1.015); }
+}
 @keyframes move-trail-draw {
   0% { opacity: 0; stroke-dashoffset: 1; }
   18% { opacity: 0.9; }
@@ -389,7 +443,7 @@
   animation: fx-water var(--fx-water-ms, 550ms) ease-out forwards;
 }
 .attack-fx.fx-water::after {
-  animation-delay: 0.12s;
+  animation-delay: var(--fx-water-echo-delay, 120ms);
   border-color: rgba(160, 215, 255, 0.9);
 }
 @keyframes fx-water {
@@ -498,7 +552,7 @@
 .attack-fx.fx-slash::after {
   --fx-slash-angle: 34deg;
   height: 2px;
-  animation-delay: 0.06s;
+  animation-delay: var(--fx-slash-second-delay, 60ms);
 }
 @keyframes fx-slash {
   0% {
@@ -530,6 +584,9 @@
     opacity: 0.65;
   }
   .move-vector-point {
+    display: none;
+  }
+  .screen-impact {
     display: none;
   }
 }

@@ -158,10 +158,23 @@ function buildAttackFx(
     );
   }
 
-  return { kind, shape, tiles, from: key(from), to: key(to), path, seq };
+  const damagedEnemy = healthDeltas(state, after).some((delta) => {
+    if (delta.kind !== "damage") return false;
+    return after.characters.find((c) => c.id === delta.charId)?.ownerId !== source.ownerId;
+  });
+  return {
+    kind,
+    shape,
+    tiles,
+    from: key(from),
+    to: key(to),
+    path,
+    screenImpact: damagedEnemy ? kind : undefined,
+    seq,
+  };
 }
 
-function buildMoveFx(state: GameState, after: GameState, action: GameAction, seq: number): AttackFx | null {
+function buildMoveFx(state: GameState, after: GameState, action: GameAction, seq: number, isNpcAction: boolean): AttackFx | null {
   if (action.type !== "MOVE") return null;
   const beforeChar = state.characters.find((c) => c.id === action.characterId);
   const afterChar = after.characters.find((c) => c.id === action.characterId);
@@ -174,11 +187,12 @@ function buildMoveFx(state: GameState, after: GameState, action: GameAction, seq
     from: key(beforeChar.position),
     to: key(afterChar.position),
     path: [key(beforeChar.position), ...path],
+    screenImpact: isNpcAction ? "dust" : undefined,
     seq,
   };
 }
 
-function buildActionFx(state: GameState, after: GameState, action: GameAction, seq: number): AttackFx | null {
+function buildActionFx(state: GameState, after: GameState, action: GameAction, seq: number, isNpcAction = false): AttackFx | null {
   if (action.type === "PLAY_CARD") {
     return buildAttackFx(state, after, action.card, action.characterId, action.selection, seq, action.movePath);
   }
@@ -186,6 +200,7 @@ function buildActionFx(state: GameState, after: GameState, action: GameAction, s
     const source = state.characters.find((c) => c.id === action.characterId);
     const target = state.characters.find((c) => c.id === action.targetCharacterId);
     if (!source || !target) return null;
+    const causedDamage = healthDeltas(state, after).some((delta) => delta.charId === target.id && delta.kind === "damage");
     return {
       kind: "slash",
       shape: "projectile",
@@ -193,10 +208,11 @@ function buildActionFx(state: GameState, after: GameState, action: GameAction, s
       from: key(source.position),
       to: key(target.position),
       path: [key(source.position), key(target.position)],
+      screenImpact: causedDamage ? "slash" : undefined,
       seq,
     };
   }
-  return buildMoveFx(state, after, action, seq);
+  return buildMoveFx(state, after, action, seq, isNpcAction);
 }
 
 /** Build floating "-x"/"+y" callouts for the HP changes of one action. */
@@ -403,7 +419,7 @@ export default function App() {
         return;
       }
       setMessage(null);
-      const fx = buildActionFx(state, result.state, action, fxSeq.current++);
+      const fx = buildActionFx(state, result.state, action, fxSeq.current++, true);
       if (fx) setAttackFx(fx);
       const nextFloats = buildFloats(state, result.state, floatSeq.current);
       floatSeq.current += nextFloats.length;
