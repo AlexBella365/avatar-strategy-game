@@ -22,9 +22,10 @@ import { applyGameAction } from "./game/rules/cards";
 import {
   canEvade,
   getEvadeDestinations,
+  movementBlockedTiles,
   movementAllowance,
 } from "./game/rules/movement";
-import { blockingTiles, difficultTiles } from "./game/rules/terrain";
+import { difficultTiles } from "./game/rules/terrain";
 import { getLegalTargets, resolveTiles } from "./game/rules/targeting";
 import { cloneState, createInitialState, createTestMapTerrain, rollNorthPlayerId } from "./game/state";
 import { MAPS, getMap } from "./game/maps";
@@ -33,7 +34,7 @@ import { CARDS, getCardDefinition } from "./game/content/cards";
 import { CHARACTERS } from "./game/content/characters";
 import { ECONOMY_TUNING, restrictionSatisfied } from "./game/content/economy";
 import type { Restriction } from "./game/types";
-import { key, reachableTiles } from "./game/rules/grid";
+import { GRID_COLS, GRID_ROWS, key, manhattan, reachableTiles } from "./game/rules/grid";
 import "./App.css";
 
 /** Default slots for the shipped deployment inset (spec §4.2 + balance pass):
@@ -58,6 +59,8 @@ const FIGHTERS = CHARACTERS.filter((d) => !d.companion);
 const ADMIN_MODE = true;
 
 function CardRoster() {
+  const [sortBy, setSortBy] = useState("name");
+  const [typeFilter, setTypeFilter] = useState("all");
   const restrictionLabel = (r: Restriction): string => {
     switch (r.type) {
       case "unique": return `${CHARACTERS.find((d) => d.id === r.characterId)?.name ?? r.characterId} only`;
@@ -65,13 +68,68 @@ function CardRoster() {
       case "alignment": return r.alignment === "hero" ? "Heroes" : "Villains";
     }
   };
+  const cards = CARDS
+    .filter((card) => {
+      if (typeFilter === "all") return true;
+      if (typeFilter === "gear") return card.economy?.kind === "gear";
+      return card.cardType === typeFilter;
+    })
+    .slice()
+    .sort((a, b) => {
+      let order = 0;
+      switch (sortBy) {
+        case "type":
+          order = a.cardType.localeCompare(b.cardType);
+          break;
+        case "element":
+          order = (a.element ?? "neutral").localeCompare(b.element ?? "neutral");
+          break;
+        case "energy":
+          order = a.energyCost - b.energyCost;
+          break;
+        case "chi":
+          order = (a.economy?.chiCost ?? 0) - (b.economy?.chiCost ?? 0);
+          break;
+        case "bank":
+          order = (a.economy?.value ?? 0) - (b.economy?.value ?? 0);
+          break;
+        default:
+          order = a.name.localeCompare(b.name);
+      }
+      return order || a.name.localeCompare(b.name);
+    });
   return (
     <section className="roster-page">
       <div className="roster-heading">
-        <div><h2>Card roster</h2><p className="dim">{CARDS.length} cards · full rules text and assignment requirements</p></div>
+        <div><h2>Card roster</h2><p className="dim">{cards.length} of {CARDS.length} cards · full rules text and assignment requirements</p></div>
+        <div className="roster-controls">
+          <label>
+            Sort by
+            <select aria-label="Sort cards" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+              <option value="name">Name (A–Z)</option>
+              <option value="type">Card type</option>
+              <option value="element">Element</option>
+              <option value="energy">Energy cost</option>
+              <option value="chi">Chi cost</option>
+              <option value="bank">Chi bank value</option>
+            </select>
+          </label>
+          <label>
+            Show
+            <select aria-label="Filter card type" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <option value="all">All card types</option>
+              <option value="attack">Attack</option>
+              <option value="defense">Defense</option>
+              <option value="support">Support</option>
+              <option value="setup">Setup</option>
+              <option value="reaction">Reaction</option>
+              <option value="gear">Gear</option>
+            </select>
+          </label>
+        </div>
       </div>
       <div className="roster-mosaic">
-        {CARDS.map((def) => {
+        {cards.map((def) => {
           const requirements = def.economy?.restrictions ?? [];
           const fits = requirements.length ? requirements.map(restrictionLabel).join(" + ") : "Anyone";
           return <div className="roster-card" key={def.id}>
@@ -120,6 +178,7 @@ interface TargetingState {
   card: CardDefinition;
   instanceId: string;
   options: TargetOption[];
+  movementDestination?: boolean;
 }
 
 interface EvadeState {
@@ -728,7 +787,7 @@ export default function App() {
     );
     const reach = reachableTiles(selectedChar.position, {
       allowance: Math.max(0, movementAllowance(state, selectedChar.id) - selectedChar.movementSpent),
-      blocked: blockingTiles(state),
+      blocked: movementBlockedTiles(state, selectedChar.id),
       occupied,
       difficult: difficultTiles(state),
     });
@@ -738,10 +797,30 @@ export default function App() {
   const legalTargetTiles = new Set<string>();
   const legalTargetChars = new Set<string>();
   if (targeting) {
-    for (const o of targeting.options) {
-      if (!o.isLegal) continue;
-      for (const t of o.affectedTiles) legalTargetTiles.add(key(t));
-      for (const id of o.affectedCharacterIds) legalTargetChars.add(id);
+    if (targeting.movementDestination && selectedChar && targeting.card.movement) {
+      const blocked = movementBlockedTiles(state, selectedChar.id);
+      const occupied = new Set(
+        state.characters.filter((character) => character.health > 0).map((character) => key(character.position)),
+      );
+      for (let y = 0; y < GRID_ROWS; y++) {
+        for (let x = 0; x < GRID_COLS; x++) {
+          const pos = { x, y };
+          if (
+            (targeting.card.movement.maxSteps <= 0 ||
+              manhattan(selectedChar.position, pos) <= targeting.card.movement.maxSteps) &&
+            !blocked.has(key(pos)) &&
+            !occupied.has(key(pos))
+          ) {
+            legalTargetTiles.add(key(pos));
+          }
+        }
+      }
+    } else {
+      for (const o of targeting.options) {
+        if (!o.isLegal) continue;
+        for (const t of o.affectedTiles) legalTargetTiles.add(key(t));
+        for (const id of o.affectedCharacterIds) legalTargetChars.add(id);
+      }
     }
   }
 
@@ -761,6 +840,7 @@ export default function App() {
     selection: TargetOption["selection"],
     reactions: { characterId: string; dest: Position }[],
     afterMove: boolean,
+    movePath: Position[] = [],
   ) => {
     if (!selectedChar) return;
     const ok = dispatch({
@@ -771,6 +851,7 @@ export default function App() {
       selection,
       card,
       reactions,
+      movePath,
     });
     if (ok) {
       setTargeting(null);
@@ -827,6 +908,16 @@ export default function App() {
   const onTileClick = (x: number, y: number) => {
     if (gameOver || evade) return;
     if (targeting) {
+      if (targeting.movementDestination) {
+        const legalDest = legalTargetTiles.has(key({ x, y }));
+        const automatic = targeting.options[0];
+        if (!legalDest || !automatic?.isLegal) {
+          setMessage("Choose a highlighted empty tile within the movement range.");
+          return;
+        }
+        doPlayWith(targeting.card, targeting.instanceId, automatic.selection, [], false, [{ x, y }]);
+        return;
+      }
       const option = findOption(x, y);
       if (!option) {
         setMessage("No target option there.");
@@ -868,6 +959,10 @@ export default function App() {
   const onCharClick = (id: string) => {
     if (gameOver || evade) return;
     if (targeting) {
+      if (targeting.movementDestination) {
+        setMessage("Choose an empty landing tile, not a character.");
+        return;
+      }
       const c = state.characters.find((ch) => ch.id === id)!;
       const option = findOption(c.position.x, c.position.y);
       if (!option) {
@@ -918,6 +1013,12 @@ export default function App() {
     setMenu(null); // targeting takes over from here
     if (afterMove) setPlan("play-first");
     const options = getLegalTargets(state, selectedChar.id, card);
+    if (card.movement?.path === "teleport") {
+      setTargeting({ card, instanceId: assigned.id, options, movementDestination: true });
+      setMoveMode(false);
+      setMessage(`Choose an empty landing tile within ${card.movement.maxSteps} tiles.`);
+      return;
+    }
     const automatic = options.length === 1 && options[0].selection.kind === "automatic";
     if (automatic && options[0].isLegal) {
       setTargeting({ card, instanceId: assigned.id, options });

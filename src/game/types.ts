@@ -163,6 +163,7 @@ export interface MovementEffect {
   timing: "beforeTechnique" | "afterTechnique" | "insteadOfTechnique";
   maxSteps: number;
   path: "orthogonal" | "straightOrthogonal" | "teleport";
+  ignoresBound?: boolean;
   ignoresDifficultTerrain?: boolean;
   destinationRule: "mustBeLegal" | "stopBeforeIllegal" | "fizzle";
 }
@@ -232,6 +233,7 @@ export type Restriction =
 export interface GearBonus {
   movement?: number;
   damage?: number;
+  waterWalking?: boolean;
 }
 
 export interface CardDefinition {

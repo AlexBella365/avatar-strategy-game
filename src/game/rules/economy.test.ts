@@ -34,9 +34,13 @@ describe("starter content validation", () => {
   it("all cards have complete data and economy entries; deck matches", () => {
     expect(validateCardDefinitions()).toEqual([]);
     expect(new Set(Object.keys(CARD_ECONOMY))).toEqual(new Set(Object.keys(CARD_DEFINITIONS)));
+    expect(STARTER_DECK_IDS).toContain("water-shoes");
+    expect(STARTER_DECK_IDS).toContain("rocket-flight");
     for (const id of STARTER_DECK_IDS) {
       expect(getCardDefinition(id), id).toBeDefined();
     }
+    expect(getCardDefinition("water-shoes")?.gearBonus?.waterWalking).toBe(true);
+    expect(getCardDefinition("rocket-flight")?.movement?.maxSteps).toBe(3);
   });
 
   it("universal cards fit everyone; each hero has options", () => {

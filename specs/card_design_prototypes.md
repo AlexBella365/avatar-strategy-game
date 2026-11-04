@@ -218,7 +218,7 @@ One per character in draft + activation panel. Art occupies top half; stats are 
 
 ### Water Shoes card
 
-The gear card that enables this exception is **Water Shoes**. Its full card data (field-by-field definition, verbatim `rulesText`, `GearBonus.waterWalking` engine delta, restriction and UI notes) lives in the card roster: `specs/card_roster.md` §2.1. Only the terrain-rule interactions are kept here.
+The gear card that enables this exception is **Water Shoes**. Its full card data (field-by-field definition, verbatim `rulesText`, `GearBonus.waterWalking` behavior, restriction and UI notes) lives in the card roster: `specs/card_roster.md` §2.1. Water Shoes now permits voluntary walking and Evade onto water; forced movement remains blocked.
 
 ## 9. Movement technique — Rocket Flight (firebender)
 
@@ -236,7 +236,7 @@ The gear card that enables this exception is **Water Shoes**. Its full card data
 
 ### Rocket Flight card
 
-Full card data (field-by-field definition, verbatim `rulesText`, teleport engine delta, targeting-model note, UI notes) lives in the card roster: `specs/card_roster.md` §2.2. Only the rule design (cost, path legality, terrain triggers, Bound/Evade interaction) is kept here.
+Full card data (field-by-field definition, verbatim `rulesText`, teleport behavior, targeting-model note, UI notes) lives in the card roster: `specs/card_roster.md` §2.2. Rocket Flight is implemented as a chosen landing tile highlighted by the UI. Only the rule design (cost, path legality, terrain triggers, Bound/Evade interaction) is kept here.
 
 ## 10. Implementation notes (for the builder)
 

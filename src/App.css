@@ -41,9 +41,36 @@
   padding: 1rem;
   background: var(--surface);
 }
-.roster-heading { margin-bottom: 1rem; }
+.roster-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
 .roster-heading h2 { font-size: 1.4rem; }
 .roster-heading p { margin: 0; }
+.roster-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.roster-controls label {
+  display: grid;
+  gap: 3px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.roster-controls select {
+  min-width: 150px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-strong);
+  background: var(--surface);
+}
 .roster-mosaic {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));

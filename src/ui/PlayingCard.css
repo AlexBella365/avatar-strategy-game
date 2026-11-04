@@ -11,16 +11,20 @@
   align-items: start;
 }
 .playing-card {
+  --card-tint: #e8e1d3;
+  --card-glow: rgba(130, 120, 105, 0.18);
   position: relative;
   box-sizing: border-box;
   width: 100%;
   max-width: 150px;
   aspect-ratio: 5 / 7;
   border-radius: 10px;
-  background: var(--card-face-grad);
+  background:
+    radial-gradient(ellipse at 82% 18%, var(--card-glow), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), var(--card-tint));
   border: 2px solid var(--border-strong);
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
-  padding: 24px 6px 7px;
+  padding: 28px 6px 7px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -36,58 +40,91 @@
   outline: 3px solid var(--accent-select);
 }
 .playing-card.kind-gear {
-  border-color: var(--gear-border);
-  background: var(--gear-face-grad);
+  --card-tint: #efe5ce;
+  --card-glow: rgba(194, 143, 44, 0.25);
 }
 .playing-card.kind-attack {
-  border-color: var(--accent-danger);
+  --card-glow: rgba(193, 67, 55, 0.16);
 }
 .playing-card.kind-defense {
-  border-color: var(--accent-select);
+  --card-glow: rgba(65, 121, 190, 0.18);
+}
+.playing-card.element-water,
+.mini-card.element-water {
+  --card-tint: #d3edf0;
+  --card-glow: rgba(19, 151, 185, 0.36);
+}
+.playing-card.element-earth,
+.mini-card.element-earth {
+  --card-tint: #e5e3c9;
+  --card-glow: rgba(112, 132, 51, 0.34);
+}
+.playing-card.element-fire,
+.mini-card.element-fire {
+  --card-tint: #f3d9cb;
+  --card-glow: rgba(229, 91, 39, 0.34);
+}
+.playing-card.element-air,
+.mini-card.element-air {
+  --card-tint: #e4e6f4;
+  --card-glow: rgba(119, 124, 201, 0.32);
+}
+.playing-card.element-nonbender,
+.mini-card.element-nonbender {
+  --card-tint: #e8ddcb;
+  --card-glow: rgba(153, 111, 54, 0.3);
+}
+.playing-card.element-avatar {
+  --card-tint: #e7dcf3;
+  --card-glow: rgba(138, 82, 190, 0.36);
+}
+.playing-card.element-neutral,
+.mini-card.element-neutral {
+  --card-tint: #e8e1d3;
+  --card-glow: rgba(130, 120, 105, 0.18);
 }
 .pc-type-ribbon {
   position: absolute;
   top: -2px;
-  right: 4px;
-  border-radius: 0 0 6px 6px;
-  padding: 2px 5px 3px;
+  left: -2px;
+  right: -2px;
+  display: flex;
+  justify-content: center;
+  border-radius: 8px 8px 0 0;
+  padding: 5px 5px 6px;
   color: #fff;
   background: #6b2930;
-  font-size: 0.48rem;
+  font-size: 0.52rem;
   font-weight: 800;
   letter-spacing: 0.45px;
-  line-height: 1;
+  line-height: 1.1;
   text-transform: uppercase;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
+.pc-type-ribbon.kind-attack {
+  background: var(--accent-danger);
+}
 .pc-type-ribbon.kind-defense {
-  background: #286d70;
+  background: var(--accent-select);
 }
 .pc-type-ribbon.kind-gear {
   background: #89671b;
 }
-.pc-corner {
-  position: absolute;
+.pc-costs {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 12px;
+  padding: 1px 3px;
+  border-radius: 5px;
+  color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.62);
   font-weight: bold;
   line-height: 1.05;
 }
-.pc-tl {
-  top: 4px;
-  left: 5px;
-}
-.pc-br {
-  bottom: 4px;
-  right: 5px;
-  transform: rotate(180deg);
-}
 .pc-cost {
   font-size: 0.72rem;
-}
-.pc-suit {
-  font-size: 0.78rem;
 }
 .pc-name {
   font-weight: bold;
@@ -174,18 +211,21 @@
 }
 .pc-affinity-alignment { background: #704d7a; }
 .pc-affinity-open { background: #72715b; }
-}
 
 /* Compact card token shown in the sheet-side slots (assigned ability / gear).
    Same shape language and 5:7 ratio as a playing card, sized to fit beside a
    sheet. */
 .mini-card {
+  --card-tint: #e8e1d3;
+  --card-glow: rgba(130, 120, 105, 0.18);
   box-sizing: border-box;
   width: 100%;
   aspect-ratio: 5 / 7;
   border-radius: 6px;
   border: 2px solid var(--border-strong);
-  background: var(--card-face-grad);
+  background:
+    radial-gradient(ellipse at 80% 18%, var(--card-glow), transparent 48%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), var(--card-tint));
   padding: 3px 2px;
   display: flex;
   flex-direction: column;
@@ -195,14 +235,8 @@
   overflow: hidden;
 }
 .mini-card.kind-gear {
-  border-color: var(--gear-border);
-  background: var(--gear-face-grad);
-}
-.mini-card.kind-attack {
-  border-color: var(--accent-danger);
-}
-.mini-card.kind-defense {
-  border-color: var(--accent-select);
+  --card-tint: #efe5ce;
+  --card-glow: rgba(194, 143, 44, 0.25);
 }
 .mini-art {
   font-size: 1rem;

@@ -45,7 +45,9 @@ import {
   applyMove,
   canEvade,
   findCheapestPath,
+  getEvadeDestinations,
   gearDamageBonus,
+  movementBlockedTiles,
   resolveForcedMove,
   resolveSwap,
 } from "./movement";
@@ -60,7 +62,7 @@ import {
 } from "./terrain";
 import { getAffectedCharacters, resolveTiles, validateTarget } from "./targeting";
 import { activationOwner } from "./turns";
-import { hasLineOfSight, inBounds, isOrthogonalAdjacent, key } from "./grid";
+import { hasLineOfSight, inBounds, isOrthogonalAdjacent, key, manhattan } from "./grid";
 import type {
   ActionError,
   ActionResult,
@@ -405,6 +407,11 @@ function resolvePlayCard(
   if (actor.techniqueBlockedThisActivation)
     return {
       errors: [err("TECHNIQUE_SPENT", "This activation's technique play is already spent.")],
+      events,
+    };
+  if (card.movement && !card.movement.ignoresBound && hasStatus(actor, "Bound"))
+    return {
+      errors: [err("CHARACTER_BOUND", `${actor.definitionId} is Bound and cannot move voluntarily.`)],
       events,
     };
   const def = defOf(actor);
@@ -957,7 +964,8 @@ function checkMovementEffect(
     const legal =
       dest !== undefined &&
       inBounds(dest) &&
-      !blockingTiles(state).has(key(dest)) &&
+      (movement.maxSteps <= 0 || manhattan(actor.position, dest) <= movement.maxSteps) &&
+      !movementBlockedTiles(state, actor.id).has(key(dest)) &&
       !occupantAt(state, dest);
     if (!legal)
       return { ok: false, errors: [err("INVALID_DESTINATION", "Teleport needs a legal destination tile.")] };
@@ -1002,8 +1010,11 @@ function runMovementEffect(
   const rule = movement.destinationRule;
   if (movement.path === "teleport") {
     const dest = path[path.length - 1];
-    const legal =
-      dest && inBounds(dest) && !tilesBlocked(state).has(key(dest)) && !occupantAt(state, dest);
+    const legal = dest &&
+      inBounds(dest) &&
+      (movement.maxSteps <= 0 || manhattan(actor.position, dest) <= movement.maxSteps) &&
+      !movementBlockedTiles(state, actor.id).has(key(dest)) &&
+      !occupantAt(state, dest);
     if (!legal) {
       events.push(`${card.name}: illegal teleport destination; card fizzles.`);
       return rule !== "mustBeLegal" ? false : false;

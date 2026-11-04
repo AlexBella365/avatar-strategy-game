@@ -81,7 +81,7 @@ export function MiniCard({ def }: { def: CardDefinition }) {
   const suit = ELEMENT_SUIT[def.element ?? ""] ?? "⚙️";
   const kind = def.economy?.kind ?? def.cardType;
   return (
-    <div className={`mini-card kind-${kind}`} title={`${def.name}\n${def.rulesText}`}>
+    <div className={`mini-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"}`} title={`${def.name}\n${def.rulesText}`}>
       <span className="mini-art">{def.art ?? suit}</span>
       <span className="mini-name">{def.name}</span>
     </div>
@@ -119,17 +119,13 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
   ].join("\n");
   return (
     <div
-      className={`playing-card kind-${kind} ${assigning ? "assigning" : ""}`}
+      className={`playing-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"} ${assigning ? "assigning" : ""}`}
       onClick={onAssign}
       title={title}
     >
-      <div className="pc-corner pc-tl">
-        <span className="pc-cost">⚡{def.energyCost}</span>
-        <span className="pc-suit">{suit}</span>
-      </div>
-      <div className="pc-corner pc-br">
-        <span className="pc-cost">🌀{chi}</span>
-        <span className="pc-suit">{suit}</span>
+      <div className="pc-costs" aria-label={`Energy cost ${def.energyCost}; chi cost ${chi}`}>
+        <span className="pc-cost">⚡ {def.energyCost}</span>
+        <span className="pc-cost">🌀 {chi}</span>
       </div>
       <div className={`pc-type-ribbon kind-${kind}`} aria-label={`${kind} card`}>
         <span aria-hidden="true">{KIND_ICON[kind] ?? "✦"}</span> {kind}
