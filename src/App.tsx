@@ -191,6 +191,11 @@ function SheetCard(props: {
               {c.statuses.map((s) => s.statusId).join(" · ")}
             </div>
           )}
+          {c.preparedResponse && (
+            <div className="sheet-row prepared-response">
+              ↻ Ready: {getCardDefinition(c.preparedResponse.cardId)?.name ?? "response"}
+            </div>
+          )}
           {c.avatarState && !c.avatarState.active && (
             <div className="sheet-row dim small">
               Res {c.avatarState.resonance}/{charDef?.avatarState?.threshold ?? 6}
@@ -615,7 +620,12 @@ export default function App() {
     ) {
       const targetId = option.primaryCharacterId;
       const target = state.characters.find((c) => c.id === targetId)!;
-      if (canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
+      const airCocoon = target.preparedResponse && getCardDefinition(target.preparedResponse.cardId);
+      const airCocoonWillTrigger =
+        targeting.card.targeting.kind === "character" &&
+        targeting.card.targeting.range !== "melee" &&
+        airCocoon?.conditional?.trigger === "nonMeleeAttackTargeted";
+      if (!airCocoonWillTrigger && canEvade(state, targetId, targeting.card.canBeEvaded !== false).ok) {
         // Auto side evades only to tiles that actually dodge the attack.
         if (autoSides.has(target.ownerId)) {
           const escaping = getEvadeDestinations(state, targetId).filter((dest) =>

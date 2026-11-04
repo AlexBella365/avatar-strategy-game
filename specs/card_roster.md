@@ -1,12 +1,14 @@
 # Card Roster v1 — Full Pool (existing + proposed)
 
-**Status:** Design proposal for future implementation. Non-normative for engine rules.
-**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 18-card pool).
+**Status:** Live pool documents current code; expansion sections remain design proposals. Non-normative for engine rules.
+**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 22-card pool).
 **Goal:** Reach **~20 usable cards per character type** (Water / Earth / Fire / Air / Non-bending), built from ATLA + LOK lore, **with a shared core** so common effects aren't reprinted per element.
+
+**Conditional defense prototypes:** see [`conditional_defense_cards_v1.md`](conditional_defense_cards_v1.md) for a batch exploring prepared responses, trigger families, and lore variants. Four cards are in the live pool as intentionally unbalanced prototypes; the remaining concepts are design-only.
 
 ## 1. Existing live pool (ships today — `cards.ts` + `economy.ts`)
 
-18 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card).
+22 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
 
 | id | name | cardType / kind | ⚡+💠 (⇪) | Fits (restriction) | rulesText (verbatim) |
 |---|---|---|---|---|---|
@@ -15,7 +17,11 @@
 | `rising-flame` | Rising Flame | attack / attack | 2+1 (2) | Fire | `Ranged 3. 3 damage (+1 if the target was displaced this round).` |
 | `water-whip` | Water Whip | attack / attack | 1+0 (1) | Water, Avatar | `Ranged 3. 2 damage and pull 1 (+1 damage when Water empowered).` |
 | `air-shield` | Air Shield | defense / defense | 1+1 (1) | Air, Avatar | `Shield 2 to self and adjacent allies until next round.` |
+| `air-cocoon` | Air Cocoon | defense / defense | 1+0 (1) | Air, Avatar | `Prepare until the opponent's next activation ends. When a ranged or area attack targets you, step 1 tile furthest from its source (ties: north, east, south, west) before it resolves. The attack may miss if you leave its range or area.` |
 | `earth-wall` | Earth Wall | support / defense | 1+1 (2) | Earth, Avatar | `Create a Rock Wall (blocking, 2 rounds) on an empty tile in range 3.` |
+| `earth-smash` | Earth Smash | defense / defense | 1+0 (1) | Earth, Avatar | `Prepare until the opponent's next activation ends. The next ranged attack that would damage you deals 1 less damage; then strike its attacker for 1 damage if you survive and it is within range 3 and line of sight.` |
+| `seismic-snare` | Seismic Snare | defense / defense | 1+0 (1) | Earth, Avatar | `Prepare until the opponent's next activation ends. The next enemy that moves from outside your adjacency and ends a normal move adjacent to you becomes OffBalance.` |
+| `octopus-intercept` | Octopus Intercept | defense / defense | 1+0 (1) | Water, Avatar | `Prepare until the opponent's next activation ends. When an enemy melee attack would damage an adjacent ally, that ally takes 2 less damage from that attack.` |
 | `fire-sweep` | Fire Sweep | attack / attack | 2+2 (2) | Fire | `Line 2 in a chosen direction. 1 damage to each enemy (not split).` |
 | `ice-bind` | Ice Bind | attack / attack | 1+1 (2) | Water | `Ranged 3. 1 damage; Bound (2) if the target is OffBalance.` |
 | `sokkas-feint` | Sokka's Feint | attack / attack | 1+0 (1) | Sokka only (unique) | `Ranged 3. Expose the target and gain 1 Focus. Sokka only.` |
@@ -29,7 +35,7 @@
 | `smoke-bomb` | Smoke Bomb | defense / defense | 1+0 (1) | Anyone | `Vanish in smoke: shield 2 until next round and gain 1 Focus. Anyone can use it.` |
 | `dust-toss` | Dust Toss | attack / attack | 1+0 (1) | Anyone | `Throw dust: ranged 2, 1 damage + Exposed. Anyone can throw dust.` |
 
-Per-type signature counts from this live pool: Water 3 (water-whip, ice-bind, water-recovery) · Earth 3 (earth-sweep, earth-wall, seismic-read) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 2 (air-blast, air-shield) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 3 (travel-rations, smoke-bomb, dust-toss). Gear/unique 2 (aang-glider, sokka-boomerang).
+Per-type signature counts from this live pool: Water 4 (water-whip, ice-bind, water-recovery, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 3 (travel-rations, smoke-bomb, dust-toss). Gear/unique 2 (aang-glider, sokka-boomerang).
 
 ## 2. Design-intent additions (from `card_design_prototypes.md` §8/§9 — new cards, not yet in `cards.ts`)
 

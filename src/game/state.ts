@@ -89,6 +89,7 @@ export function createCharacter(
     shields: [],
     passiveUsesThisRound: {},
     reactionUsedThisRound: false,
+    preparedResponse: null,
     activatedThisRound: false,
     movementSpent: 0,
     techniqueBlockedThisActivation: false,

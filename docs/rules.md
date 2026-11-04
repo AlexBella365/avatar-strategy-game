@@ -125,6 +125,17 @@ When you are targeted by a focused attack, you may spend **1 Focus** to step 1 t
 - If it can still reach you, it still hits.
 - If it was an AoE aimed at your tile, you are still hit if your new tile is in the area.
 
+## Prepared responses
+
+Some Defense cards prepare a one-shot response instead of resolving an immediate shield or heal. The card names the character who holds the response. It stays ready through the opponent's next activation and expires when that activation is passed. If its trigger never happens, the card is still spent.
+
+A prepared response uses that character's once-per-round reaction. It does not start another response, and a character can hold only one prepared response at a time.
+
+- **Air Cocoon:** when a ranged or area attack targets you, step to the furthest legal adjacent tile from its source (ties: north, east, south, west). The attack is checked again from your new tile and may miss.
+- **Earth Smash:** when a ranged attack would damage you, reduce that attack by 1. If you survive, hit the attacker for 1 if it is within range 3 and line of sight.
+- **Seismic Snare:** when an enemy's normal move starts outside your adjacency and ends adjacent to you, make it OffBalance.
+- **Octopus Intercept:** when a melee attack would deal damage to an adjacent ally, reduce that attack's damage to the ally by 2. This also protects against a basic attack.
+
 ## Statuses
 
 - **OffBalance:** You are pushed +1 tile by the next push/pull. Then it clears.

@@ -54,10 +54,11 @@ import {
   createTerrain,
   isWaterEmpowered,
   resolveTileEntry,
+  sightBlockingTiles,
   terrainAt,
 } from "./terrain";
 import { getAffectedCharacters, resolveTiles, validateTarget } from "./targeting";
-import { inBounds, isOrthogonalAdjacent, key } from "./grid";
+import { hasLineOfSight, inBounds, isOrthogonalAdjacent, key } from "./grid";
 import type {
   ActionError,
   ActionResult,
@@ -183,8 +184,48 @@ export function applyGameAction(state: GameState, action: GameAction): ActionRes
       );
       break;
   }
+  if (errors.length === 0) {
+    if (action.type === "MOVE") resolveSeismicSnare(next, state, action, events);
+    if (action.type === "PASS_ACTIVATION") expirePreparedResponses(next, action.playerId, events);
+  }
   next.log.push(...events);
   return { state: next, errors, events };
+}
+
+function expirePreparedResponses(state: GameState, actingPlayerId: string, events: string[]): void {
+  for (const c of state.characters) {
+    if (c.preparedResponse?.expiresAfterPlayerId !== actingPlayerId) continue;
+    const card = getCardDefinition(c.preparedResponse.cardId);
+    c.preparedResponse = null;
+    events.push(`${c.definitionId}'s ${card?.name ?? "prepared response"} expires unused.`);
+  }
+}
+
+function resolveSeismicSnare(
+  state: GameState,
+  before: GameState,
+  action: Extract<GameAction, { type: "MOVE" }>,
+  events: string[],
+): void {
+  const moverBefore = before.characters.find((c) => c.id === action.characterId);
+  const mover = state.characters.find((c) => c.id === action.characterId);
+  if (!moverBefore || !mover || mover.health <= 0) return;
+  for (const watcher of state.characters) {
+    const prepared = watcher.preparedResponse;
+    if (
+      !prepared || prepared.ownerId === mover.ownerId || watcher.reactionUsedThisRound ||
+      watcher.health <= 0 || isOrthogonalAdjacent(watcher.position, moverBefore.position) ||
+      !isOrthogonalAdjacent(watcher.position, mover.position)
+    ) continue;
+    const card = getCardDefinition(prepared.cardId);
+    const response = card?.conditional?.response;
+    if (card?.conditional?.trigger !== "enemyEndsAdjacent" || response?.type !== "seismicSnare") continue;
+    watcher.preparedResponse = null;
+    watcher.reactionUsedThisRound = true;
+    events.push(`${watcher.definitionId} triggers Seismic Snare as ${mover.definitionId} moves adjacent.`);
+    events.push(applyStatus(state, mover.id, response.statusId, response.duration));
+    break;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -315,6 +356,9 @@ function resolvePlayCard(
     return { errors: [err("NOT_YOUR_CHARACTER", "That character is not yours.")], events };
   if (actor.health <= 0)
     return { errors: [err("CHARACTER_KNOCKED_OUT", "Knocked-out characters cannot act.")], events };
+  if (card.conditional && actor.preparedResponse) {
+    return { errors: [err("RESPONSE_ALREADY_PREPARED", "This character already has a prepared response.")], events };
+  }
   if (actor.techniqueBlockedThisActivation)
     return {
       errors: [err("TECHNIQUE_SPENT", "This activation's technique play is already spent.")],
@@ -432,6 +476,17 @@ function resolvePlayCard(
   // One card per activation: committing the play spends this activation's
   // one action slot (holds even if the technique later fizzles).
   actor.techniqueBlockedThisActivation = true;
+  if (card.conditional) {
+    const opponent = state.players.find((p) => p.id !== action.playerId);
+    if (opponent) {
+      actor.preparedResponse = {
+        cardId: card.id,
+        ownerId: action.playerId,
+        expiresAfterPlayerId: opponent.id,
+      };
+      events.push(`${actor.definitionId} prepares ${card.name} until ${opponent.id}'s next activation ends.`);
+    }
+  }
   // Gear replacement drops the old bonus immediately.
   if (isGear && action.replaceGearInstanceId) {
     const idx = actor.equippedGear.findIndex((g) => g.id === action.replaceGearInstanceId);
@@ -464,6 +519,48 @@ function resolvePlayCard(
   // (spec §4A.4); only currently-affected characters may declare it.
   const missed = new Set<string>();
   const t = card.targeting;
+  if (attackClass(card) !== "melee" && card.cardType === "attack" && card.cannotBeEvaded !== true) {
+    const threatened = getAffectedCharacters(state, actor.id, card, action.selection);
+    for (const targetId of threatened) {
+      const target = state.characters.find((c) => c.id === targetId);
+      const prepared = target?.preparedResponse;
+      const preparedCard = prepared && getCardDefinition(prepared.cardId);
+      if (
+        !target || !prepared || !preparedCard ||
+        preparedCard.conditional?.trigger !== "nonMeleeAttackTargeted" ||
+        preparedCard.conditional.response.type !== "airCocoon" ||
+        target.reactionUsedThisRound
+      ) continue;
+
+      const order = (pos: Position) => {
+        if (pos.y < target.position.y) return 0; // north
+        if (pos.x > target.position.x) return 1; // east
+        if (pos.y > target.position.y) return 2; // south
+        return 3; // west
+      };
+      const destinations = getEvadeDestinations(state, target.id).sort((a, b) => {
+        const distanceA = Math.abs(a.x - actor.position.x) + Math.abs(a.y - actor.position.y);
+        const distanceB = Math.abs(b.x - actor.position.x) + Math.abs(b.y - actor.position.y);
+        return distanceB - distanceA || order(a) - order(b);
+      });
+      target.preparedResponse = null;
+      target.reactionUsedThisRound = true;
+      if (destinations.length === 0) {
+        events.push(`${target.definitionId} triggers Air Cocoon but has no open tile to move to.`);
+        continue;
+      }
+      target.position = { ...destinations[0] };
+      events.push(`${target.definitionId} triggers Air Cocoon and steps to (${target.position.x},${target.position.y}).`);
+      const entry = resolveTileEntry(state, target.id, target.position);
+      events.push(...entry.events);
+      if (entry.matchEnded) return { errors, events };
+      if (t.kind === "character" && action.selection.kind === "character" &&
+          !validateTarget(state, actor.id, card, action.selection).ok) {
+        missed.add(target.id);
+        events.push(`${target.definitionId} slips outside the attack's legal target range.`);
+      }
+    }
+  }
   if (
     (t.kind === "character" || t.kind === "tile" || t.kind === "area") &&
     card.cannotBeEvaded !== true &&
@@ -490,7 +587,7 @@ function resolvePlayCard(
     // Focused attacks re-check the (possibly moved) target; tile/area attacks
     // stay aimed and recompute occupants below.
     if (t.kind === "character" && action.selection.kind === "character") {
-      if (!validateTarget(state, actor.id, card, action.selection).ok) {
+      if (!missed.has(action.selection.characterId) && !validateTarget(state, actor.id, card, action.selection).ok) {
         missed.add(action.selection.characterId);
         events.push(
           `${getCharacterOrThrow(state, action.selection.characterId).definitionId} evades the attack (miss).`,
@@ -549,7 +646,7 @@ function resolvePlayCard(
           let cover = 0;
           const coverDef = getTerrainDefinition(terrainAt(state, target.position)?.terrainId ?? "");
           if (coverDef?.cover && coverDef.cover.vs.includes(attackClass(card))) cover = coverDef.cover.reduction;
-          const total = calculateDamage({
+          let total = calculateDamage({
             base: effect.amount,
             scalesWithAggression: effect.scalesWithAggression,
             attackerAggression: attackerAgg,
@@ -558,6 +655,39 @@ function resolvePlayCard(
             exposedBonus: exposed,
             coverReduction: cover,
           });
+          // Ally interception resolves first, then the targeted character's
+          // personal ranged-damage response. Each response is one-shot.
+          if (attackClass(card) === "melee" && target.ownerId !== actor.ownerId) {
+            const protector = state.characters.find((candidate) => {
+              if (
+                candidate.ownerId !== target.ownerId || candidate.id === target.id ||
+                candidate.health <= 0 || candidate.reactionUsedThisRound ||
+                !isOrthogonalAdjacent(candidate.position, target.position)
+              ) return false;
+              const preparedCard = candidate.preparedResponse && getCardDefinition(candidate.preparedResponse.cardId);
+              return preparedCard?.conditional?.trigger === "adjacentAllyMeleeTargeted" &&
+                preparedCard.conditional.response.type === "allyIntercept";
+            });
+            const preparedCard = protector?.preparedResponse && getCardDefinition(protector.preparedResponse.cardId);
+            const response = preparedCard?.conditional?.response;
+            if (protector && response?.type === "allyIntercept" && total > 0) {
+              protector.preparedResponse = null;
+              protector.reactionUsedThisRound = true;
+              total = Math.max(0, total - response.damageReduction);
+              events.push(`${protector.definitionId} triggers Octopus Intercept for ${target.definitionId} (-${response.damageReduction} damage).`);
+            }
+          }
+          let earthCounter: { damage: number; range: number } | null = null;
+          const targetCard = target.preparedResponse && getCardDefinition(target.preparedResponse.cardId);
+          const targetResponse = targetCard?.conditional?.response;
+          if (attackClass(card) === "ranged" && total > 0 && !target.reactionUsedThisRound &&
+              targetCard?.conditional?.trigger === "rangedDamage" && targetResponse?.type === "earthSmash") {
+            target.preparedResponse = null;
+            target.reactionUsedThisRound = true;
+            total = Math.max(0, total - targetResponse.damageReduction);
+            earthCounter = { damage: targetResponse.counterDamage, range: targetResponse.counterRange };
+            events.push(`${target.definitionId} triggers Earth Smash (-${targetResponse.damageReduction} damage).`);
+          }
           const outcome = dealDamage(state, targetId, total, card.name);
           events.push(...outcome.events);
           if (exposed > 0) events.push(removeStatus(state, targetId, "Exposed"));
@@ -570,6 +700,15 @@ function resolvePlayCard(
             if (pressure) events.push(pressure);
           }
           if (outcome.matchEnded) return { errors, events };
+          if (earthCounter && target.health > 0 && actor.health > 0) {
+            const distance = Math.abs(target.position.x - actor.position.x) + Math.abs(target.position.y - actor.position.y);
+            if (distance <= earthCounter.range && hasLineOfSight(target.position, actor.position, sightBlockingTiles(state))) {
+              const counter = dealDamage(state, actor.id, earthCounter.damage, "Earth Smash counter");
+              events.push(`${target.definitionId} counters ${actor.definitionId} with Earth Smash (${earthCounter.damage}).`);
+              events.push(...counter.events);
+              if (counter.matchEnded) return { errors, events };
+            }
+          }
           break;
         }
         case "heal": {

@@ -46,6 +46,10 @@ export const STARTER_DECK_IDS: string[] = [
   "travel-rations",
   "smoke-bomb",
   "dust-toss",
+  "air-cocoon",
+  "earth-smash",
+  "seismic-snare",
+  "octopus-intercept",
 ];
 
 /** chi value / chi cost / energy / restrictions / slot per card. */
@@ -68,6 +72,11 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "travel-rations": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
   "smoke-bomb": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
   "dust-toss": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "attack" },
+  // Prototype values expose the mechanic in the demo; these cards are not balanced.
+  "air-cocoon": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["air", "avatar"] }], slotType: "defense" },
+  "earth-smash": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["earth", "avatar"] }], slotType: "defense" },
+  "seismic-snare": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["earth", "avatar"] }], slotType: "defense" },
+  "octopus-intercept": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "defense" },
 };
 
 /** Restriction gate for assign AND play (banking is always legal). */
