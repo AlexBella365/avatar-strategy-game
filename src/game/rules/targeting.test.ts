@@ -2,6 +2,7 @@
 // Spec v2 §4.5, §10 + test list §17 (targeting).
 import { describe, expect, it } from "vitest";
 import { setup } from "../testutils";
+import { CARD_DEFINITIONS } from "../content/cards";
 import type { CardDefinition, Targeting } from "../types";
 import { createTerrain } from "./terrain";
 import {
@@ -93,6 +94,28 @@ describe("focused character targeting", () => {
     expect(
       getLegalTargets(state, AANG, focused()).some((o) => o.primaryCharacterId === TOPH),
     ).toBe(false);
+  });
+
+  it("Momo Scout requires an adjacent unactivated enemy with an assignment", () => {
+    const state = setup();
+    const scout = state.characters.find((character) => character.id === AANG)!;
+    scout.position = { x: 1, y: 5 };
+    const card = CARD_DEFINITIONS["momo-scout"];
+    const noAssignment = validateTarget(state, scout.id, card, {
+      kind: "character",
+      characterId: TOPH,
+    });
+    expect(noAssignment.errors[0].code).toBe("NO_ASSIGNED_CARD_TARGET");
+
+    state.players[1].assignments[TOPH] = { id: "assigned", definitionId: "earth-sweep" };
+    expect(
+      validateTarget(state, scout.id, card, { kind: "character", characterId: TOPH }).ok,
+    ).toBe(true);
+
+    state.characters.find((character) => character.id === TOPH)!.activatedThisRound = true;
+    expect(
+      validateTarget(state, scout.id, card, { kind: "character", characterId: TOPH }).errors[0].code,
+    ).toBe("TARGET_ALREADY_ACTIVATED");
   });
 });
 

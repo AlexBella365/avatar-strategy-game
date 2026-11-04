@@ -182,6 +182,7 @@ export function applyGameAction(
         bankCard(next, action.playerId, assigned, "scrapped on pass");
         player.assignments[action.characterId] = null;
       }
+      clearAssignmentIntel(next, action.characterId);
       actor.activatedThisRound = true;
       actor.techniqueBlockedThisActivation = false;
       events.push(`${actor.definitionId} passes.`);
@@ -243,6 +244,12 @@ function expirePreparedResponses(state: GameState, actingPlayerId: string, event
     const card = getCardDefinition(c.preparedResponse.cardId);
     c.preparedResponse = null;
     events.push(`${c.definitionId}'s ${card?.name ?? "prepared response"} expires unused.`);
+  }
+}
+
+function clearAssignmentIntel(state: GameState, characterId: string): void {
+  for (const intel of Object.values(state.revealedAssignments)) {
+    delete intel[characterId];
   }
 }
 
@@ -384,6 +391,7 @@ function resolveScrap(
   if (!assigned)
     return { errors: [err("NOTHING_ASSIGNED", "That character holds no card.")], events: [] };
   player.assignments[characterId] = null;
+  clearAssignmentIntel(state, characterId);
   return { errors: [], events: [bankCard(state, playerId, assigned, "scrapped")] };
 }
 
@@ -511,6 +519,7 @@ function resolvePlayCard(
     events.push(`${actor.definitionId} uses Discipline focus (-1 Energy).`);
   }
   player.assignments[actor.id] = null;
+  clearAssignmentIntel(state, actor.id);
   removeFromHand(state, action.playerId, actor.id, action.cardInstanceId);
   // The played card leaves play at commit: gear equips, the rest discards
   // (even if the technique later fizzles).
@@ -903,6 +912,17 @@ function resolvePlayCard(
         case "disrupt":
           events.push(applyStatus(state, targetId, "Exhausted", 1));
           break;
+        case "revealAssignment": {
+          const targetOwner = state.players.find((p) => p.id === target.ownerId);
+          const assignedTargetCard = targetOwner?.assignments[target.id];
+          if (assignedTargetCard) {
+            const intel = state.revealedAssignments[actor.ownerId] ?? {};
+            intel[target.id] = { ...assignedTargetCard };
+            state.revealedAssignments[actor.ownerId] = intel;
+            events.push(`${actor.definitionId} scouts the face-down card on ${target.definitionId}.`);
+          }
+          break;
+        }
       }
     }
   }

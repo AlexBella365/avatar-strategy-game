@@ -200,6 +200,7 @@ export function endRound(state: GameState): string[] {
   }
   // v0.3: unplayed assignments auto-scrap, leftovers auto-bank — then effects.
   for (const player of state.players) events.push(...bankLeftovers(state, player.id));
+  state.revealedAssignments = {};
   // Avatar State duration counts down each end-of-round (§12A.5).
   for (const c of state.characters) {
     if (c.avatarState?.active) {

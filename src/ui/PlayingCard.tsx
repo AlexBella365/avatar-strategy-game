@@ -49,6 +49,16 @@ function affinityBadge(restrictions: Restriction[] = []) {
     };
   }
 
+  const team = restrictions.find((restriction) => restriction.type === "team");
+  if (team?.type === "team") {
+    const label = team.teamId === "team-avatar" ? "Team Avatar" : team.teamId;
+    return {
+      className: "team",
+      label: `${label} only`,
+      marks: ["👥"],
+    };
+  }
+
   return { className: "open", label: "Any character", marks: ["✦"] };
 }
 
@@ -77,11 +87,11 @@ interface PlayingCardProps {
 }
 
 /** Compact card token for the sheet-side slots (assigned ability / gear). */
-export function MiniCard({ def }: { def: CardDefinition }) {
+export function MiniCard({ def, scouted = false }: { def: CardDefinition; scouted?: boolean }) {
   const suit = ELEMENT_SUIT[def.element ?? ""] ?? "⚙️";
   const kind = def.economy?.kind ?? def.cardType;
   return (
-    <div className={`mini-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"}`} title={`${def.name}\n${def.rulesText}`}>
+    <div className={`mini-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"} ${scouted ? "scouted" : ""}`} title={`${scouted ? "Scouted card\n" : ""}${def.name}\n${def.rulesText}`}>
       <span className="mini-art">{def.art ?? suit}</span>
       <span className="mini-name">{def.name}</span>
     </div>

@@ -1,14 +1,14 @@
 # Card Roster v1 — Full Pool (existing + proposed)
 
 **Status:** Live pool documents current code; expansion sections remain design proposals. Non-normative for engine rules.
-**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 27-card pool).
+**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 29-card pool).
 **Goal:** Reach **~20 usable cards per character type** (Water / Earth / Fire / Air / Non-bending), built from ATLA + LOK lore, **with a shared core** so common effects aren't reprinted per element.
 
 **Conditional defense prototypes:** see [`conditional_defense_cards_v1.md`](conditional_defense_cards_v1.md) for a batch exploring prepared responses, trigger families, and lore variants. Four cards are in the live pool as intentionally unbalanced prototypes; the remaining concepts are design-only.
 
 ## 1. Existing live pool (ships today — `cards.ts` + `economy.ts`)
 
-27 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
+29 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
 
 | id | name | cardType / kind | ⚡+💠 (⇪) | Fits (restriction) | rulesText (verbatim) |
 |---|---|---|---|---|---|
@@ -244,7 +244,7 @@ New signature (12):
 | `dual-daggers` | attack | 1+0 (1) | melee | `Dual Daggers: melee. 2 damage (+1 vs Exposed).` | Ty Lee/Mai |
 | `rally` | support | 1+0 (2) | ally R3 | `Rally: an ally in range 3 heals 1 and gains 1 Focus.` | Sokka (leadership) |
 
-## 13. Gear & companions additions
+## 13. Gear & companions
 
 **Gear** (`slotType:"gear"`, persistent bonus while equipped): existing Aang's Glider, Sokka's Boomerang (§1).
 
@@ -255,14 +255,14 @@ New signature (12):
 | `combat-suit` | Suki (unique) | 1+1 (2) | `shield` +1 | `Kyoshi Combat Suit: your first shield each round is +1.` | Suki |
 | `metal-armband` | Lin, Kuvira (earth) | 1+1 (2) | `damage:1` vs shielded | `Metal Armband: +1 damage against shielded targets.` | metalbenders |
 
-**Companions** (one-shot ability cards, resolve then discard; no Evade): existing Appa (Team Avatar teleport), Momo (snatch/bank).
+**Companions** are one-shot ability cards that resolve then discard; they do not open an Evade window. The first pair is live:
 
 | id | Fits | ⚡+💠 (⇪) | rulesText (verbatim) | Lore |
 |---|---|---|---|---|
-| `naga-lift` | Korra (LOK team) | 2+2 (2) | `Naga Lift: fly yourself to any empty, non-blocking tile, ignoring everything in between.` (Appa analogue for LOK) | Naga |
-| `pabu-swipe` | Bolin, Mako (LOK) | 1+2 (2) | `Pabu Swipe: target an adjacent enemy who hasn't activated; peek at their face-down card, then bank it for its chi.` (Momo analogue) | Pabu |
+| `appa-lift` | Aang (unique) | 2+2 (2) | `Appa carries you to an empty, legal tile within 3, ignoring intervening terrain, hazards, and Bound. The landing tile must be standable; its entry effects still apply. Aang only. 2 Energy + 2 chi.` | Appa |
+| `momo-scout` | Team Avatar | 1+2 (2) | `Momo scouts an adjacent enemy who has not activated and reveals their assigned card to your team. The card is not taken or discarded. Team Avatar only. 1 Energy + 2 chi.` | Momo |
 
-(Gear/companions are `unique`/team-gated and NOT counted in the per-type totals.)
+Scouted cards are visible only to the scouting player's view and stay known until their owner activates or scraps them, or the round ends. (Gear/companions are not counted in the per-type totals.)
 
 ## 14. Per-type totals (target ≥ 20)
 

@@ -65,6 +65,7 @@ function CardRoster() {
     switch (r.type) {
       case "unique": return `${CHARACTERS.find((d) => d.id === r.characterId)?.name ?? r.characterId} only`;
       case "element": return r.elements.join(" or ");
+      case "team": return r.teamId === "team-avatar" ? "Team Avatar" : r.teamId;
       case "alignment": return r.alignment === "hero" ? "Heroes" : "Villains";
     }
   };
@@ -315,7 +316,10 @@ function buildFloats(before: GameState, after: GameState, startSeq: number): Com
  *  - `front`: the viewer owns this character — show the assigned card's face.
  *  - `back`:  the opponent holds a face-down card here — show only the card back.
  *  - `none`:  nothing assigned to show. */
-type AssignmentView = { kind: "front"; def: CardDefinition } | { kind: "back" } | { kind: "none" };
+type AssignmentView =
+  | { kind: "front"; def: CardDefinition; scouted?: boolean }
+  | { kind: "back" }
+  | { kind: "none" };
 
 /** One character sheet: a narrower sheet flanked by a gear slot (left) and the
  *  assigned-ability slot (right). Cards replace the old "Card: …" text row. */
@@ -406,7 +410,7 @@ function SheetCard(props: {
         }
       >
         {assignment.kind === "front" ? (
-          <MiniCard def={assignment.def} />
+          <MiniCard def={assignment.def} scouted={assignment.scouted} />
         ) : assignment.kind === "back" ? (
           <MiniCardBack />
         ) : (
@@ -1080,7 +1084,14 @@ export default function App() {
     const owner = state.characters.find((c) => c.id === charId)?.ownerId;
     const inst = state.players.find((p) => p.id === owner)?.assignments[charId];
     if (!inst) return { kind: "none" };
-    if (owner !== actingSide) return { kind: "back" }; // opponent cards stay face down
+    if (owner !== actingSide) {
+      const scouted = state.revealedAssignments[actingSide]?.[charId];
+      if (scouted?.id === inst.id) {
+        const def = getCardDefinition(scouted.definitionId);
+        if (def) return { kind: "front", def, scouted: true };
+      }
+      return { kind: "back" }; // opponent cards stay face down unless scouted
+    }
     const def = getCardDefinition(inst.definitionId);
     return def ? { kind: "front", def } : { kind: "back" };
   };
@@ -1112,6 +1123,8 @@ export default function App() {
         return `${CHARACTERS.find((d) => d.id === r.characterId)?.name ?? r.characterId} only`;
       case "element":
         return r.elements.join(" or ");
+      case "team":
+        return r.teamId === "team-avatar" ? "Team Avatar" : r.teamId;
       case "alignment":
         return r.alignment === "hero" ? "Heroes" : "Villains";
     }
