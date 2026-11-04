@@ -18,7 +18,7 @@
   max-width: 150px;
   aspect-ratio: 5 / 7;
   border-radius: 10px;
-  background: var(--element-base, #fff);
+  background: var(--element-base, #f2f2f2);
   border: 2px solid var(--border-strong);
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
   padding: 28px 6px 7px;
@@ -230,7 +230,7 @@
   aspect-ratio: 5 / 7;
   border-radius: 6px;
   border: 2px solid var(--border-strong);
-  background: var(--element-base, #fff);
+  background: var(--element-base, #f2f2f2);
   padding: 3px 2px;
   display: flex;
   flex-direction: column;
