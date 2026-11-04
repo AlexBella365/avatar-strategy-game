@@ -255,9 +255,9 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
       maxRange: 4,
     },
     tags: ["AoE", "Ranged"],
-    effects: [{ type: "damage", amount: 5 }],
+    effects: [{ type: "damage", amount: 4 }],
     economy: withEconomy("comet-strike", "attack"),
-    rulesText: "Radius-1 bomb at an origin within 4. 5 damage to each enemy. 2 Energy + 3 chi.",
+    rulesText: "Radius-1 bomb at an origin within 4. 4 damage to each enemy. 2 Energy + 3 chi.",
   },
   "travel-rations": {
     id: "travel-rations",

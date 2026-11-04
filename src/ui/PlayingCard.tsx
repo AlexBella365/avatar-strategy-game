@@ -1,4 +1,5 @@
-import type { CardDefinition } from "../game/types";
+import { CHARACTERS } from "../game/content/characters";
+import type { CardDefinition, Restriction, Targeting } from "../game/types";
 import "./PlayingCard.css";
 
 const ELEMENT_SUIT: Record<string, string> = {
@@ -8,6 +9,65 @@ const ELEMENT_SUIT: Record<string, string> = {
   air: "🌪️",
   nonbender: "🪃",
 };
+
+const KIND_ICON: Record<string, string> = {
+  attack: "⚔",
+  defense: "⛨",
+  gear: "⚙",
+};
+
+function affinityBadge(restrictions: Restriction[] = []) {
+  const unique = restrictions.find((restriction) => restriction.type === "unique");
+  if (unique?.type === "unique") {
+    const character = CHARACTERS.find((entry) => entry.id === unique.characterId);
+    return {
+      className: "character",
+      label: `${character?.name ?? unique.characterId} only`,
+      portrait: `/faces/${unique.characterId}.webp`,
+      marks: [] as string[],
+    };
+  }
+
+  const elements = restrictions
+    .filter((restriction): restriction is Extract<Restriction, { type: "element" }> => restriction.type === "element")
+    .flatMap((restriction) => restriction.elements)
+    .filter((element, index, all) => all.indexOf(element) === index);
+  if (elements.length) {
+    return {
+      className: "element",
+      label: `${elements.map((element) => `${element}bender`).join(" or ")} only`,
+      marks: elements.map((element) => ELEMENT_SUIT[element] ?? "✦"),
+    };
+  }
+
+  const alignment = restrictions.find((restriction) => restriction.type === "alignment");
+  if (alignment?.type === "alignment") {
+    return {
+      className: "alignment",
+      label: `${alignment.alignment === "hero" ? "Heroes" : "Villains"} only`,
+      marks: [alignment.alignment === "hero" ? "☀" : "☾"],
+    };
+  }
+
+  return { className: "open", label: "Any character", marks: ["✦"] };
+}
+
+function combatBadge(targeting: Targeting) {
+  switch (targeting.kind) {
+    case "self":
+      return { className: "self", label: "Self", mark: "●" };
+    case "character":
+      if (targeting.range === "melee") return { className: "melee", label: "Melee", mark: "⚔" };
+      if (targeting.range === "any") return { className: "ranged", label: "Any range", mark: "⌁" };
+      return { className: "ranged", label: `Range ${targeting.range}`, mark: "➹" };
+    case "tile":
+      return { className: "tile", label: targeting.range === "any" ? "Any tile" : `Tile ${targeting.range}`, mark: "◇" };
+    case "direction":
+      return { className: "line", label: `Line ${targeting.maxLength}`, mark: "↠" };
+    case "area":
+      return { className: "area", label: "Area", mark: "✹" };
+  }
+}
 
 interface PlayingCardProps {
   def: CardDefinition;
@@ -49,6 +109,8 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
   const kind = def.economy?.kind ?? def.cardType;
   const chi = def.economy?.chiCost ?? 0;
   const bank = def.economy?.value ?? 1;
+  const affinity = affinityBadge(def.economy?.restrictions);
+  const combat = combatBadge(def.targeting);
   const title = [
     def.name,
     def.rulesText,
@@ -69,10 +131,22 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
         <span className="pc-cost">🌀{chi}</span>
         <span className="pc-suit">{suit}</span>
       </div>
+      <div className={`pc-type-ribbon kind-${kind}`} aria-label={`${kind} card`}>
+        <span aria-hidden="true">{KIND_ICON[kind] ?? "✦"}</span> {kind}
+      </div>
       <div className="pc-name">{def.name}</div>
       <div className="pc-art">{def.art ?? suit}</div>
+      <div className={`pc-combat pc-combat-${combat.className}`} title={combat.label}>
+        <span aria-hidden="true">{combat.mark}</span> {combat.label}
+      </div>
       <div className="pc-rules">{def.rulesText}</div>
-      <div className="pc-kind">{kind}</div>
+      <div className={`pc-affinity pc-affinity-${affinity.className}`} title={affinity.label} aria-label={affinity.label}>
+        {affinity.portrait ? (
+          <img src={affinity.portrait} alt="" />
+        ) : (
+          affinity.marks.map((mark, index) => <span key={`${mark}-${index}`} aria-hidden="true">{mark}</span>)
+        )}
+      </div>
     </div>
   );
 }

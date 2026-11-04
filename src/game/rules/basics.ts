@@ -71,7 +71,9 @@ export function resolveBasicAttack(
     };
   }
   actor.techniqueBlockedThisActivation = true;
-  const outcome = dealDamage(state, targetCharacterId, 1, "basic attack");
+  // Basic attacks stay at their printed 1 damage: the global damage multiplier
+  // is for card/hazard lethality, not the free fallback (rules §8 Phase 3).
+  const outcome = dealDamage(state, targetCharacterId, 1, "basic attack", { scale: false });
   events.push(`${actor.definitionId} makes a basic attack (1).`);
   events.push(...outcome.events);
   return { errors, events };
