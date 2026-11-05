@@ -109,10 +109,10 @@
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 .pc-type-ribbon.kind-attack {
-  background: var(--accent-danger);
+  background: #70418f;
 }
 .pc-type-ribbon.kind-defense {
-  background: var(--accent-select);
+  background: #277568;
 }
 .pc-type-ribbon.kind-gear {
   background: #89671b;
