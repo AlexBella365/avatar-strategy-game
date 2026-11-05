@@ -54,22 +54,22 @@
 }
 .playing-card.element-air,
 .mini-card.element-air {
-  --element-base: #f3f1e8;
+  --element-base: #f7f1df;
   --element-symbol: url("../../artwork/symbols_air.png");
 }
 .playing-card.element-water,
 .mini-card.element-water {
-  --element-base: #eef4f7;
+  --element-base: #e8f4f6;
   --element-symbol: url("../../artwork/symbols_water.png");
 }
 .playing-card.element-earth,
 .mini-card.element-earth {
-  --element-base: #f0f3e9;
+  --element-base: #eff3df;
   --element-symbol: url("../../artwork/symbols_earth.png");
 }
 .playing-card.element-fire,
 .mini-card.element-fire {
-  --element-base: #f7eeee;
+  --element-base: #f8e9e7;
   --element-symbol: url("../../artwork/symbols_fire.png");
 }
 .playing-card.element-nonbender,
@@ -79,7 +79,7 @@
 }
 .playing-card.element-technology,
 .mini-card.element-technology {
-  --element-base: #f2edf5;
+  --element-base: #f1e8f6;
   --element-symbol: url("../../artwork/symbols_techno.png");
 }
 .playing-card > :not(.pc-affinity):not(.pc-type-ribbon),
