@@ -71,7 +71,7 @@ export function resolveBasicAttack(
     };
   }
   actor.techniqueBlockedThisActivation = true;
-  const outcome = dealDamage(state, targetCharacterId, 1, "basic attack");
+  const outcome = dealDamage(state, targetCharacterId, 1, "basic attack", { scale: false });
   events.push(`${actor.definitionId} makes a basic attack (1).`);
   events.push(...outcome.events);
   return { errors, events };

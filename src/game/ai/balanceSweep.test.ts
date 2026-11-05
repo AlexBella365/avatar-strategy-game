@@ -59,7 +59,7 @@ const slots = (inset: number): [Position[], Position[]] => [
   ],
 ];
 const HEROES: CharacterDefinition[] = [byId("aang"), byId("katara"), byId("toph")];
-const VILLAINS: CharacterDefinition[] = [byId("zuko"), byId("sokka"), byId("azula")];
+const VILLAINS: CharacterDefinition[] = [byId("zuko"), byId("azula"), byId("ozai")];
 
 interface Opts {
   rounds?: number;
@@ -299,9 +299,9 @@ describe.skipIf(!RUN)("balance sweep", () => {
     // spend its cells on the knobs that matter: movement (contact timing), HP
     // (kill window), inset (starting distance), and the damage multiplier.
     const movements = [1, 2];
-    const hpScales = [1, 0.8, 0.65];
+    const hpScales = [1, 0.65, 0.58];
     const insets = [0, 1];
-    const damageScales = [1, 1.5];
+    const damageScales = [1, 1.5, 1.75];
     const emitGrid = (rosterLabel: string, a: CharacterDefinition[], b: CharacterDefinition[]) => {
       emit(`\n===== tuning grid: ${rosterLabel} (n=${GRID_N} per cell) =====`);
       for (const movement of movements) {

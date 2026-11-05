@@ -152,62 +152,65 @@ A version may **not** be called balanced if any of these hold:
 
 ---
 
-## 10. Lethality pass — results and next steps (v0.3 engine + shipped tuning)
+## 10. Lethality + roster-parity pass — results and next steps (v0.3 engine + shipped tuning)
 
-Second harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. The shipped match now runs on the defaults in `src/game/content/balance.ts`; **raw baseline cells are committed at `specs/balance_sweep_baseline.txt`** (regenerate with `make sweep-baseline`; the unfiltered harness also emits the tuning grid). Turn order is engine-enforced (§4.1); the remaining harness caveat is deployment/secrecy.
+Third harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. The shipped match runs on the defaults in `src/game/content/balance.ts`; **raw baseline cells are committed at `specs/balance_sweep_baseline.txt`** (regenerate with `make sweep-baseline`; the unfiltered harness also emits the tuning grid). Turn order is engine-enforced (§4.1); the remaining harness caveat is deployment/secrecy.
 
 ### 10.1 Measured
 
 | Matchup | result | cap-reach | KO finish | draws | HP-share margin |
 |---|---|---|---|---|---|
-| Shipped — heroes (p1, north) vs villains (p2) | **villains 75%** (25–75) | 50% | **41%** | 0% | 0.290 |
-| Mirror heroes (seat alternated) | p1 39 / p2 57 | 90% | 5% | 4% | 0.234 |
-| Mirror villains (seat alternated) | p1 38 / p2 61 | 25% | **75%** | 1% | 0.327 |
+| Shipped — heroes (p1, north) vs villains (p2) | **heroes 46%** (46–51) | 20% | **76%** | 3% | 0.254 |
+| Mirror heroes (seat alternated) | p1 45 / p2 55 | 50% | 39% | 0% | 0.289 |
+| Mirror villains (seat alternated) | p1 46 / p2 52 | 8% | **92%** | 2% | 0.203 |
 
-First KO lands at **round 3.8** on average in the shipped matchup (min 2), versus ≈7 before the pass. Round-1 KOs: 0% shipped, 0% hero mirror, 1% villain mirror. The 9% "unresolved" shipped rows are Avatar-State instant losses (`fell while in Avatar State`), not missing results.
+First KO lands at **round 3.2** on average in the shipped matchup (min 1). Round-1 KOs: 1% shipped, 0% hero mirror, 2% villain mirror. The shipped "unresolved 4" rows are Avatar-State instant losses, not missing results.
 
 ### 10.2 Gate verdict against §2.1
 
-- **Lethality — PASS on the declared rule:** cap-reach 50% (≤70%), KO finish 41% (≥40%), draws 0% (<10%). This is the first cell that clears all three, and it is tight: KO and cap are within about one Wilson step of their thresholds, so this is *not* yet a durable "balanced" claim.
-- **Time — healthy in the shipped matchup:** 50% of games reach round 10 (band 30–70%). **Hero mirror is still grindy: 90% cap-reach → FLAG** (>85%); villain mirror is 25% (bursty but not <10%).
-- **Matchup — FAIL:** heroes 25% / villains 75%, beyond the ±20pp bar. This is roster parity, not seat: both mirrors sit near 50% north/first-mover (47% and 54%, CIs include 50%) and near 50/50 by player.
-- **Round-1 KO:** 0–1% → OK (fail is >7%).
-- **Draws:** 0% shipped, 4% hero mirror, 1% villain mirror → OK (fail is >30%). The old 18% hero-mirror draw problem is gone.
+- **Lethality — PASS:** cap-reach 20% (≤70%), KO finish 76% (≥40%), draws 3% (<10%). KO has ~36pp of headroom rather than sitting on the threshold.
+- **Matchup — PASS:** heroes 46% / villains 51%, inside the ±12pp flag band. (Was 25/75.)
+- **Time — mixed:** shipped cap-reach 20% sits between the healthy 30–70% band and the <10% bursty flag; hero mirror is healthy at 50%; **villain mirror is 8% → FLAG** (<10% is bursty). The 90%-cap hero mirror from the lethality pass is gone.
+- **Round-1 KO:** 1% shipped, 0% hero mirror, 2% villain mirror → OK (flag is >3%, fail >7%).
+- **Draws:** 3% / 0% / 2% → OK (fail is >30%).
+- **Seat:** north/first-mover 46% shipped, 53% hero mirror, 52% villain mirror — all CIs include 50%.
 - Not yet measured: avg team Energy spent/round, Avatar State *activation* rate, staple rates, bank:play, per-character win rates.
 
-### 10.3 What moved (tuning data)
+### 10.3 What moved (three passes)
 
 All knobs are per-match data (`MatchTuning` in `src/game/types.ts`, defaults in `src/game/content/balance.ts`), so the harness can re-run any cell without engine edits.
 
-| Knob | Old | Shipped | Why |
+| Knob / rule | Original | Shipped | Why |
 |---|---|---|---|
 | `movement` | 1 | **2** | Contact happened in round 3–4; two tiles makes it round 1–2. |
-| `hpScale` | 1 | **0.65** | 16–20 HP pool → 10–13, so focused fire can finish inside 10 rounds. |
+| `hpScale` | 1 | **0.58** | 14–20 HP pool → 8–12, so focused fire finishes inside 10 rounds. |
 | `deploymentInset` | 0 | **1** | Start on rows 1/5 instead of 0/6: one row closer without changing the board. |
-| `damageScale` | 1 | **1.5** | Applied in `dealDamage` after the rulebook formula, so cards, basics, and hazards scale together. |
-| `energyPerRound` | 4 | **4** | Exploring 6 changed plays/round but not the KO rate enough to justify a second economy variable. |
-| `healingScale` | 1 | **1** | Heals are now actually chosen by the improved policy, so the model is exercised without a multiplier. |
+| `damageScale` | 1 | **1.75** | Applied in `dealDamage` after the rulebook formula. 1.75 is the step where printed 2-damage staples deal 4; it gives hero sustain decks finishing power. |
+| Cardless basic attack | scales | **exempt** | The free fallback stays at its printed 1 damage (rules §8 Phase 3). At ×1.5 it silently dealt 2 and was ~20% of all damage, favouring aggression-5 villains. |
+| `comet-strike` | 5 | **4** | Largest single damage source (~14/match, no hero equivalent); 4 keeps it the ceiling anchor without deciding matchups. |
+| Villain roster | Zuko, **Sokka**, Azula | **Zuko, Azula, Ozai** | Sokka is `role: "hero"` and was filling a villain slot; Ozai (the lore villain) was unused. |
 
-Before the pass: 100% cap-reach, 0% KO finishes, first KO ≈ round 7, hero-mirror draws 18%. `hpScale` alone (the first baseline's grid) never cleared the gates — **engagement speed had to move with the damage/HP ratio.** The first cell that passed was `movement 2 · hp ×0.65 · inset 1 · damage ×1.5`; that cell is now the shipped default.
+Rejected during the pass: **+1 printed damage on each hero attack card** (Earth Sweep / Air Blast / Water Whip 2→3). At ×1.5 that rounds to +2 effective per hit and pushed hero win rates far outside the band. The lesson: under an integer damage multiplier, printed-damage changes compound; prefer roster/tuning levers and check rounding cliffs (`1.5` and `1.6` produce identical outcomes; `1.75` is a step change).
 
 ### 10.4 Key dynamics
 
-1. **Lethality now depends on the matchup.** The shipped cross-roster game finishes 41% by KO, but same-roster hero mirrors are still 90% cap-reach with 5% KOs. Global pacing is no longer the blocker; the *shape* of each kit is.
-2. **The matchup is still polarized.** Villains win 75% of shipped games. `rising-flame` 3→2 improved the pre-tuning baseline from ~21% to ~44%, but after the pass the shipped matchup sits at 25% — card/roster parity, not another global damage multiplier (which would push KO/cap outside their bands).
-3. **Mirror asymmetry points at kit shape.** Villains finish 75% of their mirrors by KO; heroes finish 5% and grind to a tiebreak. Hero sustain/control likely needs a damage floor or cheaper tempo, while villain burst may need a cost/range gate.
-4. **Seat is fine.** North/first-mover is 47% and 54% in the mirrors; both CIs include 50%.
-5. **Avatar-State instant loss is a live outcome** (~9% of shipped games, 5% of hero mirrors). It is working as designed; treat it as a separate risk axis when reading win rates.
+1. **Parity came from roster + rounding, not a new mechanic.** Removing the hero-flavoured Sokka from the villain team and giving heroes a damage step they can actually use (4-damage staples) closed the 25/75 gap; the villain trio now wins its mirror 92% by KO.
+2. **Heroes are no longer the grindy side.** The hero mirror moved from 5% KO / 90% cap to 39% KO / 50% cap. The remaining pacing flag is the *villain* mirror at 8% cap — bursty rather than grindy.
+3. **Integer cliffs matter more than knob precision.** `damageScale` and `hpScale` both round; report the *effective* damage/HP values, not just the multipliers, when proposing changes. `1.5` and `1.6` can produce identical outcomes while `1.75` is a step change.
+4. **Seat is fine** in all three cells.
+5. **Avatar-State instant loss is a live outcome** (~4% of shipped games after this pass). It is working as designed; treat it as a separate risk axis when reading win rates.
 
 ### 10.5 Next steps (prioritized)
 
-1. **Roster/card parity — the next block.** Bring shipped heroes-vs-villains inside ±20pp at n≥200 without breaking the lethality bands. Start with the §3.1 counterplay and §3.2 efficiency audits under the tuned numbers (a printed 2-damage card now deals 3).
-2. **Re-baseline at n≥200.** Regenerate the full report (`make sweep-baseline`) and add per-character/type win rates to the harness; 25/75 is decision-grade for direction but not yet for pair tables.
-3. **Watch the tight gate.** KO 41% / cap 50% is within one Wilson step of both thresholds; a small roster change can flip it. Keep the PASS rule fixed and compare paired seeds.
-4. **Heals are now exercised** (1.1 spike-heal plays/match shipped; 2.7 in hero mirrors). Keep `healingScale` at 1 until matchup work shows a specific need.
-5. **Basic-action floor audit stays open:** the villains' 75% mirror KO rate and 1% round-1 KOs warrant checking whether the free strike is still undercosted for aggression-5 kits.
+1. **Re-baseline at n≥200.** The current n=100 cells are ±9.8pp; run `make sweep-baseline` and add per-character/type win rates to the harness before treating pair tables as decision-grade.
+2. **Investigate the villain mirror's 8% cap-reach.** Villain games end by KO almost always; confirm this is acceptable burst (Ceasefire/Comet trades) rather than a missing defensive option. If it needs calming, raise `hpScale` slightly rather than cutting damage.
+3. **Counterplay/efficiency audits (§3.1–3.2) under the tuned numbers.** Every printed value now resolves through ×1.75; recompute damage-per-Energy tables and confirm the signature > universal > cross-class ordering still holds.
+4. **Watch the villain basic-attack share.** Ozai (aggression 5) is now in the villain lineup and the AI leans on the free strike; the cardless-floor audit stays open even though it no longer scales.
+5. **Keep the gates fixed.** KO 76% / cap 20% has headroom, but any roster edit can move it; compare paired seeds and log the decision note required by §2.
 6. **Harness follow-ons:** emit the §4.4 JSONL per-game log; add T2 archetype bots (§4.2) now that pacing is usable.
+
 
 ### 10.6 Follow-ups (not balance)
 
 - Track A M2 remainder: debug overlay (`chooseAutoActionTraced` + `ai/traceLog.ts` already exist; hook near `src/App.tsx` auto loop), tracked in `npc_ai_plan.md` §A.7.
-- Optional `VITE_AI_POLICY=random` A/B baseline flag (npc_ai_plan.md §4); useful for policy comparisons, but not a prerequisite for resolving the current pacing failure.
+- Optional `VITE_AI_POLICY=random` A/B baseline flag (npc_ai_plan.md §4); useful for policy comparisons, but not a prerequisite for the current balance work.

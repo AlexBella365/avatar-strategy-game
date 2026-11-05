@@ -133,6 +133,6 @@ stay in sync.
 12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
 13. ⬜ NPC AI debug overlay — finish Track A M2 by surfacing the existing decision traces in the UI; see `specs/npc_ai_plan.md` §A.6–A.7.
 14. ⬜ End-to-end polish (passives, roster waves)
-15. ✅ Lethality pass — shipped tuning is now data (`src/game/content/balance.ts`): movement 2, HP ×0.65, deployment rows 1/5, damage ×1.5. At n=100 the shipped matchup finishes 41% by KO, reaches the cap 50%, and draws 0% — the §2.1 lethality gate passes (tightly). See `specs/balance_testing_plan.md` §10.
-16. ⬜ Roster/card parity — the remaining balance blocker: villains win 75% of shipped games (heroes 25%), beyond the ±20pp matchup gate. Start with the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 and re-baseline at n≥200.
+15. ✅ Lethality + roster-parity pass — shipped tuning is data (`src/game/content/balance.ts`): movement 2, HP ×0.58, deployment rows 1/5, damage ×1.75. At n=100 the shipped matchup is heroes 46% / villains 51%, KO 76%, cap 20%, draws 3% — all §2.1 gates pass, and the hero mirror is no longer grindy (KO 39%, was 5%). See `specs/balance_testing_plan.md` §10.
+16. ⬜ Balance hardening — re-baseline at n≥200 and investigate the villain mirror's burst (8% cap-reach), then run the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 under the tuned numbers. The villain lineup is now the lore trio (Zuko, Azula, Ozai); Sokka is a hero and no longer fills a villain slot.
 17. 🧪 Experimental LLM advisor (Track B, Mode 1) — off by default (`VITE_AI_LLM=1` to enable); evaluation against Track A is pending. Mode 2 (LLM top-k choice) remains deferred; see `specs/npc_ai_plan.md` §3–5.

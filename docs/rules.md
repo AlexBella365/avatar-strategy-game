@@ -17,13 +17,13 @@ If both teams survive after round 10, you compare:
 
 ## Setup
 
-1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
+1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Azula, Ozai).
 2. A random roll assigns your sides: one of you deploys on north row 1, the other on south row 5. Place your 3 characters on 3 different tiles of your row, in secret; both sides reveal after locking. Rows 0, 2–4, and 6 start empty. (Starting one row in from the edge shortens the walk to contact — see the balance note below.)
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
 4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
 
-> **Balance tuning (current build).** Starting/max HP is 65% of each character's printed value, all damage is ×1.5, and you deploy one row in from your edge. These are match *data*, not bespoke rules: `src/game/content/balance.ts` holds the numbers, and `specs/balance_testing_plan.md` §10 records the self-play measurements behind them.
+> **Balance tuning (current build).** Starting/max HP is 58% of each character's printed value, card and hazard damage is ×1.75 (the free cardless basic attack stays at its printed 1), and you deploy one row in from your edge. These are match *data*, not bespoke rules: `src/game/content/balance.ts` holds the numbers, and `specs/balance_testing_plan.md` §10 records the self-play measurements behind them.
 
 ## Your cards
 
@@ -71,7 +71,7 @@ Some cards need a direction — line attacks, and earth **Wall Rise** (low wall 
 Your bank is a spendable pool of chi, shared by your team. **Your chi total and which cards you banked are secret** — your opponent only sees played cards and the board.
 
 - You gain chi by banking unassigned cards (auto) and scrapping assigned ones (live choice).
-- Strong cards cost chi **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 chi, 5 damage.** Weak cards cost 0 chi.
+- Strong cards cost chi **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 chi, 4 damage.** Weak cards cost 0 chi.
 - Typical income: ~2–4 chi/round if you bank 2 unassigned. A bomb costing 5 chi means you must scrap ~2 extra assigned cards over rounds 1–2 to fire it on round 3. That's the tension: play your good cards now, or scrap them to afford bombs later.
 - Chi does not cap in the prototype. It belongs to your team, not your characters.
 
