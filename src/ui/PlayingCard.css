@@ -36,20 +36,16 @@
   content: "";
   position: absolute;
   z-index: 0;
-  top: 50%;
-  left: 50%;
-  width: 50%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
+  inset: 0;
   border-radius: inherit;
   background-image: var(--element-symbol, none);
   background-position: center;
-  background-size: contain;
+  background-size: 50% auto;
   background-repeat: no-repeat;
   opacity: 0.3;
   filter: blur(2px);
-  -webkit-mask-image: radial-gradient(ellipse, #000 28%, transparent 100%);
-  mask-image: radial-gradient(ellipse, #000 28%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
   pointer-events: none;
 }
 .playing-card.element-air,
