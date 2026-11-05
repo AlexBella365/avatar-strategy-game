@@ -79,6 +79,13 @@ function combatBadge(targeting: Targeting) {
   }
 }
 
+function symbolElement(def: CardDefinition): string {
+  if (def.tags.some((tag) => ["machine", "machines", "technology", "tech", "techno"].includes(tag.toLowerCase()))) {
+    return "technology";
+  }
+  return def.element ?? "neutral";
+}
+
 interface PlayingCardProps {
   def: CardDefinition;
   assigning: boolean;
@@ -90,8 +97,9 @@ interface PlayingCardProps {
 export function MiniCard({ def, scouted = false }: { def: CardDefinition; scouted?: boolean }) {
   const suit = ELEMENT_SUIT[def.element ?? ""] ?? "⚙️";
   const kind = def.economy?.kind ?? def.cardType;
+  const elementClass = symbolElement(def);
   return (
-    <div className={`mini-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"} ${scouted ? "scouted" : ""}`} title={`${scouted ? "Scouted card\n" : ""}${def.name}\n${def.rulesText}`}>
+    <div className={`mini-card kind-${kind} element-${elementClass} ${scouted ? "scouted" : ""}`} title={`${scouted ? "Scouted card\n" : ""}${def.name}\n${def.rulesText}`}>
       <span className="mini-art">{def.art ?? suit}</span>
       <span className="mini-name">{def.name}</span>
     </div>
@@ -121,6 +129,7 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
   const bank = def.economy?.value ?? 1;
   const affinity = affinityBadge(def.economy?.restrictions);
   const combat = combatBadge(def.targeting);
+  const elementClass = symbolElement(def);
   const title = [
     def.name,
     def.rulesText,
@@ -129,7 +138,7 @@ export default function PlayingCard({ def, assigning, fits, onAssign }: PlayingC
   ].join("\n");
   return (
     <div
-      className={`playing-card kind-${kind} ${def.element ? `element-${def.element}` : "element-neutral"} ${assigning ? "assigning" : ""}`}
+      className={`playing-card kind-${kind} element-${elementClass} ${assigning ? "assigning" : ""}`}
       onClick={onAssign}
       title={title}
     >
