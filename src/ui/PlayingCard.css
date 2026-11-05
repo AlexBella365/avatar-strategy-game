@@ -47,6 +47,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   opacity: 0.3;
+  filter: blur(2px);
   -webkit-mask-image: radial-gradient(ellipse, #000 28%, transparent 100%);
   mask-image: radial-gradient(ellipse, #000 28%, transparent 100%);
   pointer-events: none;
