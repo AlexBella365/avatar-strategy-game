@@ -39,6 +39,11 @@ describe("character roster", () => {
     }
   });
 
+  it("includes the LOK main cast", () => {
+    const ids = new Set(FIGHTERS.map((c) => c.id));
+    for (const id of ["korra", "mako", "bolin", "asami"]) expect(ids).toContain(id);
+  });
+
   it("keeps Avatar State exclusive to Aang", () => {
     const avatars = CHARACTERS.filter((c) => c.avatarState?.enabled);
     expect(avatars.map((c) => c.id)).toEqual(["aang"]);

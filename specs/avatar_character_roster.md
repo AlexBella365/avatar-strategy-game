@@ -105,8 +105,8 @@
 ## Suggested MVP implementation order
 
 1. **Core six:** Aang, Katara, Toph, Zuko, Sokka, Azula — a familiar and varied initial test roster.
-2. **Expand to 15+ (shipped):** Iroh, Suki, Ty Lee, Bumi, Pakku, Tenzin, Lin Beifong, Kuvira, Ming-Hua, Mai, Asami Sato — 18 fighters in play, including five non-benders.
-3. **Complete the 25-character pool:** add Hama, Unalaq, Ghazan, Jeong Jeong, P'Li, Jinora, Zaheer, Kai.
+2. **Expand to 15+ (shipped):** Iroh, Suki, Ty Lee, Bumi, Pakku, Tenzin, Lin Beifong, Kuvira, Mai, Asami Sato, Korra, Mako, Bolin — 20 fighters in play, including five non-benders.
+3. **Complete the 25-character pool:** add Hama, Unalaq, Ghazan, Jeong Jeong, P'Li, Jinora, Zaheer, Kai, Ming-Hua.
 4. Tune each character through playtests before adding more cards or complex passives.
 
 ## Reference scope
