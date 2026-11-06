@@ -404,7 +404,7 @@ export default function App() {
   }, [floats]);
   const [draft, setDraft] = useState<{ p1: string[]; p2: string[] }>({
     p1: ["aang", "katara", "toph"],
-    p2: ["zuko", "sokka", "azula"],
+    p2: ["zuko", "azula", "ozai"],
   });
   const [mapId, setMapId] = useState("demo");
 

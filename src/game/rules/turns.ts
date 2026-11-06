@@ -12,7 +12,7 @@ function teamOf(state: GameState, ownerId: string) {
   return state.characters.filter((c) => c.ownerId === ownerId);
 }
 
-/** Health share of a team (0..1) for the round-limit tiebreaker. */
+/** Health share of a team (0..1). Descriptive stat for the self-play report. */
 export function teamHealthShare(state: GameState, ownerId: string): number {
   const team = teamOf(state, ownerId);
   const max = team.reduce((sum, c) => sum + c.maxHealth, 0);
@@ -61,19 +61,10 @@ export function updateMatchResult(
       state.winnerId = a;
       return;
     }
-    const shareA = teamHealthShare(state, a);
-    const shareB = teamHealthShare(state, b);
-    if (shareA !== shareB) {
-      state.winnerId = shareA > shareB ? a : b;
-    } else {
-      const countA = teamOf(state, a).filter((c) => c.health > 0).length;
-      const countB = teamOf(state, b).filter((c) => c.health > 0).length;
-      if (countA !== countB) state.winnerId = countA > countB ? a : b;
-      else state.isDraw = true;
-    }
-    state.log.push(
-      state.isDraw ? "Round limit reached — draw." : `${state.winnerId} wins on tiebreakers.`,
-    );
+    // Rule (v0.4): reaching the round cap without a knockout is a draw.
+    // There are no health-share or survivor tiebreakers.
+    state.isDraw = true;
+    state.log.push(`Round limit reached (${state.maxRounds || MAX_ROUNDS} rounds) — draw.`);
   }
 }
 

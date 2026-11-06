@@ -3,27 +3,24 @@
 You lead 3 benders in a turn-based duel on a 7×7 grid. Outmaneuver your opponent, play the right technique at the right time, and knock out their whole team.
 
 - **Players:** 2 (hot-seat / pass-and-play)
-- **Time:** up to 10 rounds
+- **Time:** up to 30 rounds
 - **You need:** 3 characters each, technique cards, this board
 
 ## Goal
 
 You win immediately when you knock out all 3 enemy characters.
 
-If both teams survive after round 10, you compare:
-1. Total remaining health (% of max)
-2. Most survivors left
-3. Otherwise: draw
+If both teams still have characters standing after round 30, the match is a draw. There is no health-share or survivor tiebreaker.
 
 ## Setup
 
-1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Sokka, Azula).
+1. You pick 3 characters each (try: Aang, Katara, Toph vs. Zuko, Azula, Ozai).
 2. A random roll assigns your sides: one of you deploys on north row 1, the other on south row 5. Place your 3 characters on 3 different tiles of your row, in secret; both sides reveal after locking. Rows 0, 2–4, and 6 start empty. (Starting one row in from the edge shortens the walk to contact — see the balance note below.)
 3. You start each character at full health, 1 Focus, 0 Momentum, no statuses, empty slots.
 4. You shuffle your team deck. Your chi bank starts at 0 and persists across rounds. Each round your Team Energy refreshes to 4.
 5. You build decks with restricted cards (see below) — glider only fits Aang, boomerang only fits Sokka, etc.
 
-> **Balance tuning (current build).** Starting/max HP is 65% of each character's printed value, all damage is ×1.5, and you deploy one row in from your edge. These are match *data*, not bespoke rules: `src/game/content/balance.ts` holds the numbers, and `specs/balance_testing_plan.md` §10 records the self-play measurements behind them.
+> **Balance tuning (current build).** Starting/max HP is 58% of each character's printed value, card and hazard damage is ×1.75 (the free cardless basic attack stays at its printed 1), and you deploy one row in from your edge. These are match *data*, not bespoke rules: `src/game/content/balance.ts` holds the numbers, and `specs/balance_testing_plan.md` §10 records the self-play measurements behind them.
 
 ## Your cards
 
@@ -71,7 +68,7 @@ Some cards need a direction — line attacks, and earth **Wall Rise** (low wall 
 Your bank is a spendable pool of chi, shared by your team. **Your chi total and which cards you banked are secret** — your opponent only sees played cards and the board.
 
 - You gain chi by banking unassigned cards (auto) and scrapping assigned ones (live choice).
-- Strong cards cost chi **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 chi, 5 damage.** Weak cards cost 0 chi.
+- Strong cards cost chi **in addition to** Energy/Focus. Example: **Comet Strike — 2 Energy + 3 chi, 4 damage.** Weak cards cost 0 chi.
 - Typical income: ~2–4 chi/round if you bank 2 unassigned. A bomb costing 5 chi means you must scrap ~2 extra assigned cards over rounds 1–2 to fire it on round 3. That's the tension: play your good cards now, or scrap them to afford bombs later.
 - Chi does not cap in the prototype. It belongs to your team, not your characters.
 
@@ -170,14 +167,14 @@ G|G|P|F|F|G|G
 G|G|P|F|F|F|K
 ```
 
-## Avatar State (Aang only)
+## Avatar State (Avatars only)
 
-Aang builds **Resonance 0/6** (max +2/round): use 2 different elements in a round, protect an ally, or survive a 3+ damage hit. You see the meter fill.
+Every Avatar character (currently Aang and Korra) builds **Resonance 0/6** (max +2/round): use 2 different elements in a round, protect an ally, or survive a 3+ damage hit. You see the meter fill. Non-Avatars cannot gain Resonance or transform.
 
-When he hits 6/6, on his activation you may spend **2 Focus** to transform instead of playing a technique:
+When the Avatar hits 6/6, on their activation you may spend **2 Focus** to transform instead of playing a technique:
 
-- **+1 damage** to all his attacks, **+1 shield** to his defenses, for 2 rounds (including this one).
-- **Risk: if Aang is knocked out while active, you lose immediately** — even if your allies are alive.
+- **+1 damage** to all their attacks, **+1 shield** to their defenses, for 2 rounds (including this one).
+- **Risk: if the active Avatar is knocked out while transformed, you lose immediately** — even if your allies are alive.
 - Once per match.
 
 ## Example
@@ -189,4 +186,4 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 - Save 1 Focus to Evade a kill shot.
 - Push/pull enemies into hazards or out of cover before your big hit.
 - Spread out vs. AoE, clump vs. focused fire.
-- Force the Avatar player to defend — don't let Aang sit at 6/6 for free.
+- Force the Avatar player to defend — don't let an Avatar sit at 6/6 for free.

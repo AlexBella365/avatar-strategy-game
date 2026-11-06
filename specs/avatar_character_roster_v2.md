@@ -2,6 +2,8 @@
 
 **Purpose:** A cross-series candidate roster for the Avatar tactical card game. Version 2 expands the pool to 30 characters, explicitly includes key *Legend of Korra* heroes and villains, and preserves room for additional characters in later waves. This is a character-pool proposal, not a final balance sheet: each character should eventually have distinct attributes, a passive trait, and a signature card package.
 
+**Implementation status (current build):** 20 playable fighters are in `src/game/content/characters.ts` — the MVP six, the Wave 1 additions (Iroh, Ozai, Suki, Ty Lee), and the Wave 2 expansion (King Bumi, Pakku, Mai, Tenzin, Lin Beifong, Asami Sato, Kuvira, Korra, Mako, Bolin). Appa, Momo, Naga, and Pabu exist as companions and are excluded from the draft pool. Avatar State is wired for both Aang and Korra; passives remain descriptive only.
+
 ## Roster principles
 
 - **30 characters total** across five gameplay classes: Water, Earth, Fire, Air, and Non-bending.
@@ -9,7 +11,7 @@
 - Includes both *Avatar: The Last Airbender* (ATLA) and *The Legend of Korra* (LOK), with key LOK protagonists and antagonists represented.
 - Each entry has a series, role, and release-wave designation so future additions can be planned without displacing the core roster.
 - Tiny emoji-style glyphs are placeholders for UI icons. They are not official character art and can later be replaced with custom portraits or original silhouettes.
-- Class means the character's primary gameplay identity. Avatars are assigned to their most defining base class for roster accounting; Aang is listed under Air, while his four-element access and Avatar State should be represented by special mechanics.
+- Class means the character's primary gameplay identity. Avatars are assigned to their most defining base class for roster accounting; Aang is listed under Air and Korra under Water, while their multi-element card access (air/water/earth) and the shared Avatar State are represented by special mechanics.
 
 ## At-a-glance balance
 
@@ -103,11 +105,11 @@ Use these fields in the canonical character data, even if the first playable bui
 
 The eight LOK characters specifically requested for the expanded pool are **Mako, Korra, Lin Beifong, Bolin, Asami Sato, Amon, Zaheer, and Kuvira**. Lin, Asami, Zaheer, and Kuvira were already in v1; v2 retains them and adds Mako, Korra, Bolin, and Amon. **Fire Lord Ozai** is also added as a major ATLA villain.
 
-### New and retained LOK / villain priorities
+### New and retained LOK / villain priorities (original wave plan; shipped waves are listed above)
 
 | Character | Series | Role | Class | Release wave | Design guardrail |
 |---|---|---|---|---|---|
-| Korra | LOK | Hero / Avatar | Water | Wave 1 | Base kit should focus on water and close-range pressure; additional elements and Avatar State must be gated. |
+| Korra | LOK | Hero / Avatar | Water | Wave 1 | Water-first base kit; air/water/earth card access and the shared Avatar State are implemented. |
 | Mako | LOK | Hero | Fire | Wave 1 | Lightning is costly and telegraphed. |
 | Bolin | LOK | Hero | Earth | Wave 1 | Lavabending is a limited specialization with visible terrain warnings. |
 | Amon | LOK | Villain | Water | Wave 1 | No long-duration or unavoidable bending removal; use temporary, resistible suppression. |
@@ -128,8 +130,8 @@ The eight LOK characters specifically requested for the expanded pool are **Mako
 
 ### Avatar State
 
-- Aang is the only character in this roster with the Avatar State.
-- Keep Avatar State separate from normal Air-class abilities and from Focus.
+- Every character marked as an Avatar (currently Aang and Korra) can use the Avatar State; non-Avatars cannot.
+- Keep Avatar State separate from normal class abilities and from Focus.
 - Its build-up, activation cost, duration, bonuses, and immediate-loss condition should be implemented by the shared battle engine, not hard-coded into individual card effects.
 - The roster may later add other Avatars from different eras. They should be clearly marked as Avatars and balanced around the same core risk rules, with character-specific variations only where necessary.
 

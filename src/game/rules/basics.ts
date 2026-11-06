@@ -91,7 +91,7 @@ export function resolveBasicAttack(
     damage = Math.max(0, damage - response.damageReduction);
     events.push(`${protector.definitionId} triggers Octopus Intercept for ${target.definitionId} (-${response.damageReduction} damage).`);
   }
-  const outcome = dealDamage(state, targetCharacterId, damage, "basic attack");
+  const outcome = dealDamage(state, targetCharacterId, damage, "basic attack", { scale: false });
   events.push(`${actor.definitionId} makes a basic attack (1).`);
   events.push(...outcome.events);
   return { errors, events };

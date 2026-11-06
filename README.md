@@ -1,138 +1,85 @@
-# Avatar Tactical Card Game — Prototype (MVP v0.3)
+# Avatar Tactical Card Game
 
 <p align="center">
   <img src="public/splash_screen.png" alt="Splash screen" width="640" />
 </p>
 
-> **Unofficial fan project.** This is a non-commercial prototype made by fans, for
-> learning and playtesting only. It is not affiliated with, endorsed by, or connected
-> to Nickelodeon, Avatar Studios, or any rights holders. All code, rules text, and
-> game design here are original. Please do not use this project commercially.
+> **Unofficial fan project.** A non-commercial prototype made by fans, for learning
+> and playtesting only. Not affiliated with or endorsed by Nickelodeon, Avatar
+> Studios, or any rights holders. All code, rules text, and game design here are
+> original; do not use this project commercially.
 
-A lightweight 3v3 tactical card-game prototype inspired by the Avatar universe
-(ATLA + LOK). The goal is a playable, deterministic rules engine with a themed,
-data-driven board — mechanics first, now with tile art and a central palette.
+A deterministic **3v3 tactical card-game prototype** set in the Avatar universe
+(ATLA + LOK). Draft three fighters, chain bending techniques from a shared deck,
+and knock out the enemy team on a hand-editable 7×7 board. Hot-seat, local-only,
+no backend.
 
-Player-facing rules live in `docs/rules.md`; engine and card design specs live in `specs/`.
+Player-facing rules: [`docs/rules.md`](docs/rules.md). Engine, roster, card, and
+balance specs: [`specs/`](specs/). Development history and open work:
+[`docs/progress.md`](docs/progress.md).
 
-## Tech stack
-
-- **Vite + React + TypeScript (strict)** — minimal browser prototype
-- **Vitest** (`npm test` / `make test`) — deterministic rules tests, no animation timing
-- **Plain CSS** — a central variable palette (`src/theme.css`); board art is
-  data-driven from `public/tiles/` (no component framework or canvas library)
-- **No backend** — local hot-seat play; a single authoritative engine exposes
-  `applyGameAction(state, action)` and the UI never mutates game state directly
-
-## Layout
-
-- `src/game/types.ts` — data shapes only (7×7 grid model + v0.3 economy)
-- `src/game/state.ts` — match init, deployment validation, seeded decks, occupancy helpers
-- `src/game/rules/` — grid, movement, damage, statuses, terrain, cards, turns, avatar, economy
-- `src/game/content/` — characters, cards, terrain, economy tuning (single source of truth)
-- `src/game/maps/demo.grid.txt` + `src/game/mapGrid.ts` — hand-editable 7×7 board and its parser
-- `src/App.tsx` + `src/ui/` — hot-seat UI: grid board, character sheets with card slots, hands with assign/scrap, activation panel, battle log, icon legend, and the admin landing tabs
-- `src/ui/animationTiming.ts` — single source of truth for combat-animation durations (injected as CSS variables)
-- `src/ui/attackFx.ts` + `src/ui/combatText.ts` — element→attack-FX mapping and floating damage/heal numbers
-- `src/ui/terrainTiles.ts` — terrain → tile art, label, rules blurb (drives the board and legend)
-- `src/theme.css` — every themed colour, as CSS variables
-
-## Run
-
-The landing page includes Game and Card roster tabs while the temporary
-`ADMIN_MODE` switch in `src/App.tsx` is enabled. The roster tab shows the full
-card set in a responsive mosaic with assignment requirements and chi bank
-values; the Game tab retains the fighter draft and match view.
-
-With Make:
+## Quick start
 
 ```sh
 make install
 make dev        # UI prototype
-make test       # rules tests
+make test       # deterministic rules tests
 make typecheck
 make build
 ```
 
-Or directly with npm (`npm install`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run build`).
-Run `make help` for all targets.
+Or with npm: `npm install`, `npm run dev`, `npm test`, `npm run typecheck`,
+`npm run build`. Run `make help` for all targets.
 
-### Optional: LLM NPC advisor (Track B)
+The landing page has Game and Card roster tabs while the temporary `ADMIN_MODE`
+switch in `src/App.tsx` is enabled.
 
-Off by default — the NPC uses the pure utility AI. To let a local model pick a
-per-round stance (it can only nudge Track A weights, never act directly):
+## What's in the box
 
-```sh
-VITE_AI_LLM=1 npm run dev            # defaults to Ollama at http://localhost:11434
-VITE_AI_LLM=1 VITE_LLM_MODEL=qwen3.5:0.8b npm run dev
-```
+- **20 fighters + 4 companions** across Water / Earth / Fire / Air / Non-bending,
+  drawn from ATLA and LOK. Appa, Momo, Naga, and Pabu are companions, not
+  fighters.
+- **21 cards** — starter techniques, signature gear, universal defenders, and
+  the water-locked Healing Waters. Card faces are 5:7 and print their full rules
+  text verbatim; hidden assignments show card backs to the opponent.
+- **30-round matches.** Win by knocking out the whole enemy team; reaching round
+  30 is a draw. Avatar State (Aang and Korra) adds Resonance buildup, a temporary
+  damage/shield bonus, and an instant-loss risk while transformed.
+- **Deterministic engine.** `applyGameAction(state, action)` is authoritative;
+  the UI never mutates game state. Matches are seeded and replayable.
+- **Track A utility AI** opponent by default, plus an optional local-LLM stance
+  advisor (Track B) that can nudge weights but never act directly.
 
-Server-side smoke test (skips models that aren't pulled): `make llm-live`.
-See `specs/npc_ai_plan.md` §3 for the design and the verified local models.
+## Project layout
+
+- `src/game/` — authoritative engine: `types.ts`, `state.ts`, `rules/`,
+  `content/` (data single source), `maps/` + `mapGrid.ts`, and `ai/` + `auto.ts`.
+- `src/App.tsx` + `src/ui/` — hot-seat UI: board, character sheets, hands, battle
+  log, legend, combat FX, and shared animation timing.
+- `src/theme.css` — every themed colour as a CSS variable.
 
 ## Editing the board
 
-The demo board is hand-editable text at `src/game/maps/demo.grid.txt`: seven rows
-of seven tiles, one letter per tile, cells split by `|` (lines starting with `#`
-are comments). Letters: `G` grass, `R` road, `P` pond, `K` rocks, `F` forest,
-`W` wall, `I` ice, `B` blaze, `A` ash — full names and engine ids also work.
-`src/game/mapGrid.ts` parses it (tests: `src/game/mapGrid.test.ts`). A `P` pond
-blocks movement (you cannot enter, cross, or be pushed onto it) but not line of
-sight; a `W` wall blocks both. Blaze is never placed by hand; it only appears in
-play when fire ignites woodland.
+The demo board is `src/game/maps/demo.grid.txt`: seven rows of seven tiles split
+by `|` (lines beginning with `#` are comments). Letters: `G` grass, `R` road,
+`P` pond (blocks movement, not sight), `K` rocks, `F` forest, `W` wall (blocks
+movement and sight), `I` ice, `B` blaze (created by fire in play), `A` ash. Full
+names and engine ids also work. Parser tests: `src/game/mapGrid.test.ts`.
 
-## Roster
+## Optional: LLM NPC advisor (Track B)
 
-A 30-character fan pool across five classes (Water / Earth / Fire / Air / Non-bending),
-drawing on characters from both animated series, with series/role/class metadata for
-alignment restrictions. The demo drafts 10 fighters (core six + Iroh, Ozai, Suki,
-Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
-the only Avatar State–capable character; Resonance buildup, activation cost,
-duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
+Off by default. To let a local model pick a per-round stance:
 
-## Cards (21)
+```sh
+VITE_AI_LLM=1 npm run dev
+VITE_AI_LLM=1 VITE_LLM_MODEL=qwen3.5:0.8b npm run dev   # custom Ollama model
+```
 
-12 starter techniques + 2 signature gear (Glider, Boomerang) + Comet Strike bomb +
-6 defender cards: **Travel Rations** (food = heal-over-time), **Miraculous Balm**
-(instant spike heal 4, costs chi), **Second Wind** (instant self-heal 2 + Focus),
-**Smoke Bomb** (shield + Focus), **Dust Toss** (chip + Exposed) — all universal —
-plus the water-locked **Healing Waters** (instant heal 3). Every character
-fits at least 6 cards; the hand list shows each card's requirement and who fits.
+Defaults to Ollama at `http://localhost:11434`. Server-side smoke test:
+`make llm-live`. See `specs/npc_ai_plan.md` §3 for design and verified models.
 
-## Card presentation
+## Tech stack
 
-Every card face is **5:7** (matching the card-back art `public/card_back.png`, 300×420)
-and prints its full `rulesText` **verbatim** — never truncated or replaced with
-icons. The hot-seat sheets flank each character with two card slots: a **gear** slot
-and an **ability** slot. A face-down assignment is shown as the card face to its
-owner and as the card back to the opponent; both sides' sheet columns share the
-space either side of the board, and the acting player's hand sits under their own
-sheets.
-
-Combat feedback is CSS-only: each attack type (fire/water/air/earth/slash) plays a
-short burst on every affected tile, and affected characters show a floating red
-`-x` (or green `+y` heal). Both are drawn in a board-level overlay (`.fx-overlay`)
-that mirrors the tile grid, so effects can spill across cell borders instead of
-being clipped by a tile. All durations live in `src/ui/animationTiming.ts` and are
-injected as CSS custom properties, so the keyframes and the JS dismissal timers
-stay in sync.
-
-## Roadmap (grid model + v0.3 economy)
-
-1. ✅ Types + state (grid coords, deployment, occupancy)
-2. ✅ Pure geometry (bounds, Manhattan, LOS, paths, AoE shapes)
-3. ✅ Movement + terrain (normal moves, Evade, push/pull/swap, entry/expiry)
-4. ✅ Card resolution (focused/tile/directional/AoE, reactions, statuses)
-5. ✅ Round loop + victory + Avatar State (resonance, activation, risk)
-6. ✅ v0.3 economy (chi bank, draw/assign/scrap, restrictions, slots, gear)
-7. ✅ Starter content (core six + 18 complete cards) + playable hot-seat UI (versus draft, pucks, sheets, playing cards, legend, fits, e2e)
-8. ✅ Demo tooling (Auto P1/P2 test toggles, UI smoke test, auto-vs-auto match sim)
-9. ✅ Demo visuals (painterly terrain tiles + connected roads, redesigned pucks, terrain legend, CSS-variable theme)
-10. ✅ Combat feedback (per-element attack FX — fire/water/air/earth/slash — and floating damage/heal numbers, drawn in a board overlay so they aren't clipped by tiles)
-11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
-12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
-13. ⬜ NPC AI debug overlay — finish Track A M2 by surfacing the existing decision traces in the UI; see `specs/npc_ai_plan.md` §A.6–A.7.
-14. ⬜ End-to-end polish (passives, roster waves)
-15. ✅ Lethality pass — shipped tuning is now data (`src/game/content/balance.ts`): movement 2, HP ×0.65, deployment rows 1/5, damage ×1.5. At n=100 the shipped matchup finishes 41% by KO, reaches the cap 50%, and draws 0% — the §2.1 lethality gate passes (tightly). See `specs/balance_testing_plan.md` §10.
-16. ⬜ Roster/card parity — the remaining balance blocker: villains win 75% of shipped games (heroes 25%), beyond the ±20pp matchup gate. Start with the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 and re-baseline at n≥200.
-17. 🧪 Experimental LLM advisor (Track B, Mode 1) — off by default (`VITE_AI_LLM=1` to enable); evaluation against Track A is pending. Mode 2 (LLM top-k choice) remains deferred; see `specs/npc_ai_plan.md` §3–5.
+Vite + React + TypeScript (strict), Vitest, and plain CSS with a central variable
+palette. No backend, component framework, canvas library, or animation timing
+outside the shared duration constants.

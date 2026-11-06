@@ -72,6 +72,12 @@ describe("shipped match tuning", () => {
     );
   });
 
+  it("leaves unscaled damage at its printed value (cardless basic attack)", () => {
+    const state = shippedMatch();
+    const outcome = dealDamage(state, "p2-c0", 1, "basic attack", { scale: false });
+    expect(outcome.hpLost).toBe(1);
+  });
+
   it("lets a match opt back into neutral rules (used by engine tests)", () => {
     const teams: [TeamSetup, TeamSetup] = [
       {

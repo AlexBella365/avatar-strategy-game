@@ -8,7 +8,7 @@
 - **5 characters per class (20% each)**.
 - Draws from both animated series: *Avatar: The Last Airbender* (ATLA) and *The Legend of Korra* (LOK), so the Air class has enough distinct characters.
 - Tiny emoji-style glyphs are placeholders for UI icons. They are not official character art and can later be replaced with custom portraits or original silhouettes.
-- Class means the character's primary gameplay identity. Avatars are assigned to their most defining base class for roster accounting; Aang is listed under Air, while his four-element access and Avatar State should be represented by special mechanics.
+- Class means the character's primary gameplay identity. Avatars are assigned to their most defining base class for roster accounting; Aang is listed under Air, while his multi-element access (air/water/earth cards) and Avatar State are represented by special mechanics.
 
 ## At-a-glance balance
 
@@ -89,8 +89,8 @@
 
 ### Avatar State
 
-- Aang is the only character in this roster with the Avatar State.
-- Keep Avatar State separate from normal Air-class abilities and from Focus.
+- Every character marked as an Avatar (currently Aang and Korra) can use the Avatar State; non-Avatars cannot.
+- Keep Avatar State separate from normal class abilities and from Focus.
 - Its build-up, activation cost, duration, bonuses, and immediate-loss condition should be implemented by the shared battle engine, not hard-coded into individual card effects.
 - The roster may later add other Avatars from different eras. They should be clearly marked as Avatars and balanced around the same core risk rules, with character-specific variations only where necessary.
 
@@ -105,8 +105,8 @@
 ## Suggested MVP implementation order
 
 1. **Core six:** Aang, Katara, Toph, Zuko, Sokka, Azula — a familiar and varied initial test roster.
-2. **Expand to 15:** add Iroh, Suki, Ty Lee, Bumi, Pakku, Tenzin, Lin, Kuvira, Ming-Hua.
-3. **Complete the 25-character pool:** add Hama, Unalaq, Ghazan, Jeong Jeong, P'Li, Jinora, Zaheer, Kai, Mai, Asami.
+2. **Expand to 15+ (shipped):** Iroh, Ozai, Suki, Ty Lee, Bumi, Pakku, Tenzin, Lin Beifong, Kuvira, Mai, Asami Sato, Korra, Mako, Bolin — 20 fighters in play, including five non-benders.
+3. **Complete the 25-character pool:** add Hama, Unalaq, Ghazan, Jeong Jeong, P'Li, Jinora, Zaheer, Kai, Ming-Hua.
 4. Tune each character through playtests before adding more cards or complex passives.
 
 ## Reference scope

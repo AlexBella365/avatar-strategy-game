@@ -59,7 +59,7 @@ const slots = (inset: number): [Position[], Position[]] => [
   ],
 ];
 const HEROES: CharacterDefinition[] = [byId("aang"), byId("katara"), byId("toph")];
-const VILLAINS: CharacterDefinition[] = [byId("zuko"), byId("sokka"), byId("azula")];
+const VILLAINS: CharacterDefinition[] = [byId("zuko"), byId("azula"), byId("ozai")];
 
 interface Opts {
   rounds?: number;
@@ -83,7 +83,7 @@ interface MatchRecord {
   winnerId: string | null;
   isDraw: boolean;
   round: number;
-  decision: "ko" | "tiebreak" | "limit-draw" | "ko-draw" | "unresolved";
+  decision: "ko" | "limit-draw" | "ko-draw" | "unresolved";
   kos: number;
   firstKOround: number | null;
   logLen: number;
@@ -133,9 +133,8 @@ function sim(state: GameState, seed: number): MatchRecord {
   };
   let decision: MatchRecord["decision"] = "unresolved";
   if (log.includes("wins by knockout")) decision = "ko";
-  else if (log.includes("wins on tiebreakers")) decision = "tiebreak";
   else if (log.includes("All characters knocked out")) decision = "ko-draw";
-  else if (log.includes("Round limit reached — draw")) decision = "limit-draw";
+  else if (log.includes("Round limit reached")) decision = "limit-draw";
 
   return {
     seed,
@@ -238,7 +237,7 @@ function summarise(label: string, records: MatchRecord[]) {
   const by = (d: MatchRecord["decision"]) => records.filter((r) => r.decision === d).length;
   const avg = (f: (r: MatchRecord) => number) =>
     (records.reduce((s, r) => s + f(r), 0) / n).toFixed(2);
-  const reachedCap = records.filter((r) => r.decision === "tiebreak" || r.decision === "limit-draw").length;
+  const reachedCap = records.filter((r) => r.decision === "limit-draw").length;
   const koRounds = records.map((r) => r.firstKOround).filter((x): x is number => x !== null);
   const round1KO = records.filter((r) => r.firstKOround === 1).length;
   const margins = records.map((r) => Math.abs(r.shareP1 - r.shareP2)).sort((a, b) => a - b);
@@ -248,7 +247,7 @@ function summarise(label: string, records: MatchRecord[]) {
   emit(`p1 ${winsP1} (${pct(winsP1)}) | p2 ${winsP2} (${pct(winsP2)}) | draws ${draws} (${pct(draws)})`);
   emit(`north/first-mover ${pct(northWins)}  95% CI [${(lo * 100).toFixed(1)}%, ${(hi * 100).toFixed(1)}%]`);
   emit(
-    `decision: KO ${by("ko")} (${pct(by("ko"))}) | tiebreak ${by("tiebreak")} (${pct(by("tiebreak"))}) | ` +
+    `decision: KO ${by("ko")} (${pct(by("ko"))}) | ` +
       `limit-draw ${by("limit-draw")} | ko-draw ${by("ko-draw")} | unresolved ${by("unresolved")}`,
   );
   emit(
@@ -266,7 +265,7 @@ function summarise(label: string, records: MatchRecord[]) {
 function gridRow(label: string, records: MatchRecord[]) {
   const n = records.length;
   const pct = (x: number) => ((100 * x) / n).toFixed(0);
-  const cap = records.filter((r) => r.decision === "tiebreak" || r.decision === "limit-draw").length;
+  const cap = records.filter((r) => r.decision === "limit-draw").length;
   const ko = records.filter((r) => r.decision === "ko").length;
   const draws = records.filter((r) => r.isDraw).length;
   const margins = records.map((r) => Math.abs(r.shareP1 - r.shareP2));
@@ -299,16 +298,16 @@ describe.skipIf(!RUN)("balance sweep", () => {
     // spend its cells on the knobs that matter: movement (contact timing), HP
     // (kill window), inset (starting distance), and the damage multiplier.
     const movements = [1, 2];
-    const hpScales = [1, 0.8, 0.65];
+    const hpScales = [1, 0.65, 0.58];
     const insets = [0, 1];
-    const damageScales = [1, 1.5];
+    const damageScales = [1, 1.5, 1.75];
     const emitGrid = (rosterLabel: string, a: CharacterDefinition[], b: CharacterDefinition[]) => {
       emit(`\n===== tuning grid: ${rosterLabel} (n=${GRID_N} per cell) =====`);
       for (const movement of movements) {
         for (const hpScale of hpScales) {
           for (const deploymentInset of insets) {
             for (const damageScale of damageScales) {
-              const opts = { movement, hpScale, deploymentInset, damageScale, rounds: 10 };
+              const opts = { movement, hpScale, deploymentInset, damageScale, rounds: 30 };
               const recs: MatchRecord[] = [];
               for (let s = 1; s <= GRID_N; s++) recs.push(run(a, b, s, opts));
               emit(

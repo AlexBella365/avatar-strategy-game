@@ -46,6 +46,7 @@ import {
   canEvade,
   findCheapestPath,
   gearDamageBonus,
+  getEvadeDestinations,
   resolveForcedMove,
   resolveSwap,
 } from "./movement";

@@ -19,7 +19,7 @@ The game is closer to an AI-ready state than it looks. These seams are fixed con
 | Determinism | `cloneState` + `nextRandom` (mulberry32, `state.rng`) | Pure simulation is one `structuredClone` away; seeded tie-breaks make every match replayable. |
 | Test harness | `src/game/rules/auto.test.ts` (full auto-vs-auto match) | The invariant test every new policy must keep passing. |
 
-Game-shape facts that matter for scoring: activation = *assign a face-down card → optional move (MP pool) → optional technique play → pass*; per-side 4 energy/round, focus 0–4, chi bank, cover/hazard terrain, heal-over-time regeneration, Avatar State risk/reward, round-10 tiebreakers.
+Game-shape facts that matter for scoring: activation = *assign a face-down card → optional move (MP pool) → optional technique play → pass*; per-side 4 energy/round, focus 0–4, chi bank, cover/hazard terrain, heal-over-time regeneration, Avatar State risk/reward, 30-round cap with a draw (no tiebreakers).
 
 ## 1. Design principles (non-negotiable)
 
@@ -211,7 +211,7 @@ App.tsx's auto loop is a synchronous `useEffect` tick; an LLM call is not. Requi
 | B2 chooser | ≤ #technique plays | ~500 / ~60 | confidence-gap gate should cut this further |
 | Local model | unbounded | 0 | Ollama/LM Studio: free + offline; quality gate per §B.8 |
 
-Guardrails: per-match call cap (default ~12), per-round cap, total-token ceiling, and a single `LLM_ENABLED` flag — all kill-switchable at runtime.
+Guardrails: per-match call cap (default 64 = 2 × 30 rounds), per-round cap, total-token ceiling, and a single `LLM_ENABLED` flag — all kill-switchable at runtime.
 
 ### B.7 Testing (Track B) — implemented offline
 
@@ -277,8 +277,8 @@ This section records the initial diagnosis and is not the current balance report
 
 Findings from 20 seeded policy-vs-policy matches (`setup()` rosters). These are **not AI bugs**; they are inputs to the balance plan:
 
-- **Matches run to the round limit and are decided on tiebreakers.** With movement = 1 tile/activation and 4 energy/round, a 14–18 HP roster is hard to deplete inside the limit. This is engine pacing, not passivity. *Attempted fix (round cap 8→10 + slower/weaker healing) did **not** resolve it:* a fresh n=100 harness run (`balance_testing_plan.md` §10) still shows **100% cap-reach, 0% KO finishes**, first KO ≈ round 7. Lethality (damage/HP ratio + engagement speed), not the round count, is the lever.
-- **Seat is fine; the roster matchup is not.** First-activation win rate is 38–52% (CIs include 50%) — no systematic p1/north win. But the shipped cross-roster matchup is now **villains 100% vs heroes** (n=100): the one-card-per-activation + cardless basic-action engine change (`db956bf`) appears to have flipped hero/villain dominance. Roster/`balance_testing_plan.md` issue, not policy; tracked in §10.5 there.
+- **Matches ran to the round limit and were decided on tiebreakers** (pre-v0.4 rule; the cap is now 30 rounds with a draw). With movement = 1 tile/activation and 4 energy/round, a 14–18 HP roster is hard to deplete inside the limit. This is engine pacing, not passivity. *Attempted fix (round cap 8→10 + slower/weaker healing) did **not** resolve it:* a fresh n=100 harness run (`balance_testing_plan.md` §10) still shows **100% cap-reach, 0% KO finishes**, first KO ≈ round 7. Lethality (damage/HP ratio + engagement speed), not the round count, is the lever.
+- **Seat is fine; the roster matchup is not.** First-activation win rate is 38–52% (CIs include 50%) — no systematic p1/north win. But the shipped cross-roster matchup is now **villains 100% vs heroes** (n=100): the one-card-per-activation + cardless basic-action engine change (`db956bf`) appears to have flipped hero/villain dominance. Roster/`balance_testing_plan.md` issue, not policy; tracked in §10.5 there. *Resolved in the parity pass:* the villain team now uses the lore trio (Zuko, Azula, Ozai) and the tuned numbers put the shipped matchup at heroes 46% / villains 51% (see §10).
 - **Healing is inert in AI play.** ~3–5 instant HP + ~2–3 regeneration HP per match; the new spike-heal cards are played ~0.1×/match. The policy rarely chooses heals, so the heal-model rebalance is not exercised by self-play (see `balance_testing_plan.md` §10.5 item 5).
 - **Focus fire works.** Damage consistently collapses one enemy (azula commonly ends at 3–4 HP), confirming the `focusFire` signal reaches target selection.
 - **Open for A3:** the AI cannot *finish* a wounded-but-out-of-range target, and never retreats a low-HP ally out of enemy range — both want one-ply lookahead.
@@ -304,7 +304,7 @@ The design notes live in §3; this is what only showed up once it was actually b
 2. **Latency, not quality, picks the default model.** `qwen3.5:9b` answered correctly but in ~8.2 s — over 3× the 2.5 s deadline, so in the UI it would fall back to Track A almost every round. `qwen3.5:0.8b` (~0.5 s) is the default for that reason; `qwen3.5:4b` and `bonsai-2` (~1.1–1.2 s) are the verified fallbacks (table in §B.8).
 3. **Mode 1 staleness must be round-granular, not state-granular.** A strict `stateHash` match invalidates the advice after the first action *within* the round — i.e. immediately, since the advice is meant to persist for the round. The controller drops a response only if the requesting round is no longer current (§B.5). `advisor.isStale` remains for Mode 2, where per-decision staleness is the right granularity.
 4. **The call budget has to be derived from the loop, not guessed — twice over.** Two separate defects, both silent:
-   - *Match cap too low.* Mode 1 costs one call per side per round ⇒ 2 × 10 = **20** calls/match, but the initial default was **12**: Track B would have gone dead around round 6 with no visible error. `maxCallsPerMatch` is now **24**, and a regression test pins `DEFAULT_BUDGET.maxCallsPerMatch ≥ 2 × maxRounds`.
+   - *Match cap too low.* Mode 1 costs one call per side per round ⇒ 2 × 30 = **60** calls/match after the 30-round cap change, so `maxCallsPerMatch` is now **64** (it was 24 under the old 10-round limit). The initial default of **12** would have gone dead around round 6 with no visible error. A regression test pins `DEFAULT_BUDGET.maxCallsPerMatch ≥ 2 × maxRounds`.
    - *Round counter never advanced.* `budget.startRound` was only called by `ui.ts`, so anyone using `createAdvisor` directly (a headless harness, Mode 2, tests) silently hit the per-round cap (4) **once, for the whole match**. The advisor now derives the round from the `GameState` it is handed; the counter is self-synchronizing and `startRound` is redundant (kept for external callers).
 
    Per-round cap stays 4 (one shared controller serves both auto sides), token ceiling 20 000 (a Mode-1 call is ~370 tokens ⇒ ~7.4 k for a full match).

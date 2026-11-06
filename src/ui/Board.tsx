@@ -49,6 +49,18 @@ export const FACES: Record<string, string> = {
   tylee: "🎪",
   appa: "🦬",
   momo: "🐒",
+  bumi: "🏔️",
+  pakku: "🧊",
+  korra: "💪",
+  mai: "🎯",
+  tenzin: "🌪️",
+  "lin-beifong": "⚙️",
+  asami: "🧰",
+  kuvira: "🛡️",
+  mako: "🌩️",
+  bolin: "🌋",
+  naga: "🐻‍❄️",
+  pabu: "🦦",
 };
 
 /** Official portraits scraped for the demo (fan prototype, replace with original art). */

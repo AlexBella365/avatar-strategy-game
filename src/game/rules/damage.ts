@@ -93,14 +93,18 @@ export function dealDamage(
   characterId: string,
   amount: number,
   cause: string,
+  opts?: { scale?: boolean },
 ): DamageOutcome {
   const events: string[] = [];
   const c = getCharacterOrThrow(state, characterId);
   if (c.health <= 0) return { events, knockedOut: false, matchEnded: false, hpLost: 0 };
   const hpBefore = c.health;
   // Balance hook: one multiplier for every damage source, applied after the
-  // rulebook's per-attack math so card/basic/hazard damage scale together.
-  let remaining = Math.max(0, Math.round(amount * tuningOf(state).damageScale));
+  // rulebook's per-attack math so card/hazard damage scales together. The
+  // cardless basic attack opts out: it is designed as a 1-damage floor, and
+  // scaling it made free aggression-5 basics worth 2 damage.
+  const scale = opts?.scale ?? true;
+  let remaining = Math.max(0, Math.round(amount * (scale ? tuningOf(state).damageScale : 1)));
   while (remaining > 0 && c.shields.length > 0) {
     const shield = c.shields[0];
     const absorbed = Math.min(shield.amount, remaining);
