@@ -34,9 +34,22 @@ describe("starter content validation", () => {
   it("all cards have complete data and economy entries; deck matches", () => {
     expect(validateCardDefinitions()).toEqual([]);
     expect(new Set(Object.keys(CARD_ECONOMY))).toEqual(new Set(Object.keys(CARD_DEFINITIONS)));
+    for (const id of [
+      "hold-the-line",
+      "shifting-ground",
+      "opening-feint",
+      "measured-retreat",
+      "team-relay",
+      "last-reserve",
+    ]) {
+      expect(getCardDefinition(id), id).toBeDefined();
+      expect(CARD_ECONOMY[id]).toBeDefined();
+      expect(STARTER_DECK_IDS).not.toContain(id);
+    }
     for (const id of STARTER_DECK_IDS) {
       expect(getCardDefinition(id), id).toBeDefined();
     }
+    expect(getCardDefinition("measured-retreat")?.movement?.maxSteps).toBe(2);
   });
 
   it("universal cards fit everyone; each hero has options", () => {
@@ -45,7 +58,17 @@ describe("starter content validation", () => {
       element: d.element,
       role: d.role,
     }));
-    for (const id of ["travel-rations", "smoke-bomb", "dust-toss"]) {
+    for (const id of [
+      "travel-rations",
+      "smoke-bomb",
+      "dust-toss",
+      "hold-the-line",
+      "shifting-ground",
+      "opening-feint",
+      "measured-retreat",
+      "team-relay",
+      "last-reserve",
+    ]) {
       const card = getCardDefinition(id)!;
       expect(card.economy?.restrictions).toEqual([]);
       for (const char of team) {
@@ -63,6 +86,7 @@ describe("starter content validation", () => {
       expect(playable.length, char.definitionId).toBeGreaterThanOrEqual(3);
     }
   });
+
 });
 
 describe("restrictions", () => {

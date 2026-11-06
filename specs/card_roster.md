@@ -1,14 +1,14 @@
 # Card Roster v1 — Full Pool (existing + proposed)
 
-**Status:** Live pool documents current code; expansion sections remain design proposals. Non-normative for engine rules.
-**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 25-card pool).
+**Status:** Live pool documents current code; six new universal cards are catalogued but intentionally excluded from the starter deck pending balance testing. Expansion sections remain design proposals. Non-normative for engine rules.
+**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 31-card pool).
 **Goal:** Reach **~20 usable cards per character type** (Water / Earth / Fire / Air / Non-bending), built from ATLA + LOK lore, **with a shared core** so common effects aren't reprinted per element.
 
 **Conditional defense prototypes:** see [`conditional_defense_cards_v1.md`](conditional_defense_cards_v1.md) for a batch exploring prepared responses, trigger families, and lore variants. Four cards are in the live pool as intentionally unbalanced prototypes; the remaining concepts are design-only.
 
 ## 1. Existing live pool (ships today — `cards.ts` + `economy.ts`)
 
-25 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
+31 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
 
 | id | name | cardType / kind | ⚡+💠 (⇪) | Fits (restriction) | rulesText (verbatim) |
 |---|---|---|---|---|---|
@@ -37,10 +37,16 @@
 | `miraculous-balm` | Miraculous Balm | support / defense | 2+2 (2) | Anyone | `Miraculous Balm: instantly heal an adjacent ally 4. A rare cure — 2 Energy + 2 chi.` |
 | `healing-waters` | Healing Waters | support / defense | 1+1 (2) | Water, Avatar | `Healing Waters: instantly heal an ally in range 3 for 3. Waterbenders only.` |
 | `second-wind` | Second Wind | support / defense | 1+0 (1) | Anyone | `Second Wind: instantly heal yourself 2 and gain 1 Focus. Anyone can dig deep.` |
+| `hold-the-line` | Hold the Line | defense / defense | 1+0 (1) | Anyone | `Shield an adjacent ally for 2 until next round. Anyone can hold the line.` |
+| `shifting-ground` | Shifting Ground | support / defense | 1+0 (1) | Anyone | `Make an empty tile in range 2 difficult terrain for 2 rounds.` |
+| `opening-feint` | Opening Feint | attack / attack | 1+0 (1) | Anyone | `Ranged 3. Expose an enemy and gain 1 Focus.` |
+| `measured-retreat` | Measured Retreat | defense / defense | 1+0 (1) | Anyone | `Move up to 2 tiles along a legal orthogonal path instead of resolving a technique.` |
+| `team-relay` | Team Relay | support / defense | 1+0 (1) | Anyone | `An ally in range 3 gains 1 shield until next round and removes Exposed.` |
+| `last-reserve` | Last Reserve | support / defense | 2+2 (3) | Anyone | `Spend 2 Energy and 2 chi to heal yourself for 2 and gain 2 shield until next round.` |
 
 **Heal tiers (balance):** most healing is deliberately slow and weak — `water-recovery` / `travel-rations` split a reduced total into an instant point plus end-of-round **regeneration**. The three `Spike` cards above are the exception: instant, larger heals, paid for with chi (`miraculous-balm` 2, `healing-waters` 1) so they stay rare build-around options rather than repeatable sustain.
 
-Per-type signature counts from this live pool: Water 5 (water-whip, ice-bind, water-recovery, healing-waters, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 5 (travel-rations, smoke-bomb, dust-toss, miraculous-balm, second-wind). Gear/unique 2 (aang-glider, sokka-boomerang).
+Per-type signature counts from this live pool: Water 5 (water-whip, ice-bind, water-recovery, healing-waters, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 11 (travel-rations, smoke-bomb, dust-toss, miraculous-balm, second-wind, and the six new cards). Gear/unique 2 (aang-glider, sokka-boomerang).
 
 ## 2. Design-intent additions (from `card_design_prototypes.md` §8/§9 — new cards, not yet in `cards.ts`)
 
@@ -124,7 +130,7 @@ No card below requires a new `CardEffect` variant beyond what exists.
 
 ## 6. Universal pool — fits EVERY character (`restrictions: []`)
 
-Existing (5): **Travel Rations**, **Smoke Bomb**, **Dust Toss**, **Miraculous Balm**, **Second Wind** (see §1).
+Existing (11): the five cards listed in §1 plus **Hold the Line**, **Shifting Ground**, **Opening Feint**, **Measured Retreat**, **Team Relay**, and **Last Reserve**.
 
 New (3):
 
@@ -134,7 +140,7 @@ New (3):
 | `quick-step` | defense (mobility) | 1+0 (1) | self | `Quick Step: this activation you may move up to 3 tiles, ignoring difficult terrain.` | generic |
 | `centering-breath` | support | 1+0 (1) | self | `Centering Breath: gain 1 Focus (max 4).` | generic |
 
-**Universal total: 8** (counts toward all five types).
+**Universal total: 14** (counts toward all five types).
 
 ## 7. Cross-class pool — fits two or more types
 
@@ -268,11 +274,11 @@ New signature (12):
 
 | Type | Universal | Cross | Existing signature | New signature | **Total** |
 |---|---:|---:|---:|---:|---:|
-| Water | 8 | 4 | 4 | 7 | **23** |
-| Earth | 8 | 4 | 3 | 8 | **23** |
-| Fire | 8 | 4 | 3 | 8 (+Rocket Flight) | **23+** |
-| Air | 8 | 4 | 2 | 8 | **22** |
-| Non-bending | 8 | 2 | 1 | 12 | **23** |
+| Water | 14 | 4 | 4 | 7 | **29** |
+| Earth | 14 | 4 | 3 | 8 | **29** |
+| Fire | 14 | 4 | 3 | 8 (+Rocket Flight) | **29+** |
+| Air | 14 | 4 | 2 | 8 | **28** |
+| Non-bending | 14 | 2 | 1 | 12 | **29** |
 
 Unique/gear/companion cards add on top per character (Glider, Boomerang, Water Shoes, Sword, etc.) but aren't counted here.
 

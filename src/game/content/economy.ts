@@ -85,6 +85,12 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "miraculous-balm": { value: 2, chiCost: 2, energy: 2, restrictions: [], slotType: "defense" },
   "healing-waters": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "defense" },
   "second-wind": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "hold-the-line": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "shifting-ground": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "opening-feint": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "attack" },
+  "measured-retreat": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "team-relay": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
+  "last-reserve": { value: 3, chiCost: 2, energy: 2, restrictions: [], slotType: "defense" },
 };
 
 /** Restriction gate for assign AND play (banking is always legal). */
