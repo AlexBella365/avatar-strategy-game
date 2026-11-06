@@ -201,6 +201,7 @@ export function createInitialState(
       characterHands: {},
       assignments: {},
     })),
+    revealedAssignments: {},
     terrain: [],
     log: [
       "Match created.",

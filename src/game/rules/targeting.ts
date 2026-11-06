@@ -229,6 +229,13 @@ export function validateTarget(
       return { ok: false, errors: [err("TARGET_KNOCKED_OUT", `${describeChar(target)} is knocked out.`)] };
     if (!matchesAllegiance(target, source, t.allegiance))
       return { ok: false, errors: [err("WRONG_ALLEGIANCE", "This card cannot target that character.")] };
+    if (t.requiresUnactivated && target.activatedThisRound)
+      return { ok: false, errors: [err("TARGET_ALREADY_ACTIVATED", "That character has already activated this round.")] };
+    if (
+      t.requiresAssignment &&
+      !state.players.find((player) => player.id === target.ownerId)?.assignments[target.id]
+    )
+      return { ok: false, errors: [err("NO_ASSIGNED_CARD_TARGET", "That character has no assigned card to reveal.")] };
     if (checkRange && !inRange(source.position, target.position, t.range))
       return {
         ok: false,

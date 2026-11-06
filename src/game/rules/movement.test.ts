@@ -84,6 +84,20 @@ describe("voluntary movement", () => {
     ).toBe("TILE_BLOCKED");
   });
 
+  it("Water Shoes allow voluntary movement and Evade onto water", () => {
+    const state = setup();
+    const katara = state.characters.find((character) => character.id === "p1-c1")!;
+    katara.equippedGear.push({ id: "shoes-test", definitionId: "water-shoes" });
+    createTerrain(state, { x: 3, y: 1 }, "water-source", "permanent", "fail");
+
+    expect(validateMove(state, katara.id, [{ x: 3, y: 1 }])).toMatchObject({
+      ok: true,
+      cost: 1,
+    });
+    expect(getEvadeDestinations(state, katara.id)).toContainEqual({ x: 3, y: 1 });
+    expect(applyEvade(state, katara.id, { x: 3, y: 1 }, true).ok).toBe(true);
+  });
+
   it("cannot walk onto or through rock walls", () => {
     const state = setup();
     createTerrain(state, { x: 2, y: 0 }, "rock-wall", "permanent", "fail");
@@ -185,6 +199,20 @@ describe("forced movement", () => {
     const result = resolveForcedMove(state, "p2-c1", "north", 3); // sokka (3,6)
     expect(result.moved).toBe(2); // (3,5),(3,4), then the wall at (3,3)
     expect(result.stopped).toBe("blocking");
+  });
+
+  it("forced movement still stops before water, even with Water Shoes", () => {
+    const state = setup();
+    const toph = state.characters.find((character) => character.id === "p2-c0")!;
+    toph.position = { x: 3, y: 3 };
+    toph.equippedGear.push({ id: "shoes-test", definitionId: "water-shoes" });
+    createTerrain(state, { x: 3, y: 2 }, "water-source", "permanent", "fail");
+
+    const result = resolveForcedMove(state, toph.id, "north", 2);
+
+    expect(result.moved).toBe(0);
+    expect(result.stopped).toBe("blocking");
+    expect(toph.position).toEqual({ x: 3, y: 3 });
   });
 
   it("OffBalance adds one step and is consumed", () => {

@@ -34,6 +34,7 @@ Every fighter card MUST display (`CharacterDefinition` + live `CharacterState`):
 ## 2. Sizing & art-slot standard (all prototypes)
 
 - **Web target:** card face 300×420px (5:7), padding 16px, corner radius 14px. Scales down to hand-row width without reflow (rules text wraps to more lines; only the art crops via `object-fit: cover` — rules text is never clamped or ellipsized).
+- **Element emblem backdrop:** on full-size and mini cards, center the element logo at 35% of the card width. Fade it into the card's neutral element-base color along the horizontal edges: neutral at 10% and 90%, transitioning to transparent by 30% and 70%. Keep the emblem behind card content at low opacity.
 - **Print target:** poker 63×88mm + 3mm bleed; safe zone 3mm inside trim. All text ≥7pt print / ≥11px web.
 - **Art slots:**
   - `ART-L` (large): 268×150px web (≈ 57×32mm print), aspect 16:9, top-anchored. Holds full scene illustration. Placeholder: current `art` emoji centered on muted element gradient.
@@ -218,7 +219,7 @@ One per character in draft + activation panel. Art occupies top half; stats are 
 
 ### Water Shoes card
 
-The gear card that enables this exception is **Water Shoes**. Its full card data (field-by-field definition, verbatim `rulesText`, `GearBonus.waterWalking` engine delta, restriction and UI notes) lives in the card roster: `specs/card_roster.md` §2.1. Only the terrain-rule interactions are kept here.
+The gear card that enables this exception is **Water Shoes**. Its full card data (field-by-field definition, verbatim `rulesText`, `GearBonus.waterWalking` behavior, restriction and UI notes) lives in the card roster: `specs/card_roster.md` §2.1. Water Shoes now permits voluntary walking and Evade onto water; forced movement remains blocked.
 
 ## 9. Movement technique — Rocket Flight (firebender)
 
@@ -236,7 +237,7 @@ The gear card that enables this exception is **Water Shoes**. Its full card data
 
 ### Rocket Flight card
 
-Full card data (field-by-field definition, verbatim `rulesText`, teleport engine delta, targeting-model note, UI notes) lives in the card roster: `specs/card_roster.md` §2.2. Only the rule design (cost, path legality, terrain triggers, Bound/Evade interaction) is kept here.
+Full card data (field-by-field definition, verbatim `rulesText`, teleport behavior, targeting-model note, UI notes) lives in the card roster: `specs/card_roster.md` §2.2. Rocket Flight is implemented as a chosen landing tile highlighted by the UI. Only the rule design (cost, path legality, terrain triggers, Bound/Evade interaction) is kept here.
 
 ## 10. Implementation notes (for the builder)
 

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
+import { CARDS } from "./game/content/cards";
 
 afterEach(cleanup);
 
@@ -12,6 +13,9 @@ describe("demo smoke", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: /fight/i }));
+    expect(screen.getByLabelText("Latest action").textContent).toContain(
+      "Round 1 begins (initiative:",
+    );
     expect(document.querySelectorAll(".tile")).toHaveLength(49);
     expect(document.querySelectorAll(".sheet").length).toBeGreaterThanOrEqual(6);
     expect(document.querySelectorAll(".puck").length).toBeGreaterThanOrEqual(6);
@@ -48,5 +52,26 @@ describe("demo smoke", () => {
     await user.click(screen.getByRole("button", { name: "P2" }));
     expect(document.querySelector(".sheets-col .mini-back")).toBeTruthy();
     expect(document.querySelector(".sheets-col .mini-card:not(.mini-back)")).toBeFalsy();
+  });
+
+  it("sorts and filters the card roster", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /fight/i }));
+    await user.click(screen.getByRole("button", { name: "Card roster" }));
+
+    const visibleNames = () =>
+      Array.from(document.querySelectorAll(".roster-card .pc-name"), (node) => node.textContent);
+    const expectedAlphabetical = [...CARDS].map((card) => card.name).sort((a, b) => a.localeCompare(b));
+    expect(visibleNames()).toEqual(expectedAlphabetical);
+
+    await user.selectOptions(screen.getByLabelText("Sort cards"), "type");
+    const expectedByType = [...CARDS]
+      .sort((a, b) => a.cardType.localeCompare(b.cardType) || a.name.localeCompare(b.name))
+      .map((card) => card.name);
+    expect(visibleNames()).toEqual(expectedByType);
+
+    await user.selectOptions(screen.getByLabelText("Filter card type"), "attack");
+    expect(visibleNames()).toHaveLength(CARDS.filter((card) => card.cardType === "attack").length);
   });
 });

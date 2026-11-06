@@ -287,6 +287,13 @@ export default function Board({
               </span>
             );
           })}
+        {fx && (
+          <span
+            className={`screen-impact impact-${fx.kind}`}
+            style={{ animationDuration: `${ANIMATION_TIMING.attackFx[fx.kind]}ms` }}
+            aria-hidden
+          />
+        )}
         {(floats ?? []).map((f) => {
           const c = state.characters.find((ch) => ch.id === f.charId);
           if (!c) return null;

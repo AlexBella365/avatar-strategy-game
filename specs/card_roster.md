@@ -1,14 +1,14 @@
 # Card Roster v1 — Full Pool (existing + proposed)
 
 **Status:** Live pool documents current code; expansion sections remain design proposals. Non-normative for engine rules.
-**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 25-card pool).
+**Purpose:** Single source of truth for **which cards exist** and their full data. Layout/visual design lives separately in `specs/card_design_prototypes.md` (T1–T4 technique frames, F1 fighter card, sizing/art-slot standard); engine rules live in `specs/avatar_tactical_card_game_spec_v2.md` + `specs/avatar_tactical_card_game_spec_v0.3_amendment.md`; character list in `specs/avatar_character_roster_v2.md`. Live code references: `src/game/content/cards.ts` + `src/game/content/economy.ts` (current 29-card pool).
 **Goal:** Reach **~20 usable cards per character type** (Water / Earth / Fire / Air / Non-bending), built from ATLA + LOK lore, **with a shared core** so common effects aren't reprinted per element.
 
 **Conditional defense prototypes:** see [`conditional_defense_cards_v1.md`](conditional_defense_cards_v1.md) for a batch exploring prepared responses, trigger families, and lore variants. Four cards are in the live pool as intentionally unbalanced prototypes; the remaining concepts are design-only.
 
 ## 1. Existing live pool (ships today — `cards.ts` + `economy.ts`)
 
-25 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
+29 cards. `rulesText` shown verbatim as it appears in `cards.ts` (the player-facing explanation printed on every card). Four conditional-defense prototypes are included in the starter deck; their costs and response values are deliberately provisional.
 
 | id | name | cardType / kind | ⚡+💠 (⇪) | Fits (restriction) | rulesText (verbatim) |
 |---|---|---|---|---|---|
@@ -42,9 +42,9 @@
 
 Per-type signature counts from this live pool: Water 5 (water-whip, ice-bind, water-recovery, healing-waters, octopus-intercept) · Earth 5 (earth-sweep, earth-wall, seismic-read, earth-smash, seismic-snare) · Fire 3 (rising-flame, fire-sweep, comet-strike) · Air 3 (air-blast, air-shield, air-cocoon) · Non-bending 1 broad (precision-strike) + Sokka-unique. Universal 5 (travel-rations, smoke-bomb, dust-toss, miraculous-balm, second-wind). Gear/unique 2 (aang-glider, sokka-boomerang).
 
-## 2. Design-intent additions (from `card_design_prototypes.md` §8/§9 — new cards, not yet in `cards.ts`)
+## 2. First expansion batch — shipped from `card_design_prototypes.md` §8/§9
 
-These two cards were specced alongside the water-impassable terrain rule and the firebender movement technique. The **rule rationale** (why water is impassable, how Rocket Flight interacts with it) lives in `specs/card_design_prototypes.md` §8/§9; this file holds the **card data**.
+These two cards were specced alongside the water-impassable terrain rule and the firebender movement technique, and are now live in `cards.ts` + `economy.ts` and the starter deck. The **rule rationale** (why water is impassable, how Rocket Flight interacts with it) lives in `specs/card_design_prototypes.md` §8/§9; this file holds the **card data**. Rocket Flight is a costly, one-use reposition; Water Shoes are persistent, water-only mobility gear. Both fill underrepresented movement niches without adding damage.
 
 ### 2.1 Water Shoes
 
@@ -55,14 +55,14 @@ These two cards were specced alongside the water-impassable terrain rule and the
 | `cardType` / `economy.kind` | `support` / `gear` |
 | `element` | `water` |
 | `energyCost` / `focusCost` | `1` / `0` |
-| `economy` | `chiCost: 1`, `value: 2`, `slotType: "gear"`, `restrictions: [{ type: "element", elements: ["water"] }]` |
+| `economy` | `chiCost: 1`, `value: 2`, `slotType: "gear"`, `restrictions: [{ type: "element", elements: ["water", "avatar"] }]` |
 | `targeting` | `{ kind: "self" }` |
 | `tags` | `["Gear", "Mobility"]` |
 | `effects` / `terrainEffects` | `[]` (mobility flag resolved by movement rules, not an effect) |
 | `gearBonus` | `{ waterWalking: true }` — **new `GearBonus` field** (see below) |
 | `rulesText` (verbatim) | `Gear (Waterbenders only). While equipped, you may enter and end your move on water tiles as if they were open ground — water no longer blocks your movement.` |
 
-- **Engine delta:** `GearBonus` gains an optional `waterWalking?: boolean` (default false). `rules/movement.ts` currently derives illegal destinations from `blockingTiles(state)`; it must also treat water tiles as blocked **unless** the moving character has an equipped gear granting `waterWalking`. The Evade legal-destination helper and the forced-movement path walker share the same water check. (Depends on the water-impassable rule — `card_design_prototypes.md` §8.)
+- **Engine:** Implemented through `GearBonus.waterWalking` and the voluntary movement / Evade destination checks. Forced movement still stops at water, as it does at other impassable terrain.
 - **Restriction note:** gated by `element: ["water"]`, so it fits waterbenders (and Avatar-element characters, consistent with other water cards). Not universal — that is the point of the card.
 - **UI:** the targeting preview must grey out pond tiles for a character without Water Shoes and light them for one with it (same "show why illegal" requirement as spec §14 — label the reason `Water — needs Water Shoes`).
 
@@ -77,13 +77,13 @@ These two cards were specced alongside the water-impassable terrain rule and the
 | `energyCost` / `focusCost` | `2` / `0` |
 | `economy` | `chiCost: 3`, `value: 2`, `slotType: "defense"`, `restrictions: [{ type: "element", elements: ["fire"] }]` |
 | `targeting` | `{ kind: "self" }` — the landing tile is chosen via `movePath` (see engine delta) |
-| `movement` | `{ timing: "beforeTechnique", maxSteps: 3, path: "teleport", destinationRule: "fizzle" }` — reuses Appa's teleport primitive |
+| `movement` | `{ timing: "insteadOfTechnique", maxSteps: 3, path: "teleport", destinationRule: "fizzle" }` — reuses Appa's teleport primitive |
 | `tags` | `["Mobility", "Escape"]` |
 | `effects` / `terrainEffects` | `[]` (pure movement) |
 | `rulesText` (verbatim) | `Rocket Flight: fly up to 3 tiles, ignoring every tile in between — walls, water, hazards, and difficult ground neither stop you nor trigger. Land on an empty tile you could normally stand on (not a wall, not water). Firebenders only.` |
 
-- **Engine delta:** smaller than Water Shoes — `MovementEffect` already supports `path: "teleport"` (Appa uses it) and `destinationRule: "fizzle"`. Rocket Flight is the same primitive with `maxSteps: 3` and a Manhattan range cap instead of "any tile." The one new bit: the destination-standability check must consult the impassable-water rule (`card_design_prototypes.md` §8), and crossed tiles skip terrain-entry triggers. Add the `element: ["fire"]` restriction and the defense slot.
-- **Targeting-model note:** `types.ts` models teleport as a `movement` field on a card whose `targeting` is `self` — but Rocket Flight needs the player to pick a *destination*. Either extend `TargetSelection` with a `teleport` kind, or model the landing tile as the card's `movePath` (already in `PLAY_CARD`). Recommend the `movePath` route to avoid a new selection kind.
+- **Engine:** Implemented with the existing teleport movement primitive, a Manhattan range cap of 3, legal empty landing tiles, and no traversal triggers. Bound still prevents this voluntary movement; illegal destinations fizzle after payment.
+- **Targeting:** the UI highlights valid landing tiles in range 3 and passes the chosen landing tile through `movePath`; no new target-selection variant is needed.
 - **UI:** range-3 reachable-tile highlight with a distinct "crossed terrain, no effect" style; legal landings solid, illegal ones (wall/water) greyed with the spec §14 reason (`Water — needs Water Shoes`, `Wall — cannot land`). Confirm before committing, since it costs chi and fizzles on a bad pick.
 
 ## 3. Design principles (pool construction)
@@ -244,7 +244,7 @@ New signature (12):
 | `dual-daggers` | attack | 1+0 (1) | melee | `Dual Daggers: melee. 2 damage (+1 vs Exposed).` | Ty Lee/Mai |
 | `rally` | support | 1+0 (2) | ally R3 | `Rally: an ally in range 3 heals 1 and gains 1 Focus.` | Sokka (leadership) |
 
-## 13. Gear & companions additions
+## 13. Gear & companions
 
 **Gear** (`slotType:"gear"`, persistent bonus while equipped): existing Aang's Glider, Sokka's Boomerang (§1).
 
@@ -255,14 +255,14 @@ New signature (12):
 | `combat-suit` | Suki (unique) | 1+1 (2) | `shield` +1 | `Kyoshi Combat Suit: your first shield each round is +1.` | Suki |
 | `metal-armband` | Lin, Kuvira (earth) | 1+1 (2) | `damage:1` vs shielded | `Metal Armband: +1 damage against shielded targets.` | metalbenders |
 
-**Companions** (one-shot ability cards, resolve then discard; no Evade): existing Appa (Team Avatar teleport), Momo (snatch/bank).
+**Companions** are one-shot ability cards that resolve then discard; they do not open an Evade window. The first pair is live:
 
 | id | Fits | ⚡+💠 (⇪) | rulesText (verbatim) | Lore |
 |---|---|---|---|---|
-| `naga-lift` | Korra (LOK team) | 2+2 (2) | `Naga Lift: fly yourself to any empty, non-blocking tile, ignoring everything in between.` (Appa analogue for LOK) | Naga |
-| `pabu-swipe` | Bolin, Mako (LOK) | 1+2 (2) | `Pabu Swipe: target an adjacent enemy who hasn't activated; peek at their face-down card, then bank it for its chi.` (Momo analogue) | Pabu |
+| `appa-lift` | Aang (unique) | 2+2 (2) | `Appa carries you to an empty, legal tile within 3, ignoring intervening terrain, hazards, and Bound. The landing tile must be standable; its entry effects still apply. Aang only. 2 Energy + 2 chi.` | Appa |
+| `momo-scout` | Team Avatar | 1+2 (2) | `Momo scouts an adjacent enemy who has not activated and reveals their assigned card to your team. The card is not taken or discarded. Team Avatar only. 1 Energy + 2 chi.` | Momo |
 
-(Gear/companions are `unique`/team-gated and NOT counted in the per-type totals.)
+Scouted cards are visible only to the scouting player's view and stay known until their owner activates or scraps them, or the round ends. (Gear/companions are not counted in the per-type totals.)
 
 ## 14. Per-type totals (target ≥ 20)
 
@@ -291,7 +291,7 @@ Wave-1 LOK bundles (Korra, Mako, Bolin, Asami, Lin, Amon/Kuvira) pull from the s
 
 ## 16. Validation & next steps
 
-1. **Add to `CARD_ECONOMY` + `CARD_DEFINITIONS`** as data; run `validateCardDefinitions()` — no TODOs, complete `rulesText`, unique `art`.
+1. **For new cards, add to `CARD_ECONOMY` + `CARD_DEFINITIONS`** as data; run `validateCardDefinitions()` — no TODOs, complete `rulesText`, unique `art`.
 2. **Ship in waves** (roster v2 order): universal + cross tier first (broadest reuse), then core-six signature, then Wave-1/LOK + companions.
 3. **Engine work gated by §5:** water impassability (Water Shoes), smoke `blocksSight`, lava + snare terrain ids, reaction window (Redirection), facing (`needsDirection`) for all line cards. Everything else is existing primitives.
 4. **Playtest each element** has ≥1 focused attack, ≥1 defense, ≥1 positional/utility (roster v2 requirement) — satisfied above; verify mixed vs mono teams.

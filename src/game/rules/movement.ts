@@ -13,6 +13,7 @@ import { getCharacterOrThrow, hasStatus, removeStatus } from "./statuses";
 import { occupantAt } from "../state";
 import type { ActionError, Direction, GameState, Position } from "../types";
 import { err } from "./errors";
+import { getTerrainDefinition } from "../content/terrain";
 
 function tileCost(difficult: Set<string>, pos: Position): number {
   return difficult.has(key(pos)) ? 2 : 1;
@@ -37,6 +38,23 @@ export function gearDamageBonus(state: GameState, characterId: string): number {
   );
 }
 
+/** Terrain blocked to voluntary movement, including Water Shoes exceptions. */
+export function movementBlockedTiles(state: GameState, characterId: string): Set<string> {
+  const blocked = blockingTiles(state);
+  const actor = state.characters.find((character) => character.id === characterId);
+  const canWalkOnWater = actor?.equippedGear.some(
+    (gear) => CARD_DEFINITIONS[gear.definitionId]?.gearBonus?.waterWalking,
+  );
+  if (canWalkOnWater) {
+    for (const terrain of state.terrain) {
+      if (getTerrainDefinition(terrain.terrainId)?.elementalSource === "water") {
+        blocked.delete(key(terrain));
+      }
+    }
+  }
+  return blocked;
+}
+
 export interface MoveValidation {
   ok: boolean;
   errors: ActionError[];
@@ -55,7 +73,7 @@ export function validateMove(
     return { ok: false, errors: [err("SOURCE_KNOCKED_OUT", "Knocked-out characters cannot move.")], cost: 0 };
   if (hasStatus(c, "Bound"))
     return { ok: false, errors: [err("CHARACTER_BOUND", `${c.definitionId} is Bound and cannot move voluntarily.`)], cost: 0 };
-  const blocked = blockingTiles(state);
+  const blocked = movementBlockedTiles(state, characterId);
   const difficult = difficultTiles(state);
   let prev = c.position;
   let cost = 0;
@@ -129,7 +147,7 @@ export function findCheapestPath(
 ): Position[] | null {
   const c = state.characters.find((ch) => ch.id === characterId);
   if (!c || c.health <= 0 || !inBounds(dest)) return null;
-  const blocked = blockingTiles(state);
+  const blocked = movementBlockedTiles(state, characterId);
   const difficult = difficultTiles(state);
   const startKey = key(c.position);
   const destKey = key(dest);
@@ -173,7 +191,7 @@ export function findCheapestPath(
 /** Legal Evade destinations: in-bounds, unoccupied, non-blocking neighbors. */
 export function getEvadeDestinations(state: GameState, characterId: string): Position[] {
   const c = getCharacterOrThrow(state, characterId);
-  const blocked = blockingTiles(state);
+  const blocked = movementBlockedTiles(state, characterId);
   return Object.values(DIRECTION_VECTORS)
     .map((v) => ({ x: c.position.x + v.x, y: c.position.y + v.y }))
     .filter(

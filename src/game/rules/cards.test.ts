@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { setup } from "../testutils";
 import { applyGameAction } from "./cards";
+import { CARD_DEFINITIONS } from "../content/cards";
 import { createTerrain } from "./terrain";
 import { applyStatus } from "./statuses";
 import type {
@@ -372,6 +373,115 @@ describe("AoE, synergy, and match-end stops", () => {
 });
 
 describe("card movement and terrain effects", () => {
+  it("Appa carries a Bound Aang across terrain to a legal tile within three", () => {
+    const state = setup();
+    state.players[0].chi = 2;
+    const aang = state.characters.find((character) => character.id === "p1-c0")!;
+    const health = aang.health;
+    applyStatus(state, aang.id, "Bound", 1);
+    createTerrain(state, { x: 2, y: 0 }, "rock-wall", "permanent", "fail");
+    createTerrain(state, { x: 1, y: 1 }, "bonfire", "permanent", "fail");
+
+    const result = play(state, {
+      char: aang.id,
+      card: CARD_DEFINITIONS["appa-lift"],
+      selection: { kind: "automatic" },
+      movePath: [{ x: 2, y: 2 }],
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.state.characters.find((character) => character.id === aang.id)?.position).toEqual({
+      x: 2,
+      y: 2,
+    });
+    expect(result.state.characters.find((character) => character.id === aang.id)?.health).toBe(health);
+  });
+
+  it("Momo reveals an adjacent unactivated enemy's assignment only to the scout's player", () => {
+    const state = setup();
+    state.players[0].chi = 2;
+    const aang = state.characters.find((character) => character.id === "p1-c0")!;
+    const toph = state.characters.find((character) => character.id === "p2-c0")!;
+    aang.position = { x: 1, y: 5 };
+    const targetAssignment = { id: "target-card", definitionId: "earth-sweep" };
+    state.players[1].assignments[toph.id] = targetAssignment;
+
+    const result = play(state, {
+      char: aang.id,
+      card: CARD_DEFINITIONS["momo-scout"],
+      selection: sel(toph.id),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.state.revealedAssignments.p1[toph.id]).toEqual(targetAssignment);
+    expect(result.state.revealedAssignments.p2?.[toph.id]).toBeUndefined();
+    expect(result.state.players[1].assignments[toph.id]).toEqual(targetAssignment);
+
+    const spent = applyGameAction(result.state, {
+      type: "PASS_ACTIVATION",
+      playerId: "p2",
+      characterId: toph.id,
+    }, { bypassTurnOrder: true });
+    expect(spent.state.revealedAssignments.p1[toph.id]).toBeUndefined();
+    expect(spent.state.players[1].assignments[toph.id]).toBeNull();
+  });
+
+  it("Rocket Flight crosses intervening terrain without triggering it", () => {
+    const state = setup();
+    state.players[0].chi = 3;
+    createTerrain(state, { x: 5, y: 1 }, "rock-wall", "permanent", "fail");
+    createTerrain(state, { x: 5, y: 2 }, "bonfire", "permanent", "fail");
+    const zuko = state.characters.find((character) => character.id === "p1-c2")!;
+    const health = zuko.health;
+
+    const result = play(state, {
+      char: zuko.id,
+      card: CARD_DEFINITIONS["rocket-flight"],
+      selection: { kind: "automatic" },
+      movePath: [{ x: 5, y: 3 }],
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.state.characters.find((character) => character.id === zuko.id)?.position).toEqual({
+      x: 5,
+      y: 3,
+    });
+    expect(result.state.characters.find((character) => character.id === zuko.id)?.health).toBe(health);
+  });
+
+  it("Rocket Flight fizzles after payment when out of range and cannot be used while Bound", () => {
+    const card = CARD_DEFINITIONS["rocket-flight"];
+    const state = setup();
+    state.players[0].chi = 3;
+    const fizzled = play(state, {
+      char: "p1-c2",
+      card,
+      selection: { kind: "automatic" },
+      movePath: [{ x: 0, y: 0 }],
+    });
+    expect(fizzled.errors).toEqual([]);
+    expect(fizzled.events.join(" ")).toContain("illegal teleport destination");
+    expect(fizzled.state.players[0].energy).toBe(2);
+    expect(fizzled.state.players[0].chi).toBe(0);
+    expect(fizzled.state.characters.find((character) => character.id === "p1-c2")?.position).toEqual({
+      x: 5,
+      y: 0,
+    });
+
+    const bound = setup();
+    bound.players[0].chi = 3;
+    applyStatus(bound, "p1-c2", "Bound", 1);
+    const rejected = play(bound, {
+      char: "p1-c2",
+      card,
+      selection: { kind: "automatic" },
+      movePath: [{ x: 5, y: 1 }],
+    });
+    expect(rejected.errors[0].code).toBe("CHARACTER_BOUND");
+    expect(rejected.state.players[0].energy).toBe(4);
+    expect(rejected.state.players[0].chi).toBe(3);
+  });
+
   it("moves before the technique, then strikes from the new tile", () => {
     const state = setup();
     state.characters.find((c) => c.id === "p2-c0")!.position = { x: 1, y: 3 };

@@ -5,9 +5,9 @@
 //   Basic Attack — adjacent enemy, 1 damage, free, no reaction window.
 //   Basic Defense — self shield 1 until next round, free.
 import type { ActionResult, GameAction, GameState } from "../types";
+import { getCardDefinition } from "../content/cards";
 import { err } from "./errors";
 import { dealDamage } from "./damage";
-import { getCardDefinition } from "../content/cards";
 
 function actorError(state: GameState, playerId: string, characterId: string) {
   const actor = state.characters.find((c) => c.id === characterId);
@@ -75,22 +75,36 @@ export function resolveBasicAttack(
   let damage = 1;
   const protector = state.characters.find((candidate) => {
     if (
-      candidate.ownerId !== target.ownerId || candidate.id === target.id || candidate.health <= 0 ||
+      candidate.ownerId !== target.ownerId ||
+      candidate.id === target.id ||
+      candidate.health <= 0 ||
       candidate.reactionUsedThisRound ||
-      Math.abs(candidate.position.x - target.position.x) + Math.abs(candidate.position.y - target.position.y) !== 1
-    ) return false;
-    const prepared = candidate.preparedResponse && getCardDefinition(candidate.preparedResponse.cardId);
-    return prepared?.conditional?.trigger === "adjacentAllyMeleeTargeted" &&
-      prepared.conditional.response.type === "allyIntercept";
+      Math.abs(candidate.position.x - target.position.x) +
+        Math.abs(candidate.position.y - target.position.y) !==
+        1
+    ) {
+      return false;
+    }
+    const prepared =
+      candidate.preparedResponse && getCardDefinition(candidate.preparedResponse.cardId);
+    return (
+      prepared?.conditional?.trigger === "adjacentAllyMeleeTargeted" &&
+      prepared.conditional.response.type === "allyIntercept"
+    );
   });
-  const protectorCard = protector?.preparedResponse && getCardDefinition(protector.preparedResponse.cardId);
+  const protectorCard =
+    protector?.preparedResponse && getCardDefinition(protector.preparedResponse.cardId);
   const response = protectorCard?.conditional?.response;
   if (protector && response?.type === "allyIntercept") {
     protector.preparedResponse = null;
     protector.reactionUsedThisRound = true;
     damage = Math.max(0, damage - response.damageReduction);
-    events.push(`${protector.definitionId} triggers Octopus Intercept for ${target.definitionId} (-${response.damageReduction} damage).`);
+    events.push(
+      `${protector.definitionId} triggers Octopus Intercept for ${target.definitionId} (-${response.damageReduction} damage).`,
+    );
   }
+  // Basic attacks stay at their printed 1 damage: the global damage multiplier
+  // is for card/hazard lethality, not the free fallback (rules §8 Phase 3).
   const outcome = dealDamage(state, targetCharacterId, damage, "basic attack", { scale: false });
   events.push(`${actor.definitionId} makes a basic attack (1).`);
   events.push(...outcome.events);

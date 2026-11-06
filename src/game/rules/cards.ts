@@ -45,8 +45,9 @@ import {
   applyMove,
   canEvade,
   findCheapestPath,
-  gearDamageBonus,
   getEvadeDestinations,
+  gearDamageBonus,
+  movementBlockedTiles,
   resolveForcedMove,
   resolveSwap,
 } from "./movement";
@@ -61,7 +62,7 @@ import {
 } from "./terrain";
 import { getAffectedCharacters, resolveTiles, validateTarget } from "./targeting";
 import { activationOwner } from "./turns";
-import { hasLineOfSight, inBounds, isOrthogonalAdjacent, key } from "./grid";
+import { hasLineOfSight, inBounds, isOrthogonalAdjacent, key, manhattan } from "./grid";
 import type {
   ActionError,
   ActionResult,
@@ -181,6 +182,7 @@ export function applyGameAction(
         bankCard(next, action.playerId, assigned, "scrapped on pass");
         player.assignments[action.characterId] = null;
       }
+      clearAssignmentIntel(next, action.characterId);
       actor.activatedThisRound = true;
       actor.techniqueBlockedThisActivation = false;
       events.push(`${actor.definitionId} passes.`);
@@ -242,6 +244,12 @@ function expirePreparedResponses(state: GameState, actingPlayerId: string, event
     const card = getCardDefinition(c.preparedResponse.cardId);
     c.preparedResponse = null;
     events.push(`${c.definitionId}'s ${card?.name ?? "prepared response"} expires unused.`);
+  }
+}
+
+function clearAssignmentIntel(state: GameState, characterId: string): void {
+  for (const intel of Object.values(state.revealedAssignments)) {
+    delete intel[characterId];
   }
 }
 
@@ -383,6 +391,7 @@ function resolveScrap(
   if (!assigned)
     return { errors: [err("NOTHING_ASSIGNED", "That character holds no card.")], events: [] };
   player.assignments[characterId] = null;
+  clearAssignmentIntel(state, characterId);
   return { errors: [], events: [bankCard(state, playerId, assigned, "scrapped")] };
 }
 
@@ -406,6 +415,11 @@ function resolvePlayCard(
   if (actor.techniqueBlockedThisActivation)
     return {
       errors: [err("TECHNIQUE_SPENT", "This activation's technique play is already spent.")],
+      events,
+    };
+  if (card.movement && !card.movement.ignoresBound && hasStatus(actor, "Bound"))
+    return {
+      errors: [err("CHARACTER_BOUND", `${actor.definitionId} is Bound and cannot move voluntarily.`)],
       events,
     };
   const def = defOf(actor);
@@ -505,6 +519,7 @@ function resolvePlayCard(
     events.push(`${actor.definitionId} uses Discipline focus (-1 Energy).`);
   }
   player.assignments[actor.id] = null;
+  clearAssignmentIntel(state, actor.id);
   removeFromHand(state, action.playerId, actor.id, action.cardInstanceId);
   // The played card leaves play at commit: gear equips, the rest discards
   // (even if the technique later fizzles).
@@ -897,6 +912,17 @@ function resolvePlayCard(
         case "disrupt":
           events.push(applyStatus(state, targetId, "Exhausted", 1));
           break;
+        case "revealAssignment": {
+          const targetOwner = state.players.find((p) => p.id === target.ownerId);
+          const assignedTargetCard = targetOwner?.assignments[target.id];
+          if (assignedTargetCard) {
+            const intel = state.revealedAssignments[actor.ownerId] ?? {};
+            intel[target.id] = { ...assignedTargetCard };
+            state.revealedAssignments[actor.ownerId] = intel;
+            events.push(`${actor.definitionId} scouts the face-down card on ${target.definitionId}.`);
+          }
+          break;
+        }
       }
     }
   }
@@ -958,7 +984,8 @@ function checkMovementEffect(
     const legal =
       dest !== undefined &&
       inBounds(dest) &&
-      !blockingTiles(state).has(key(dest)) &&
+      (movement.maxSteps <= 0 || manhattan(actor.position, dest) <= movement.maxSteps) &&
+      !movementBlockedTiles(state, actor.id).has(key(dest)) &&
       !occupantAt(state, dest);
     if (!legal)
       return { ok: false, errors: [err("INVALID_DESTINATION", "Teleport needs a legal destination tile.")] };
@@ -1003,8 +1030,11 @@ function runMovementEffect(
   const rule = movement.destinationRule;
   if (movement.path === "teleport") {
     const dest = path[path.length - 1];
-    const legal =
-      dest && inBounds(dest) && !tilesBlocked(state).has(key(dest)) && !occupantAt(state, dest);
+    const legal = dest &&
+      inBounds(dest) &&
+      (movement.maxSteps <= 0 || manhattan(actor.position, dest) <= movement.maxSteps) &&
+      !movementBlockedTiles(state, actor.id).has(key(dest)) &&
+      !occupantAt(state, dest);
     if (!legal) {
       events.push(`${card.name}: illegal teleport destination; card fizzles.`);
       return rule !== "mustBeLegal" ? false : false;

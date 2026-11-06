@@ -14,6 +14,11 @@ export const ECONOMY_TUNING = {
   chiValueMax: 3,
 } as const;
 
+/** Named crews used by companion-card affinity restrictions. */
+export const CARD_TEAMS: Record<string, string[]> = {
+  "team-avatar": ["aang", "katara", "sokka", "toph"],
+};
+
 export interface CardEconomyEntry {
   value: number; // chi gained when banked/scrapped (1..3)
   chiCost: number; // chi spent to Play (0..6)
@@ -41,6 +46,10 @@ export const STARTER_DECK_IDS: string[] = [
   "fire-sweep",
   "aang-glider",
   "sokka-boomerang",
+  "water-shoes",
+  "rocket-flight",
+  "appa-lift",
+  "momo-scout",
   "comet-strike",
   "travel-rations",
   "travel-rations",
@@ -71,6 +80,10 @@ export const CARD_ECONOMY: Record<string, CardEconomyEntry> = {
   "seismic-read": { value: 1, chiCost: 0, energy: 1, restrictions: [{ type: "element", elements: ["earth"] }], slotType: "attack" },
   "aang-glider": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "unique", characterId: "aang" }], slotType: "gear" },
   "sokka-boomerang": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "unique", characterId: "sokka" }], slotType: "gear" },
+  "water-shoes": { value: 2, chiCost: 1, energy: 1, restrictions: [{ type: "element", elements: ["water", "avatar"] }], slotType: "gear" },
+  "rocket-flight": { value: 2, chiCost: 3, energy: 2, restrictions: [{ type: "element", elements: ["fire"] }], slotType: "defense" },
+  "appa-lift": { value: 2, chiCost: 2, energy: 2, restrictions: [{ type: "unique", characterId: "aang" }], slotType: "defense" },
+  "momo-scout": { value: 2, chiCost: 2, energy: 1, restrictions: [{ type: "team", teamId: "team-avatar" }], slotType: "attack" },
   "comet-strike": { value: 3, chiCost: 3, energy: 2, restrictions: [{ type: "element", elements: ["fire"] }], slotType: "attack" },
   "travel-rations": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
   "smoke-bomb": { value: 1, chiCost: 0, energy: 1, restrictions: [], slotType: "defense" },
@@ -100,5 +113,7 @@ export function restrictionSatisfied(
     case "alignment":
       // hero/villain map from roster role; antihero/neutral match nothing.
       return character.role === restriction.alignment;
+    case "team":
+      return CARD_TEAMS[restriction.teamId]?.includes(character.definitionId) ?? false;
   }
 }

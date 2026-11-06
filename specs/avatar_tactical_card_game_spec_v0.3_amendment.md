@@ -38,10 +38,10 @@ Framework: innate (never occupy M slots); conditions on public info only (HP tot
 
 ## Companions (ability cards, playtest v1)
 
-Framework: named-animal one-shots that resolve then discard. Slot families for future card-data mapping: Appa → defense, Momo → attack. Neither opens an Evade window (neither is a focused attack); Momo is not reactable. Costs below are reference tuning, not final.
+Framework: named-animal one-shots that resolve then discard. Slot families: Appa → defense, Momo → attack. Neither opens an Evade window (neither is a focused attack); Momo is not reactable.
 
-- **Appa — Sky Bison Lift:** `team(team-avatar)` — the Gaang (starter: Aang, Katara, Sokka, Toph), not the Avatar character. Self-teleport to any legal tile (empty, non-blocking, in-bounds; destination chosen at reveal, standard fizzle-if-illegal). Ignores intervening tiles, hazards, LOS, and Bound (carried, not voluntary movement — an explicit bind counter). Reference: 2 Energy + 2 chi.
-- **Momo — Snatch:** no restriction (universal). Target: adjacent enemy character with an assigned face-down card (i.e. not yet activated — a legality condition, so spent activations can't be targeted). Peek at the card (owner-only intel), then bank it to your chi pool; the victim activates cardless (move only). Stolen-card replay is out of scope for v1 (bank only). Reference: 1 Energy + 2 chi; note the steal refunds the victim card's chi, so net cost floats with the victim's draw luck.
+- **Appa — Sky Bison Lift:** Aang-only in the initial card pool. Self-teleport up to 3 tiles to an empty, legal tile. Ignores intervening tiles, hazards, LOS, and Bound (carried, not voluntary movement). The landing tile must be standable and its entry effects apply. Illegal destinations fizzle after payment. Cost: 2 Energy + 2 chi.
+- **Momo — Scout:** `team(team-avatar)` — Aang, Katara, Sokka, or Toph in the starter roster. Target an adjacent enemy who has an assigned face-down card and has not activated. Reveal that card to the scouting player's team only; do not take or discard it. The information stays known until the target activates or scraps the assignment, or the round ends. Cost: 1 Energy + 2 chi.
 - Future companions (Naga, Pabu) follow the same framework; gate each with `unique` or leave universal per flavor.
 
 ## Terrain delta (extends v0.2 §5)

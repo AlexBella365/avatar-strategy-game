@@ -143,6 +143,8 @@ export type Targeting =
       allegiance: AllegianceFilter;
       range: number | "melee" | "any";
       requiresLineOfSight?: boolean; // default true
+      requiresAssignment?: boolean;
+      requiresUnactivated?: boolean;
     }
   | { kind: "tile"; range: number | "any"; allowsOccupiedTile: boolean }
   | { kind: "direction"; maxLength: number; directions: Direction[]; includeBlocker?: boolean }
@@ -163,6 +165,7 @@ export interface MovementEffect {
   timing: "beforeTechnique" | "afterTechnique" | "insteadOfTechnique";
   maxSteps: number;
   path: "orthogonal" | "straightOrthogonal" | "teleport";
+  ignoresBound?: boolean;
   ignoresDifficultTerrain?: boolean;
   destinationRule: "mustBeLegal" | "stopBeforeIllegal" | "fizzle";
 }
@@ -217,7 +220,8 @@ export type CardEffect =
   | { type: "gainFocus"; amount: number }
   | { type: "gainMomentum"; amount: number }
   | { type: "draw"; count: number; hand: "character" | "team" }
-  | { type: "disrupt"; amount: number };
+  | { type: "disrupt"; amount: number }
+  | { type: "revealAssignment" };
 
 export type CardType = "attack" | "defense" | "setup" | "support" | "reaction";
 
@@ -227,11 +231,13 @@ export type CardKind = "gear" | "attack" | "defense";
 export type Restriction =
   | { type: "unique"; characterId: string } // definition id, e.g. glider→aang
   | { type: "element"; elements: string[] } // any-of match
+  | { type: "team"; teamId: string }
   | { type: "alignment"; alignment: "hero" | "villain" };
 
 export interface GearBonus {
   movement?: number;
   damage?: number;
+  waterWalking?: boolean;
 }
 
 export interface CardDefinition {
@@ -348,6 +354,9 @@ export interface GameState {
   northPlayerId: string;
   characters: CharacterState[];
   players: PlayerState[];
+  /** Assignment intel visible only to the named viewer; cleared when the
+   *  assigned character activates, scraps their card, or the round ends. */
+  revealedAssignments: Record<string, Record<string, CardInstance>>;
   terrain: TerrainState[];
   log: string[];
   winnerId: string | null;

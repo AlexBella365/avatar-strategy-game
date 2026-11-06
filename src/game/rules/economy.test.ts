@@ -34,9 +34,15 @@ describe("starter content validation", () => {
   it("all cards have complete data and economy entries; deck matches", () => {
     expect(validateCardDefinitions()).toEqual([]);
     expect(new Set(Object.keys(CARD_ECONOMY))).toEqual(new Set(Object.keys(CARD_DEFINITIONS)));
+    expect(STARTER_DECK_IDS).toContain("water-shoes");
+    expect(STARTER_DECK_IDS).toContain("rocket-flight");
+    expect(STARTER_DECK_IDS).toContain("appa-lift");
+    expect(STARTER_DECK_IDS).toContain("momo-scout");
     for (const id of STARTER_DECK_IDS) {
       expect(getCardDefinition(id), id).toBeDefined();
     }
+    expect(getCardDefinition("water-shoes")?.gearBonus?.waterWalking).toBe(true);
+    expect(getCardDefinition("rocket-flight")?.movement?.maxSteps).toBe(3);
   });
 
   it("universal cards fit everyone; each hero has options", () => {
@@ -72,8 +78,11 @@ describe("restrictions", () => {
     const zuko = { definitionId: "zuko", element: "fire", role: "villain" };
     expect(restrictionSatisfied(aang, { type: "unique", characterId: "aang" })).toBe(true);
     expect(restrictionSatisfied(sokka, { type: "unique", characterId: "aang" })).toBe(false);
+    expect(restrictionSatisfied(aang, { type: "team", teamId: "team-avatar" })).toBe(true);
+    expect(restrictionSatisfied(sokka, { type: "team", teamId: "team-avatar" })).toBe(true);
     expect(restrictionSatisfied(aang, { type: "element", elements: ["water", "avatar"] })).toBe(true);
     expect(restrictionSatisfied(zuko, { type: "element", elements: ["water", "avatar"] })).toBe(false);
+    expect(restrictionSatisfied(zuko, { type: "team", teamId: "team-avatar" })).toBe(false);
     expect(restrictionSatisfied(aang, { type: "alignment", alignment: "hero" })).toBe(true);
     expect(restrictionSatisfied(zuko, { type: "alignment", alignment: "hero" })).toBe(false);
     expect(

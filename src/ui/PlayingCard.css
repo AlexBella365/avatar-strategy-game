@@ -12,15 +12,16 @@
 }
 .playing-card {
   position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   width: 100%;
   max-width: 150px;
   aspect-ratio: 5 / 7;
   border-radius: 10px;
-  background: var(--card-face-grad);
+  background: var(--element-base, #f2f2f2);
   border: 2px solid var(--border-strong);
   box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
-  padding: 20px 6px 6px;
+  padding: 28px 6px 7px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -29,44 +30,118 @@
   gap: 4px;
   font-size: 0.72rem;
 }
+/* Keep the smaller emblem behind card content and fade to the base color. */
+.playing-card::before,
+.mini-card:not(.mini-back)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(
+      to right,
+      var(--element-base, #f2f2f2) 10%,
+      transparent 30%,
+      transparent 70%,
+      var(--element-base, #f2f2f2) 90%
+    ),
+    var(--element-symbol, none);
+  background-position: center, center;
+  background-size: 100% 100%, 35% auto;
+  background-repeat: no-repeat, no-repeat;
+  opacity: 0.3;
+  filter: blur(2px);
+  pointer-events: none;
+}
+.playing-card.element-air,
+.mini-card.element-air {
+  --element-base: #f7f1df;
+  --element-symbol: url("../../artwork/symbols_air.png");
+}
+.playing-card.element-water,
+.mini-card.element-water {
+  --element-base: #e8f4f6;
+  --element-symbol: url("../../artwork/symbols_water.png");
+}
+.playing-card.element-earth,
+.mini-card.element-earth {
+  --element-base: #eff3df;
+  --element-symbol: url("../../artwork/symbols_earth.png");
+}
+.playing-card.element-fire,
+.mini-card.element-fire {
+  --element-base: #f8e9e7;
+  --element-symbol: url("../../artwork/symbols_fire.png");
+}
+.playing-card.element-nonbender,
+.mini-card.element-nonbender {
+  --element-base: #f0f0f0;
+  --element-symbol: url("../../artwork/symbols_no-bend.png");
+}
+.playing-card.element-technology,
+.mini-card.element-technology {
+  --element-base: #f1e8f6;
+  --element-symbol: url("../../artwork/symbols_techno.png");
+}
+.playing-card > :not(.pc-affinity):not(.pc-type-ribbon),
+.mini-card > * {
+  position: relative;
+  z-index: 1;
+}
 .playing-card:hover {
   transform: translateY(-4px);
 }
 .playing-card.assigning {
   outline: 3px solid var(--accent-select);
 }
-.playing-card.kind-gear {
-  border-color: var(--gear-border);
-  background: var(--gear-face-grad);
-}
-.playing-card.kind-attack {
-  border-color: var(--accent-danger);
-}
-.playing-card.kind-defense {
-  border-color: var(--accent-select);
-}
-.pc-corner {
+.pc-type-ribbon {
   position: absolute;
+  z-index: 2;
+  top: -2px;
+  left: -2px;
+  right: -2px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  border-radius: 8px 8px 0 0;
+  padding: 5px 5px 6px;
+  color: #fff;
+  background: #6b2930;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.45px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.pc-type-ribbon.kind-attack {
+  background: hsl(5, 40%, 40%);
+}
+.pc-type-ribbon.kind-defense {
+  background: hsl(65, 40%, 40%);
+}
+.pc-type-ribbon.kind-gear {
+  background: hsl(125, 0%, 60%);
+}
+.pc-meta-row {
+  display: flex;
   align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 3px;
+  white-space: nowrap;
+}
+.pc-costs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-strong);
   font-weight: bold;
   line-height: 1.05;
 }
-.pc-tl {
-  top: 4px;
-  left: 5px;
-}
-.pc-br {
-  bottom: 4px;
-  right: 5px;
-  transform: rotate(180deg);
-}
 .pc-cost {
-  font-size: 0.72rem;
-}
-.pc-suit {
-  font-size: 0.78rem;
+  font-size: 0.54rem;
 }
 .pc-name {
   font-weight: bold;
@@ -84,35 +159,87 @@
   text-align: center;
   padding: 3px 0;
 }
+.pc-combat {
+  flex: 0 1 auto;
+  padding: 0;
+  color: #612c28;
+  background: transparent;
+  font-size: 0.45rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: uppercase;
+}
+.pc-combat-melee { color: #782b29; }
+.pc-combat-ranged, .pc-combat-line { color: #285876; }
+.pc-combat-area { color: #6b437e; }
+.pc-combat-self { color: #50652c; }
+.pc-combat-tile { color: #6b5a2d; }
 /* Full, verbatim ability text — never truncated. Sits under the art and takes
    the remaining height so the kind label stays pinned to the bottom. */
 .pc-rules {
   flex: 1 1 auto;
-  font-size: 0.7rem;
-  line-height: 1.25;
+  font-size: 0.65rem;
+  line-height: 1.2;
   text-align: center;
   color: var(--text-strong);
   overflow-wrap: anywhere;
 }
-.pc-kind {
-  text-transform: uppercase;
-  font-size: 0.55rem;
-  letter-spacing: 0.5px;
-  color: var(--text);
-  text-align: center;
-  margin-top: auto;
+.pc-affinity {
+  position: absolute;
+  z-index: 1;
+  top: 26px;
+  right: 4px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 2px;
+  overflow: hidden;
+  border: 2px solid #f8eed6;
+  border-radius: 50%;
+  color: #fff;
+  background: #57534c;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  font-size: 0.66rem;
+  line-height: 1;
 }
+.pc-affinity-element {
+  gap: 0;
+  background: #365e6a;
+}
+.pc-affinity-element span + span {
+  margin-left: -5px;
+  font-size: 0.56rem;
+}
+.pc-affinity-character {
+  width: 24px;
+  padding: 0;
+  background: #2d3030;
+}
+.pc-affinity-character img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pc-affinity-alignment { background: #704d7a; }
+.pc-affinity-open { background: #72715b; }
 
 /* Compact card token shown in the sheet-side slots (assigned ability / gear).
    Same shape language and 5:7 ratio as a playing card, sized to fit beside a
    sheet. */
 .mini-card {
+  position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   width: 100%;
   aspect-ratio: 5 / 7;
   border-radius: 6px;
   border: 2px solid var(--border-strong);
-  background: var(--card-face-grad);
+  background: var(--element-base, #f2f2f2);
   padding: 3px 2px;
   display: flex;
   flex-direction: column;
@@ -121,15 +248,9 @@
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
-.mini-card.kind-gear {
-  border-color: var(--gear-border);
-  background: var(--gear-face-grad);
-}
-.mini-card.kind-attack {
-  border-color: var(--accent-danger);
-}
-.mini-card.kind-defense {
-  border-color: var(--accent-select);
+.mini-card.scouted {
+  border-color: #9c4e9a;
+  box-shadow: 0 0 0 2px rgba(156, 78, 154, 0.35), 1px 1px 0 rgba(0, 0, 0, 0.25);
 }
 .mini-art {
   font-size: 1rem;
