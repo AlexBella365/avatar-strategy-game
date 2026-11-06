@@ -85,10 +85,13 @@ play when fire ignites woodland.
 
 A 30-character fan pool across five classes (Water / Earth / Fire / Air / Non-bending),
 drawing on characters from both animated series, with series/role/class metadata for
-alignment restrictions. The demo drafts 10 fighters (core six + Iroh, Ozai, Suki,
-Ty Lee); Appa and Momo are flagged companions, not fighters. Aang is currently
-the only Avatar State–capable character; Resonance buildup, activation cost,
-duration, and the active-Avatar instant-loss rule live in the shared engine, not in card data.
+alignment restrictions. The demo drafts **18 fighters**: the core six, the Wave 1
+additions (Iroh, Ozai, Suki, Ty Lee), and the Wave 2 expansion (Bumi, Pakku, Ming-Hua,
+Mai, Tenzin, Lin Beifong, Asami Sato, Kuvira). Appa and Momo are flagged companions,
+not fighters. Non-bending fighters (Sokka, Suki, Ty Lee, Mai, Asami) are first-class
+picks rather than support-only. Aang is currently the only Avatar State–capable
+character; Resonance buildup, activation cost, duration, and the active-Avatar
+instant-loss rule live in the shared engine, not in card data.
 
 ## Cards (21)
 
@@ -132,7 +135,7 @@ stay in sync.
 11. ✅ Card presentation (5:7 faces with verbatim rules text, sheet gear/ability card slots with hidden-info card backs, balanced P1/P2 columns, hand under the owner's sheets)
 12. ✅ NPC opponent (Track A utility AI — `src/game/ai/`, no deps; `src/game/auto.ts`)
 13. ⬜ NPC AI debug overlay — finish Track A M2 by surfacing the existing decision traces in the UI; see `specs/npc_ai_plan.md` §A.6–A.7.
-14. ⬜ End-to-end polish (passives, roster waves)
+14. 🟡 End-to-end polish — roster waves are at 18 fighters (Wave 2 added 8 lore characters, including two more non-benders in Mai and Asami); mechanical passives are still descriptive only.
 15. ✅ Lethality + roster-parity pass — shipped tuning is data (`src/game/content/balance.ts`): movement 2, HP ×0.58, deployment rows 1/5, damage ×1.75. At n=100 the shipped matchup is heroes 46% / villains 51%, KO 76%, cap 20%, draws 3% — all §2.1 gates pass, and the hero mirror is no longer grindy (KO 39%, was 5%). See `specs/balance_testing_plan.md` §10.
 16. ⬜ Balance hardening — re-baseline at n≥200 and investigate the villain mirror's burst (8% cap-reach), then run the counterplay/efficiency audits in `specs/balance_testing_plan.md` §3 under the tuned numbers. The villain lineup is now the lore trio (Zuko, Azula, Ozai); Sokka is a hero and no longer fills a villain slot.
 17. 🧪 Experimental LLM advisor (Track B, Mode 1) — off by default (`VITE_AI_LLM=1` to enable); evaluation against Track A is pending. Mode 2 (LLM top-k choice) remains deferred; see `specs/npc_ai_plan.md` §3–5.

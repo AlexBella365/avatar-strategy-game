@@ -2,6 +2,8 @@
 
 **Purpose:** A cross-series candidate roster for the Avatar tactical card game. Version 2 expands the pool to 30 characters, explicitly includes key *Legend of Korra* heroes and villains, and preserves room for additional characters in later waves. This is a character-pool proposal, not a final balance sheet: each character should eventually have distinct attributes, a passive trait, and a signature card package.
 
+**Implementation status (current build):** 18 playable fighters are in `src/game/content/characters.ts` — the MVP six, the Wave 1 additions (Iroh, Ozai, Suki, Ty Lee), and the Wave 2 expansion (King Bumi, Pakku, Ming-Hua, Mai, Tenzin, Lin Beifong, Asami Sato, Kuvira). Appa and Momo exist as companions and are excluded from the draft pool. Passives are descriptive only for now.
+
 ## Roster principles
 
 - **30 characters total** across five gameplay classes: Water, Earth, Fire, Air, and Non-bending.
