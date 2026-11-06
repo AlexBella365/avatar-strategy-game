@@ -34,6 +34,7 @@ Every fighter card MUST display (`CharacterDefinition` + live `CharacterState`):
 ## 2. Sizing & art-slot standard (all prototypes)
 
 - **Web target:** card face 300×420px (5:7), padding 16px, corner radius 14px. Scales down to hand-row width without reflow (rules text wraps to more lines; only the art crops via `object-fit: cover` — rules text is never clamped or ellipsized).
+- **Element emblem backdrop:** on full-size and mini cards, center the element logo at 35% of the card width. Fade it into the card's neutral element-base color along the horizontal edges: neutral at 10% and 90%, transitioning to transparent by 30% and 70%. Keep the emblem behind card content at low opacity.
 - **Print target:** poker 63×88mm + 3mm bleed; safe zone 3mm inside trim. All text ≥7pt print / ≥11px web.
 - **Art slots:**
   - `ART-L` (large): 268×150px web (≈ 57×32mm print), aspect 16:9, top-anchored. Holds full scene illustration. Placeholder: current `art` emoji centered on muted element gradient.

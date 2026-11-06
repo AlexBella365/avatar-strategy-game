@@ -30,7 +30,7 @@
   gap: 4px;
   font-size: 0.72rem;
 }
-/* Keep the emblem behind card content and fade it into the tinted base. */
+/* Keep the smaller emblem behind card content and fade to the base color. */
 .playing-card::before,
 .mini-card:not(.mini-back)::before {
   content: "";
@@ -38,14 +38,20 @@
   z-index: 0;
   inset: 0;
   border-radius: inherit;
-  background-image: var(--element-symbol, none);
-  background-position: center;
-  background-size: 50% auto;
-  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(
+      to right,
+      var(--element-base, #f2f2f2) 10%,
+      transparent 30%,
+      transparent 70%,
+      var(--element-base, #f2f2f2) 90%
+    ),
+    var(--element-symbol, none);
+  background-position: center, center;
+  background-size: 100% 100%, 35% auto;
+  background-repeat: no-repeat, no-repeat;
   opacity: 0.3;
   filter: blur(2px);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
-  mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
   pointer-events: none;
 }
 .playing-card.element-air,
@@ -109,13 +115,13 @@
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 .pc-type-ribbon.kind-attack {
-  background: #70418f;
+  background: hsl(5, 40%, 40%);
 }
 .pc-type-ribbon.kind-defense {
-  background: #277568;
+  background: hsl(65, 40%, 40%);
 }
 .pc-type-ribbon.kind-gear {
-  background: #89671b;
+  background: hsl(125, 0%, 60%);
 }
 .pc-meta-row {
   display: flex;
@@ -174,8 +180,8 @@
    the remaining height so the kind label stays pinned to the bottom. */
 .pc-rules {
   flex: 1 1 auto;
-  font-size: 0.7rem;
-  line-height: 1.25;
+  font-size: 0.65rem;
+  line-height: 1.2;
   text-align: center;
   color: var(--text-strong);
   overflow-wrap: anywhere;
