@@ -39,7 +39,7 @@ rather than a normal ending. Full interpretation:
 4. ✅ **Card resolution** — focused/tile/directional/AoE targeting, reactions, statuses.
 5. ✅ **Round loop + victory + Avatar State** — Resonance buildup, activation, risk.
 6. ✅ **v0.3 economy** — chi bank, draw/assign/scrap, restrictions, slots, gear.
-7. ✅ **Starter content + hot-seat UI** — core six, 18 cards, versus draft, pucks,
+7. ✅ **Starter content + hot-seat UI** — core six, initial 18-card pool, versus draft, pucks,
    character sheets, hands, legend, card-fit hints, e2e coverage.
 8. ✅ **Demo tooling** — Auto P1/P2 toggles, UI smoke test, auto-vs-auto match sim.
 9. ✅ **Demo visuals** — painterly terrain tiles and connected roads, redesigned
