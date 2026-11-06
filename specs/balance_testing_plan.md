@@ -30,11 +30,11 @@ Thresholds are v1 defaults. "Flag" = investigate in the next batch. "Fail" = blo
 | Card play-win delta (n ≥ 100 plays) | within ±10pp of baseline | ±10–15pp | ±15pp+ | re-cost; check if it has no counter (audit §3.1) |
 | Bank-vs-play ratio (chi actions) | mixed by archetype | >80% of actions are banks *and* banks correlate with winning | >90% | tempo underpriced — raise effect per chi on cheap cards, or lower bank values |
 | Avg team Energy spent / round | 2.5–4.0 of 4 | <2.0 or >3.9 | — | <2: cheap plays weak / banks dominate; >3.9: energy is not a constraint, cost axis is dead |
-| Games reaching round 10 (time) | 30–70% | >85% or <10% | >95% or <5% | >85% grindy: raise lethality; <10% bursty: cut top-end damage or raise health |
+| Games reaching the round cap (30) | <5% | >10% | >25% | >10% grindy: raise lethality; the cap is a safety net, not the normal end |
 | Round-1 KO rate | ~0% | >3% | >7% | deployment/burst problem (see placement doc §2) |
 | Avatar State activation (games where meter filled) | 20–80% | <10% or >90% | — | <10% overpriced (nobody accepts instant-loss risk); >90% underpriced |
 | Max disable chain (player-tier, no out in losing deck) | ≤ 1 round | 2 rounds | ≥3 rounds | re-gate lockdown cards; villain tier reviewed separately |
-| Draw rate | <10% | >20% | >30% | tiebreaker too tight / lethality too low |
+| Draw rate | <10% | >20% | >30% | round cap reached without a knockout / lethality too low |
 
 ### 2.2 Descriptive metrics (watch, no threshold yet)
 
@@ -147,66 +147,67 @@ A version may **not** be called balanced if any of these hold:
 3. A villain-tier card has no visible tell/counter, or any disable chain ≥3 rounds with no out.
 4. One strategy (T2 archetype) beats all others >60% in both directions.
 5. Staple inclusion >95% — deck construction is an illusion.
-6. Draw rate >30% — the round-limit tiebreaker is doing too much work.
+6. Draw rate >30% — the round cap is doing too much work (matches are stalling).
 7. Any threshold in §2.1 changed without a written decision note in this file.
 
 ---
 
-## 10. Lethality + roster-parity pass — results and next steps (v0.3 engine + shipped tuning)
+## 10. Round-cap change + roster-parity pass — results and next steps (v0.4 engine + shipped tuning)
 
-Third harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. The shipped match runs on the defaults in `src/game/content/balance.ts`; **raw baseline cells are committed at `specs/balance_sweep_baseline.txt`** (regenerate with `make sweep-baseline`; the unfiltered harness also emits the tuning grid). Turn order is engine-enforced (§4.1); the remaining harness caveat is deployment/secrecy.
+Fourth harness run (§4), Track A policy, **n = 100 per cell** (Wilson ±9.8pp at p≈0.5). Harness: `src/game/ai/balanceSweep.test.ts`. The shipped match runs on the defaults in `src/game/content/balance.ts`; **raw baseline cells are committed at `specs/balance_sweep_baseline.txt`** (regenerate with `make sweep-baseline`; the unfiltered harness also emits the tuning grid). Turn order is engine-enforced (§4.1); the remaining harness caveat is deployment/secrecy.
 
 ### 10.1 Measured
 
 | Matchup | result | cap-reach | KO finish | draws | HP-share margin |
 |---|---|---|---|---|---|
-| Shipped — heroes (p1, north) vs villains (p2) | **heroes 46%** (46–51) | 20% | **76%** | 3% | 0.254 |
-| Mirror heroes (seat alternated) | p1 45 / p2 55 | 50% | 39% | 0% | 0.289 |
-| Mirror villains (seat alternated) | p1 46 / p2 52 | 8% | **92%** | 2% | 0.203 |
+| Shipped — heroes (p1, north) vs villains (p2) | **heroes 42%** (42–58) | 0% | **96%** | 0% | 0.264 |
+| Mirror heroes (seat alternated) | p1 53 / p2 47 | 0% | 89% | 0% | 0.350 |
+| Mirror villains (seat alternated) | p1 49 / p2 51 | 0% | **100%** | 0% | 0.209 |
 
-First KO lands at **round 3.2** on average in the shipped matchup (min 1). Round-1 KOs: 1% shipped, 0% hero mirror, 2% villain mirror. The shipped "unresolved 4" rows are Avatar-State instant losses, not missing results.
+First KO lands at **round 3.2** on average in the shipped matchup (min 1). Round-1 KOs: 1% shipped, 0% hero mirror, 2% villain mirror. Average match length is 8.3–11.0 rounds, so the 30-round cap is never the deciding factor. "Unresolved 4/11" rows are Avatar-State instant losses, not missing results.
 
 ### 10.2 Gate verdict against §2.1
 
-- **Lethality — PASS:** cap-reach 20% (≤70%), KO finish 76% (≥40%), draws 3% (<10%). KO has ~36pp of headroom rather than sitting on the threshold.
-- **Matchup — PASS:** heroes 46% / villains 51%, inside the ±12pp flag band. (Was 25/75.)
-- **Time — mixed:** shipped cap-reach 20% sits between the healthy 30–70% band and the <10% bursty flag; hero mirror is healthy at 50%; **villain mirror is 8% → FLAG** (<10% is bursty). The 90%-cap hero mirror from the lethality pass is gone.
+- **Lethality — PASS:** cap-reach 0% (≤70%), KO finish 96% (≥40%), draws 0% (<10%).
+- **Matchup — PASS:** heroes 42% / villains 58%, 8pp from even and inside the ±12pp flag band. (Was 25/75.)
+- **Time — PASS:** no cell reaches the 30-round cap; the cap is now a safety net rather than a normal outcome.
 - **Round-1 KO:** 1% shipped, 0% hero mirror, 2% villain mirror → OK (flag is >3%, fail >7%).
-- **Draws:** 3% / 0% / 2% → OK (fail is >30%).
-- **Seat:** north/first-mover 46% shipped, 53% hero mirror, 52% villain mirror — all CIs include 50%.
+- **Draws:** 0% in all cells → OK. Removing the tiebreakers means a stall shows up as a draw instead of a hidden health-share coin flip.
+- **Seat:** north/first-mover 42% shipped (CI 32.8–51.8%), 59% hero mirror (CI 49.2–68.1%), 53% villain mirror (CI 43.3–62.5%) — all CIs include 50%.
 - Not yet measured: avg team Energy spent/round, Avatar State *activation* rate, staple rates, bank:play, per-character win rates.
 
-### 10.3 What moved (three passes)
+### 10.3 What moved (four passes)
 
 All knobs are per-match data (`MatchTuning` in `src/game/types.ts`, defaults in `src/game/content/balance.ts`), so the harness can re-run any cell without engine edits.
 
 | Knob / rule | Original | Shipped | Why |
 |---|---|---|---|
 | `movement` | 1 | **2** | Contact happened in round 3–4; two tiles makes it round 1–2. |
-| `hpScale` | 1 | **0.58** | 14–20 HP pool → 8–12, so focused fire finishes inside 10 rounds. |
+| `hpScale` | 1 | **0.58** | 14–20 HP pool → 8–12, so focused fire finishes well inside the 30-round cap. |
 | `deploymentInset` | 0 | **1** | Start on rows 1/5 instead of 0/6: one row closer without changing the board. |
 | `damageScale` | 1 | **1.75** | Applied in `dealDamage` after the rulebook formula. 1.75 is the step where printed 2-damage staples deal 4; it gives hero sustain decks finishing power. |
 | Cardless basic attack | scales | **exempt** | The free fallback stays at its printed 1 damage (rules §8 Phase 3). At ×1.5 it silently dealt 2 and was ~20% of all damage, favouring aggression-5 villains. |
 | `comet-strike` | 5 | **4** | Largest single damage source (~14/match, no hero equivalent); 4 keeps it the ceiling anchor without deciding matchups. |
 | Villain roster | Zuko, **Sokka**, Azula | **Zuko, Azula, Ozai** | Sokka is `role: "hero"` and was filling a villain slot; Ozai (the lore villain) was unused. |
+| `maxRounds` / victory | 10 + tiebreakers | **30 + draw at cap** | Matches now end only by full knockout; reaching 30 rounds is a draw, with no health-share or survivor tiebreaker. |
 
 Rejected during the pass: **+1 printed damage on each hero attack card** (Earth Sweep / Air Blast / Water Whip 2→3). At ×1.5 that rounds to +2 effective per hit and pushed hero win rates far outside the band. The lesson: under an integer damage multiplier, printed-damage changes compound; prefer roster/tuning levers and check rounding cliffs (`1.5` and `1.6` produce identical outcomes; `1.75` is a step change).
 
 ### 10.4 Key dynamics
 
-1. **Parity came from roster + rounding, not a new mechanic.** Removing the hero-flavoured Sokka from the villain team and giving heroes a damage step they can actually use (4-damage staples) closed the 25/75 gap; the villain trio now wins its mirror 92% by KO.
-2. **Heroes are no longer the grindy side.** The hero mirror moved from 5% KO / 90% cap to 39% KO / 50% cap. The remaining pacing flag is the *villain* mirror at 8% cap — bursty rather than grindy.
-3. **Integer cliffs matter more than knob precision.** `damageScale` and `hpScale` both round; report the *effective* damage/HP values, not just the multipliers, when proposing changes. `1.5` and `1.6` can produce identical outcomes while `1.75` is a step change.
-4. **Seat is fine** in all three cells.
-5. **Avatar-State instant loss is a live outcome** (~4% of shipped games after this pass). It is working as designed; treat it as a separate risk axis when reading win rates.
+1. **The round cap is now a safety net.** Every measured game ends by knockout — average 8–11 rounds — so the 30-round rule only matters for genuine stalls, which surface as draws.
+2. **Results are binary.** With tiebreakers gone, a "close" game still has to produce a knockout; the old fractional health-share margins are now purely descriptive.
+3. **Parity holds under the longer cap.** The shipped cross-roster cell sits at 42/58, and both mirrors are within 3pp of even.
+4. **Hero mirrors are the longest games** (avg 11.0 rounds, 89% KO) because sustain decks trade healing; villain mirrors finish fastest (avg 8.3, 100% KO).
+5. **Avatar-State instant loss is a live outcome** (~4% of shipped games, 11% of hero mirrors). It is working as designed; treat it as a separate risk axis when reading win rates.
 
 ### 10.5 Next steps (prioritized)
 
 1. **Re-baseline at n≥200.** The current n=100 cells are ±9.8pp; run `make sweep-baseline` and add per-character/type win rates to the harness before treating pair tables as decision-grade.
-2. **Investigate the villain mirror's 8% cap-reach.** Villain games end by KO almost always; confirm this is acceptable burst (Ceasefire/Comet trades) rather than a missing defensive option. If it needs calming, raise `hpScale` slightly rather than cutting damage.
+2. **Confirm no stall decks reach 30 rounds.** Draws are 0% today, but the cap change should be re-checked whenever defensive cards or healing are added.
 3. **Counterplay/efficiency audits (§3.1–3.2) under the tuned numbers.** Every printed value now resolves through ×1.75; recompute damage-per-Energy tables and confirm the signature > universal > cross-class ordering still holds.
 4. **Watch the villain basic-attack share.** Ozai (aggression 5) is now in the villain lineup and the AI leans on the free strike; the cardless-floor audit stays open even though it no longer scales.
-5. **Keep the gates fixed.** KO 76% / cap 20% has headroom, but any roster edit can move it; compare paired seeds and log the decision note required by §2.
+5. **Keep the gates fixed.** KO 96% / cap 0% has headroom, but any roster edit can move it; compare paired seeds and log the decision note required by §2.
 6. **Harness follow-ons:** emit the §4.4 JSONL per-game log; add T2 archetype bots (§4.2) now that pacing is usable.
 
 

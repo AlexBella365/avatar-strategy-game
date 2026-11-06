@@ -3,17 +3,14 @@
 You lead 3 benders in a turn-based duel on a 7×7 grid. Outmaneuver your opponent, play the right technique at the right time, and knock out their whole team.
 
 - **Players:** 2 (hot-seat / pass-and-play)
-- **Time:** up to 10 rounds
+- **Time:** up to 30 rounds
 - **You need:** 3 characters each, technique cards, this board
 
 ## Goal
 
 You win immediately when you knock out all 3 enemy characters.
 
-If both teams survive after round 10, you compare:
-1. Total remaining health (% of max)
-2. Most survivors left
-3. Otherwise: draw
+If both teams still have characters standing after round 30, the match is a draw. There is no health-share or survivor tiebreaker.
 
 ## Setup
 

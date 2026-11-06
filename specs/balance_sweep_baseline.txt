@@ -13,32 +13,32 @@ Regenerate with:  make sweep-baseline
 ---
 
 ===== shipped: heroes(p1, north) vs villains(p2) (n=100) =====
-p1 46 (46.0%) | p2 51 (51.0%) | draws 3 (3.0%)
-north/first-mover 46.0%  95% CI [36.6%, 55.7%]
-decision: KO 76 (76.0%) | tiebreak 17 (17.0%) | limit-draw 3 | ko-draw 0 | unresolved 4
-cap-reach 20.0% | avg rounds 8.65 | avg KOs 4.22 | round-1 KO 1 (1.0%)
+p1 42 (42.0%) | p2 58 (58.0%) | draws 0 (0.0%)
+north/first-mover 42.0%  95% CI [32.8%, 51.8%]
+decision: KO 96 (96.0%) | limit-draw 0 | ko-draw 0 | unresolved 4
+cap-reach 0.0% | avg rounds 9.12 | avg KOs 4.45 | round-1 KO 1 (1.0%)
 first KO round: min 1 | avg 3.2
-damage/match 56.28 | HP-share margin avg 0.254 median 0.259
-plays/match 14.81 | spike-heal plays 0.75 | instant heal 3.39 | regen 1.07
+damage/match 57.76 | HP-share margin avg 0.264 median 0.296
+plays/match 15.20 | spike-heal plays 0.75 | instant heal 3.44 | regen 1.10
 
 ===== mirror heroes (seat alternated) (n=100) =====
-p1 45 (45.0%) | p2 55 (55.0%) | draws 0 (0.0%)
-north/first-mover 53.0%  95% CI [43.3%, 62.5%]
-decision: KO 39 (39.0%) | tiebreak 50 (50.0%) | limit-draw 0 | ko-draw 0 | unresolved 11
-cap-reach 50.0% | avg rounds 9.06 | avg KOs 3.47 | round-1 KO 0 (0.0%)
+p1 53 (53.0%) | p2 47 (47.0%) | draws 0 (0.0%)
+north/first-mover 59.0%  95% CI [49.2%, 68.1%]
+decision: KO 89 (89.0%) | limit-draw 0 | ko-draw 0 | unresolved 11
+cap-reach 0.0% | avg rounds 10.95 | avg KOs 4.16 | round-1 KO 0 (0.0%)
 first KO round: min 2 | avg 3.7
-damage/match 58.09 | HP-share margin avg 0.289 median 0.296
-plays/match 23.78 | spike-heal plays 2.38 | instant heal 10.58 | regen 3.59
+damage/match 63.27 | HP-share margin avg 0.350 median 0.333
+plays/match 26.07 | spike-heal plays 2.54 | instant heal 11.49 | regen 4.03
 
 ===== mirror villains (seat alternated) (n=100) =====
-p1 46 (46.0%) | p2 52 (52.0%) | draws 2 (2.0%)
-north/first-mover 52.0%  95% CI [42.3%, 61.5%]
-decision: KO 92 (92.0%) | tiebreak 6 (6.0%) | limit-draw 2 | ko-draw 0 | unresolved 0
-cap-reach 8.0% | avg rounds 8.13 | avg KOs 4.52 | round-1 KO 2 (2.0%)
+p1 49 (49.0%) | p2 51 (51.0%) | draws 0 (0.0%)
+north/first-mover 53.0%  95% CI [43.3%, 62.5%]
+decision: KO 100 (100.0%) | limit-draw 0 | ko-draw 0 | unresolved 0
+cap-reach 0.0% | avg rounds 8.31 | avg KOs 4.60 | round-1 KO 2 (2.0%)
 first KO round: min 1 | avg 3.2
-damage/match 56.37 | HP-share margin avg 0.203 median 0.185
-plays/match 8.87 | spike-heal plays 0.00 | instant heal 0.00 | regen 0.00
+damage/match 56.89 | HP-share margin avg 0.209 median 0.185
+plays/match 8.96 | spike-heal plays 0.00 | instant heal 0.00 | regen 0.00
 
 Lethality gates on the shipped defaults:
-PASS  SHIPPED DEFAULTS           cap 20%  KO 76%  draws 3%  margin 0.254
+PASS  SHIPPED DEFAULTS           cap 0%  KO 96%  draws 0%  margin 0.264
 tuning: {"movement":2,"hpScale":0.58,"deploymentInset":1,"energyPerRound":4,"healingScale":1,"damageScale":1.75}

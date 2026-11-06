@@ -17,7 +17,8 @@ import type {
 } from "./types";
 
 export const STARTING_FOCUS = 1;
-export const MAX_ROUNDS = 10;
+/** Hard round cap: a match that reaches it is a draw (no tiebreakers). */
+export const MAX_ROUNDS = 30;
 
 /** Deployment zones (spec §4.2): north team on row 0, south team on row 6. */
 export const DEPLOYMENT_ZONE_ROWS: Record<Side, number> = { north: 0, south: 6 };

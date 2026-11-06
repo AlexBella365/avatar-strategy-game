@@ -72,18 +72,13 @@ describe("damage and victory", () => {
     expect(state.winnerId).toBe("p1");
   });
 
-  it("round-limit tiebreakers: health share, then survivors, then draw", () => {
-    const hpShare = setup();
-    hpShare.round = hpShare.maxRounds;
-    hpShare.characters.find((c) => c.id === "p2-c0")!.health = 1;
-    updateMatchResult(hpShare, { applyRoundLimit: true });
-    expect(hpShare.winnerId).toBe("p1");
-
-    const draw = setup();
-    draw.round = draw.maxRounds;
-    updateMatchResult(draw, { applyRoundLimit: true });
-    // identical mirrored setup: equal share but p1/p2 max HP differ by roster...
-    // force exact tie: equalize health shares via damage is brittle; assert no crash + decided
-    expect(draw.winnerId !== null || draw.isDraw).toBe(true);
+  it("round limit is a draw even when one side has more health", () => {
+    const state = setup();
+    state.round = state.maxRounds;
+    state.characters.find((c) => c.id === "p2-c0")!.health = 1;
+    updateMatchResult(state, { applyRoundLimit: true });
+    expect(state.isDraw).toBe(true);
+    expect(state.winnerId).toBeNull();
+    expect(state.log.join("\n")).toContain("Round limit reached");
   });
 });

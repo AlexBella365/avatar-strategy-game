@@ -38,12 +38,13 @@ describe("endRound", () => {
     expect(state.round).toBe(1);
   });
 
-  it("applies the round-limit tiebreaker instead of advancing", () => {
+  it("ends the match in a draw at the round limit instead of advancing", () => {
     const state = setup();
     state.round = state.maxRounds;
     dealDamage(state, "p2-c0", 999, "test");
     endRound(state);
-    expect(state.winnerId).toBe("p1");
+    expect(state.isDraw).toBe(true);
+    expect(state.winnerId).toBeNull();
     expect(state.round).toBe(state.maxRounds);
   });
 
