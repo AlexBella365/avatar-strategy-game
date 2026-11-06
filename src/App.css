@@ -152,20 +152,34 @@
 }
 .draft-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 10px;
 }
 .draft-tile {
   position: relative;
+  display: block;
+  width: 100%;
   border: 5px solid var(--border-dark);
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
   background: var(--ink-2);
   aspect-ratio: 3 / 3.6;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
 }
 .draft-tile:hover {
   transform: scale(1.04);
+}
+.draft-tile:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  filter: saturate(0.65);
+}
+.draft-tile:disabled:hover {
+  transform: none;
 }
 .draft-tile.choosable {
   box-shadow: 0 0 0 2px var(--accent-gold);
@@ -183,6 +197,17 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+.draft-placeholder {
+  flex-direction: column;
+  gap: 6px;
+  background: var(--face-grad);
+}
+.draft-placeholder::after {
+  content: "Artwork unavailable";
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
 }
 .draft-name {
   position: absolute;

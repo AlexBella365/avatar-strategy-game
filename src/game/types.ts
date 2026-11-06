@@ -59,8 +59,6 @@ export interface CharacterDefinition {
   role?: "hero" | "villain" | "antihero" | "neutral";
   class?: "Water" | "Earth" | "Fire" | "Air" | "Non-bending";
   releaseWave?: string;
-  /** Companions (Appa, Momo) are drafted separately, never as fighters. */
-  companion?: boolean;
 }
 
 export interface CharacterState {

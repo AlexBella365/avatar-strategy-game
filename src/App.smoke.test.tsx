@@ -1,14 +1,57 @@
 // @vitest-environment jsdom
 // UI smoke test: welcome -> start -> full game view renders (no blank screen).
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 import { CARDS } from "./game/content/cards";
+import { CHARACTERS } from "./game/content/characters";
+import { PORTRAITS } from "./ui/Board";
 
 afterEach(cleanup);
 
 describe("demo smoke", () => {
+  it("shows the full character roster and uses an artwork placeholder when needed", () => {
+    render(<App />);
+
+    expect(document.querySelectorAll(".draft-tile")).toHaveLength(CHARACTERS.length);
+    expect(
+      Array.from(document.querySelectorAll(".draft-name"), (name) => name.textContent),
+    ).toEqual(CHARACTERS.map((character) => character.name).sort((a, b) => a.localeCompare(b)));
+    for (const id of Object.keys(PORTRAITS)) {
+      expect(CHARACTERS.some((character) => character.id === id), `${id} has a portrait`).toBe(true);
+    }
+    for (const character of CHARACTERS) {
+      const tile = screen.getByRole("button", {
+        name: `${character.name}, ${character.element}`,
+      }) as HTMLButtonElement;
+      expect(tile.disabled).toBe(false);
+    }
+
+    const aangTile = screen.getByRole("button", { name: "Aang, avatar" });
+    const aangPortrait = aangTile.querySelector("img");
+    if (!aangPortrait) throw new Error("Aang portrait should render before simulating a load failure");
+    fireEvent.error(aangPortrait);
+    expect(within(aangTile).getByRole("img", { name: "Aang artwork placeholder" })).toBeTruthy();
+  });
+
+  it("allows Appa and Momo to be drafted as fighters", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Aang, avatar" }));
+    await user.click(screen.getByRole("button", { name: "Katara, water" }));
+    await user.click(screen.getByRole("button", { name: "Toph, earth" }));
+    await user.click(screen.getByRole("button", { name: "Appa, air" }));
+    await user.click(screen.getByRole("button", { name: "Momo, nonbender" }));
+    await user.click(screen.getByRole("button", { name: "Aang, avatar" }));
+    await user.click(screen.getByRole("button", { name: /fight/i }));
+
+    const p1Sheets = document.querySelector(".sheets-col")?.textContent ?? "";
+    expect(p1Sheets).toContain("Appa");
+    expect(p1Sheets).toContain("Momo");
+  });
+
   it("starts a match and renders board, sheets, and hand", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -65,6 +65,15 @@ export const PORTRAITS: Record<string, string> = {
   tylee: "/portraits/tylee.webp",
   appa: "/portraits/appa.webp",
   momo: "/portraits/momo.webp",
+  korra: "/portraits/korra.webp",
+  mako: "/portraits/mako.webp",
+  bolin: "/portraits/bolin.webp",
+  asami: "/portraits/asami.webp",
+  lin: "/portraits/lin.webp",
+  amon: "/portraits/amon.webp",
+  kuvira: "/portraits/kuvira.webp",
+  tenzin: "/portraits/tenzin.webp",
+  zaheer: "/portraits/zaheer.webp",
 };
 
 export default function Board({

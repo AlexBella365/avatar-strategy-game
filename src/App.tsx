@@ -53,10 +53,38 @@ const SOUTH_SLOTS: Position[] = [
   { x: 5, y: 5 },
 ];
 
-/** Draftable fighters (companions like Appa/Momo enter through team rules). */
-const FIGHTERS = CHARACTERS.filter((d) => !d.companion);
 // Temporary prototype switch: admin-only landing tabs are enabled for now.
 const ADMIN_MODE = true;
+
+function CharacterArtwork({
+  characterId,
+  name,
+  imageClass,
+  placeholderClass,
+}: {
+  characterId: string;
+  name: string;
+  imageClass: string;
+  placeholderClass: string;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const portrait = PORTRAITS[characterId];
+  if (portrait && !imageFailed) {
+    return (
+      <img
+        className={imageClass}
+        src={portrait}
+        alt={name}
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+  return (
+    <span className={placeholderClass} role="img" aria-label={`${name} artwork placeholder`}>
+      {FACES[characterId] ?? "?"}
+    </span>
+  );
+}
 
 function CardRoster() {
   const [sortBy, setSortBy] = useState("name");
@@ -558,44 +586,44 @@ export default function App() {
       const def = CHARACTERS.find((d) => d.id === defId)!;
       const inP1 = draft.p1.includes(defId);
       const inP2 = draft.p2.includes(defId);
-      const portrait = PORTRAITS[defId];
       return (
-        <div
+        <button
+          type="button"
           key={defId}
           className={`draft-tile ${(inP1 || inP2) ? "picked" : ""} ${phase !== "done" && !inP1 && !inP2 ? "choosable" : ""}`}
           style={{ borderColor: bendingColor(defId) }}
           onClick={() => pickForPhase(defId)}
           title={`${def.name} — ${def.element}`}
+          aria-label={`${def.name}, ${def.element}`}
         >
-          {portrait ? (
-            <img className="draft-photo" src={portrait} alt={def.name} />
-          ) : (
-            <span className="draft-face" aria-hidden>
-              {FACES[defId] ?? "❓"}
-            </span>
-          )}
+          <CharacterArtwork
+            characterId={defId}
+            name={def.name}
+            imageClass="draft-photo"
+            placeholderClass="draft-face draft-placeholder"
+          />
           <span className="draft-name">{def.name}</span>
           {inP1 && <span className="draft-badge badge-p1">P1</span>}
           {inP2 && <span className="draft-badge badge-p2">P2</span>}
-        </div>
+        </button>
       );
     };
     const versusSlot = (side: "p1" | "p2", index: number) => {
       const defId = draft[side][index];
       const def = defId ? CHARACTERS.find((d) => d.id === defId)! : null;
-      const portrait = defId ? PORTRAITS[defId] : undefined;
       return (
         <div
           key={`${side}-${index}`}
           className={`versus-slot ${def ? "filled" : "empty"}`}
           style={def ? { borderColor: bendingColor(def.id) } : undefined}
         >
-          {def && portrait ? (
-            <img className="versus-photo" src={portrait} alt={def.name} />
-          ) : def ? (
-            <span className="versus-face" aria-hidden>
-              {FACES[def.id] ?? "❓"}
-            </span>
+          {def ? (
+            <CharacterArtwork
+              characterId={def.id}
+              name={def.name}
+              imageClass="versus-photo"
+              placeholderClass="versus-face"
+            />
           ) : (
             <span className="versus-empty">?</span>
           )}
@@ -644,7 +672,11 @@ export default function App() {
               <h3>P1</h3>
               {[0, 1, 2].map((i) => versusSlot("p1", i))}
             </div>
-            <div className="draft-grid">{FIGHTERS.map((d) => draftTile(d.id))}</div>
+            <div className="draft-grid" aria-label={`Character selection, ${CHARACTERS.length} roster characters`}>
+              {[...CHARACTERS]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((d) => draftTile(d.id))}
+            </div>
             <div className="versus-side">
               <h3>P2</h3>
               {[0, 1, 2].map((i) => versusSlot("p2", i))}
