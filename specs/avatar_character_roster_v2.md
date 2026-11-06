@@ -130,8 +130,8 @@ The eight LOK characters specifically requested for the expanded pool are **Mako
 
 ### Avatar State
 
-- Aang is the only character in this roster with the Avatar State.
-- Keep Avatar State separate from normal Air-class abilities and from Focus.
+- Every character marked as an Avatar (currently Aang and Korra) can use the Avatar State; non-Avatars cannot.
+- Keep Avatar State separate from normal class abilities and from Focus.
 - Its build-up, activation cost, duration, bonuses, and immediate-loss condition should be implemented by the shared battle engine, not hard-coded into individual card effects.
 - The roster may later add other Avatars from different eras. They should be clearly marked as Avatars and balanced around the same core risk rules, with character-specific variations only where necessary.
 

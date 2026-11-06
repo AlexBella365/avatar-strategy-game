@@ -100,7 +100,7 @@ These two cards were specced alongside the water-impassable terrain rule and the
 | **Alignment-gated** | add `{ type:"alignment", alignment:"villain"/"hero" }` | listed types, one alignment |
 | **Unique** | `{ type:"unique", characterId }` | that character only (not counted in type totals) |
 
-Avatar (`element:"avatar"`) is included in every elemental list, so Aang/Korra can equip any elemental card (spec §12A.4: Avatar State grants no free cards — they must be in the build).
+- Avatar (`element:"avatar"`) is included in the air/water/earth elemental lists, so Aang/Korra can equip those cards (spec §12A.4: Avatar State grants no free cards — they must be in the build). Fire-specific cards remain restricted to fire benders, and unique gear stays tied to its named character.
 
 ## 5. New mechanics / engine deltas (FLAGGED — needed before these cards ship)
 

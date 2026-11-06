@@ -156,14 +156,14 @@ G|G|P|F|F|G|G
 G|G|P|F|F|F|K
 ```
 
-## Avatar State (Aang only)
+## Avatar State (Avatars only)
 
-Aang builds **Resonance 0/6** (max +2/round): use 2 different elements in a round, protect an ally, or survive a 3+ damage hit. You see the meter fill.
+Every Avatar character (currently Aang and Korra) builds **Resonance 0/6** (max +2/round): use 2 different elements in a round, protect an ally, or survive a 3+ damage hit. You see the meter fill. Non-Avatars cannot gain Resonance or transform.
 
-When he hits 6/6, on his activation you may spend **2 Focus** to transform instead of playing a technique:
+When the Avatar hits 6/6, on their activation you may spend **2 Focus** to transform instead of playing a technique:
 
-- **+1 damage** to all his attacks, **+1 shield** to his defenses, for 2 rounds (including this one).
-- **Risk: if Aang is knocked out while active, you lose immediately** — even if your allies are alive.
+- **+1 damage** to all their attacks, **+1 shield** to their defenses, for 2 rounds (including this one).
+- **Risk: if the active Avatar is knocked out while transformed, you lose immediately** — even if your allies are alive.
 - Once per match.
 
 ## Example
@@ -175,4 +175,4 @@ When he hits 6/6, on his activation you may spend **2 Focus** to transform inste
 - Save 1 Focus to Evade a kill shot.
 - Push/pull enemies into hazards or out of cover before your big hit.
 - Spread out vs. AoE, clump vs. focused fire.
-- Force the Avatar player to defend — don't let Aang sit at 6/6 for free.
+- Force the Avatar player to defend — don't let an Avatar sit at 6/6 for free.

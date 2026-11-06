@@ -90,10 +90,9 @@ additions (Iroh, Ozai, Suki, Ty Lee), and the Wave 2 expansion (Bumi, Pakku, Mai
 Tenzin, Lin Beifong, Asami Sato, Kuvira, plus the LOK main cast: Korra, Mako, and
 Bolin). Appa, Momo, Naga, and Pabu are flagged companions, not fighters. Non-bending
 fighters (Sokka, Suki, Ty Lee, Mai, Asami) are first-class picks rather than
-support-only. Aang is currently the only Avatar State–capable character; Korra is
-playable as a water-first Avatar without Avatar State until that system is extended;
-Resonance buildup, activation cost, duration, and the active-Avatar instant-loss
-rule live in the shared engine, not in card data.
+support-only. Avatar State is available to every Avatar character (currently Aang
+and Korra); Resonance buildup, activation cost, duration, and the active-Avatar
+instant-loss rule live in the shared engine, not in card data.
 
 ## Cards (21)
 

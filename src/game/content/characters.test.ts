@@ -44,8 +44,12 @@ describe("character roster", () => {
     for (const id of ["korra", "mako", "bolin", "asami"]) expect(ids).toContain(id);
   });
 
-  it("keeps Avatar State exclusive to Aang", () => {
+  it("keeps Avatar State exclusive to Avatar characters", () => {
     const avatars = CHARACTERS.filter((c) => c.avatarState?.enabled);
-    expect(avatars.map((c) => c.id)).toEqual(["aang"]);
+    expect(avatars.map((c) => c.id).sort()).toEqual(["aang", "korra"]);
+    for (const c of CHARACTERS) {
+      if (c.element === "avatar") expect(c.avatarState?.enabled).toBe(true);
+      else expect(c.avatarState?.enabled).toBeFalsy();
+    }
   });
 });
